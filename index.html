@@ -61,38 +61,51 @@
       </div>
       
       <h2 class="text-lg font-bold text-white tracking-wide">Bhagyanagar Gas Limited</h2>
-      <p class="text-xs text-slate-400 mb-5">Field Operations & Maintenance Portal</p>
+      <p class="text-xs text-slate-400 mb-4">Field Operations & Maintenance Portal</p>
 
-      <!-- ⚡ Instant 1-Click Login (Top Priority) -->
-      <div class="p-3 bg-slate-900/90 rounded-xl border border-teal-500/40 mb-4 text-left">
-        <p class="text-[11px] font-semibold text-teal-300 mb-2 flex items-center gap-1">
-          <i class="fa-solid fa-bolt text-amber-400"></i> Instant 1-Click Login:
-        </p>
-        <div class="flex items-center gap-2">
-          <button type="button" onclick="directLogin('admin')" class="flex-1 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-bold shadow transition">
-            Admin
-          </button>
-          <button type="button" onclick="directLogin('hmt_tech')" class="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-medium transition">
-            HMT Tech
-          </button>
-          <button type="button" onclick="directLogin('kphb_tech')" class="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-medium transition">
-            KPHB Tech
-          </button>
-        </div>
+      <!-- ⚡ Fast Select Dropdown (Zero Typing Required) -->
+      <div class="p-3 bg-slate-900/90 rounded-xl border border-teal-500/40 mb-3 text-left">
+        <label class="block text-[11px] font-semibold text-teal-300 mb-1.5 flex items-center gap-1">
+          <i class="fa-solid fa-bolt text-amber-400"></i> Quick Select Employee / Login:
+        </label>
+        <select id="quickSelectDropdown" onchange="handleQuickSelect(this.value)" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-teal-500">
+          <option value="">-- Choose Your Name / ID --</option>
+          <option value="admin">Admin (Satish M)</option>
+          <option disabled>────────── HMT TEAM ──────────</option>
+          <option value="GGS/HYD/022">Muthineni Satish (GGS/HYD/022 - HMT)</option>
+          <option value="GGS/HYD/024">Deshamaina Praveen Kumar (GGS/HYD/024 - HMT)</option>
+          <option value="GGS/HYD/025">Dontharaboina Mahesh Kumar (GGS/HYD/025 - HMT)</option>
+          <option value="GGS/HYD/019">Dontharaboina Nagaraju (GGS/HYD/019 - HMT)</option>
+          <option value="GGS/HYD/035">Md Dilshan Alam (GGS/HYD/035 - HMT)</option>
+          <option value="GGS/HYD/020">Nimmala Madhu (GGS/HYD/020 - HMT)</option>
+          <option value="GGS/HYD/036">Salendra yadagiri (GGS/HYD/036 - HMT)</option>
+          <option value="GGS/HYD/018">Vagamari Sai (GGS/HYD/018 - HMT)</option>
+          <option value="GGS/HYD/037">Yavapuram Anilkumar (GGS/HYD/037 - HMT)</option>
+          <option value="GGS/HYD/038">Md Sadab (GGS/HYD/038 - HMT)</option>
+          <option disabled>────────── KPHB TEAM ──────────</option>
+          <option value="GGS/HYD/010">Mekala Mahesh (GGS/HYD/010 - KPHB)</option>
+          <option value="GGS/HYD/017">Arra Chiranjeevi (GGS/HYD/017 - KPHB)</option>
+          <option value="GGS/HYD/016">Jupalli Naresh (GGS/HYD/016 - KPHB)</option>
+          <option value="GGS/HYD/015">Matte Devendar (GGS/HYD/015 - KPHB)</option>
+          <option value="GGS/HYD/003">Moluguri Dinesh (GGS/HYD/003 - KPHB)</option>
+          <option value="GGS/HYD/008">K.Rajesh (GGS/HYD/008 - KPHB)</option>
+          <option value="GGS/HYD/009">Rathod Ramesh (GGS/HYD/009 - KPHB)</option>
+          <option value="GGS/HYD/023">Naralakanti Vijay (GGS/HYD/023 - KPHB)</option>
+        </select>
       </div>
 
-      <div class="text-xs text-slate-500 mb-3 flex items-center justify-center gap-2">
+      <div class="text-[11px] text-slate-500 mb-3 flex items-center justify-center gap-2">
         <span class="h-px bg-slate-800 flex-1"></span>
-        <span>OR ENTER DETAILS</span>
+        <span>OR ENTER MANUALLY</span>
         <span class="h-px bg-slate-800 flex-1"></span>
       </div>
 
-      <div class="space-y-3.5 text-left">
+      <div class="space-y-3 text-left">
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">User ID</label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-user text-xs"></i></span>
-            <input type="text" id="loginUsername" placeholder="Enter User ID" class="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-teal-500">
+            <input type="text" id="loginUsername" placeholder="e.g. GGS/HYD/022 or admin" class="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs sm:text-sm text-white focus:outline-none focus:border-teal-500 uppercase">
           </div>
         </div>
 
@@ -100,7 +113,7 @@
           <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-lock text-xs"></i></span>
-            <input type="password" id="loginPassword" onkeyup="if(event.key==='Enter') doLogin()" placeholder="Enter Password" class="w-full pl-9 pr-9 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-teal-500">
+            <input type="password" id="loginPassword" onkeyup="if(event.key==='Enter') doLogin()" placeholder="Enter Password" class="w-full pl-9 pr-9 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs sm:text-sm text-white focus:outline-none focus:border-teal-500">
             <button type="button" onclick="togglePassVisibility()" class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 hover:text-slate-300">
               <i id="passEyeIcon" class="fa-solid fa-eye text-xs"></i>
             </button>
@@ -109,8 +122,8 @@
 
         <div id="loginError" class="hidden text-xs text-rose-400 bg-rose-950/40 p-2 rounded-lg border border-rose-800 text-center"></div>
 
-        <button type="button" onclick="doLogin()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/30 font-semibold rounded-lg text-sm transition">
-          Sign In Manually
+        <button type="button" onclick="doLogin()" class="w-full py-2.5 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-lg shadow-lg text-sm transition">
+          Sign In
         </button>
       </div>
     </div>
@@ -129,12 +142,12 @@
               <span>BGL O&M</span>
               <span id="userBadge" class="text-[9px] px-1.5 py-0.5 rounded font-semibold bg-teal-500/20 text-teal-300 border border-teal-500/40"></span>
             </h1>
-            <p id="userZoneLabel" class="text-[10px] text-slate-400 truncate max-w-[130px] sm:max-w-none"></p>
+            <p id="userZoneLabel" class="text-[10px] text-slate-400 truncate max-w-[140px] sm:max-w-none"></p>
           </div>
         </div>
 
         <div class="flex items-center gap-1.5 sm:gap-2">
-          <!-- GPS Proximity Button -->
+          <!-- GPS Button -->
           <button onclick="toggleGeolocation()" id="gpsBtn" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 flex items-center gap-1">
             <i class="fa-solid fa-location-crosshairs"></i>
             <span class="hidden sm:inline">My Location</span>
@@ -145,7 +158,7 @@
             <i class="fa-solid fa-arrows-rotate"></i>
           </button>
 
-          <!-- Admin Exclusive Toolbar -->
+          <!-- Admin Toolbar -->
           <div id="adminHeaderBtns" class="hidden flex items-center gap-1.5">
             <button onclick="openModal('addAssetModal')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-teal-600 hover:bg-teal-500 text-white flex items-center gap-1 shadow">
               <i class="fa-solid fa-plus"></i> <span class="hidden md:inline">Asset</span>
@@ -172,7 +185,7 @@
             <i class="fa-solid fa-chart-line"></i> <span class="hidden sm:inline">Progress</span>
           </button>
 
-          <!-- Logout Button -->
+          <!-- Logout -->
           <button onclick="handleLogout()" title="Logout" class="p-1.5 sm:p-2 rounded-lg text-xs bg-slate-800 hover:bg-rose-900/40 text-slate-400 hover:text-rose-300 border border-slate-700 transition">
             <i class="fa-solid fa-power-off"></i>
           </button>
@@ -272,9 +285,7 @@
         </div>
         <button onclick="closeModal('customIconsModal')" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark fa-lg"></i></button>
       </div>
-
       <div class="space-y-3" id="categoryIconInputsContainer"></div>
-
       <div class="flex justify-end gap-2 pt-3 border-t border-slate-800 mt-4">
         <button onclick="resetCustomIcons()" class="px-3 py-1.5 bg-slate-800 text-slate-400 hover:text-white rounded">Reset Defaults</button>
         <button onclick="closeModal('customIconsModal'); renderAssets();" class="px-4 py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-medium rounded">Done</button>
@@ -289,7 +300,6 @@
         <h3 class="text-sm font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-pen-to-square text-teal-400"></i> Edit Asset</h3>
         <button onclick="closeModal('editAssetModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
       </div>
-
       <form id="editAssetForm" onsubmit="saveEditedAsset(event)" class="space-y-2.5">
         <input type="hidden" id="editAssetOriginalId">
         <div>
@@ -432,7 +442,6 @@
         </div>
         <button onclick="closeModal('assetHistoryModal')" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark fa-lg"></i></button>
       </div>
-
       <div id="historyTimelineContainer" class="space-y-3"></div>
     </div>
   </div>
@@ -443,7 +452,7 @@
       <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3">
         <div>
           <h3 class="text-sm font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-users-gear text-indigo-400"></i> Teams & Technicians</h3>
-          <p class="text-slate-400">Add operational teams and technician accounts (Synced to Cloud Sheet)</p>
+          <p class="text-slate-400">Field staff accounts & assigned zone</p>
         </div>
         <button onclick="closeModal('teamManageModal')" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark"></i></button>
       </div>
@@ -464,7 +473,7 @@
       <form id="addMemberForm" onsubmit="saveNewTeamMember(event)" class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-2 mb-3">
         <h4 class="font-bold text-white">Add Technician Login</h4>
         <div class="grid grid-cols-2 gap-2">
-          <input type="text" id="newUserId" required placeholder="User ID (e.g. ravi_tech)" class="p-2 bg-slate-950 border border-slate-700 rounded text-white font-mono">
+          <input type="text" id="newUserId" required placeholder="User ID (e.g. GGS/HYD/039)" class="p-2 bg-slate-950 border border-slate-700 rounded text-white font-mono uppercase">
           <input type="text" id="newUserPass" required placeholder="Password" class="p-2 bg-slate-950 border border-slate-700 rounded text-white">
         </div>
         <div class="grid grid-cols-2 gap-2">
@@ -472,12 +481,12 @@
           <select id="newUserTeamSelect" required class="p-2 bg-slate-950 border border-slate-700 rounded text-white"></select>
         </div>
         <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded">
-          <i class="fa-solid fa-user-plus mr-1"></i> Save Technician to Cloud
+          <i class="fa-solid fa-user-plus mr-1"></i> Save Technician
         </button>
       </form>
 
       <!-- Active Users Table -->
-      <h4 class="font-bold text-slate-300 mb-1">Active Accounts (Cloud Synced)</h4>
+      <h4 class="font-bold text-slate-300 mb-1">Active Accounts (Total: <span id="totalUsersCount"></span>)</h4>
       <div class="overflow-x-auto border border-slate-800 rounded-lg">
         <table class="w-full text-left">
           <thead class="bg-slate-900 text-slate-400 border-b border-slate-800">
@@ -526,7 +535,6 @@
         </div>
         <button onclick="closeModal('reportsModal')" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark"></i></button>
       </div>
-
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-3">
         <div>
           <label class="block text-slate-400 mb-1">From Date</label>
@@ -542,14 +550,12 @@
           </button>
         </div>
       </div>
-
       <div class="flex justify-between items-center mb-2">
         <span id="reportCount" class="text-slate-400">0 records found</span>
         <button onclick="downloadFilteredCSV()" class="px-3 py-1 bg-teal-600 hover:bg-teal-500 text-white rounded font-medium flex items-center gap-1">
           <i class="fa-solid fa-download"></i> Download CSV
         </button>
       </div>
-
       <div class="overflow-x-auto border border-slate-800 rounded-lg">
         <table class="w-full text-left">
           <thead class="bg-slate-900 text-slate-400 border-b border-slate-800">
@@ -678,7 +684,6 @@
 
   <!-- ==================== JAVASCRIPT ==================== -->
   <script>
-    // In-memory fallback if LocalStorage/SessionStorage is blocked in sandbox iframe
     const memStore = {};
     const safeStore = {
       get: (k) => { try { return localStorage.getItem(k); } catch(e) { return memStore[k] || null; } },
@@ -690,21 +695,29 @@
 
     const CATEGORIES = ['SR', 'DRS', 'MRS', 'Diaphragm meter', 'MDPE Valve', 'SV station'];
     const DEFAULT_TEAMS = ['HMT', 'KPHB', 'MEDCHAL', 'SUCHITRA'];
+
+    // PRELOADED ALL 18 FIELD TECHNICIANS (100% Guaranteed to work)
     const DEFAULT_USERS = {
       'admin': { pass: 'admin123', name: 'Satish M (Admin)', role: 'admin', team: 'ALL' },
-      'hmt_tech': { pass: '1234', name: 'HMT Field Tech', role: 'tech', team: 'HMT' },
-      'kphb_tech': { pass: '1234', name: 'KPHB Field Tech', role: 'tech', team: 'KPHB' }
+      'GGS/HYD/022': { pass: 'GGS/HYD/022', name: 'Muthineni Satish', role: 'tech', team: 'HMT' },
+      'GGS/HYD/010': { pass: 'GGS/HYD/010', name: 'Mekala Mahesh', role: 'tech', team: 'KPHB' },
+      'GGS/HYD/017': { pass: 'GGS/HYD/017', name: 'Arra Chiranjeevi', role: 'tech', team: 'KPHB' },
+      'GGS/HYD/024': { pass: 'GGS/HYD/024', name: 'Deshamaina Praveen Kumar', role: 'tech', team: 'HMT' },
+      'GGS/HYD/025': { pass: 'GGS/HYD/025', name: 'Dontharaboina Mahesh Kumar', role: 'tech', team: 'HMT' },
+      'GGS/HYD/019': { pass: 'GGS/HYD/019', name: 'Dontharaboina Nagaraju', role: 'tech', team: 'HMT' },
+      'GGS/HYD/016': { pass: 'GGS/HYD/016', name: 'Jupalli Naresh', role: 'tech', team: 'KPHB' },
+      'GGS/HYD/015': { pass: 'GGS/HYD/015', name: 'Matte Devendar', role: 'tech', team: 'KPHB' },
+      'GGS/HYD/035': { pass: 'GGS/HYD/035', name: 'Md Dilshan Alam', role: 'tech', team: 'HMT' },
+      'GGS/HYD/003': { pass: 'GGS/HYD/003', name: 'Moluguri Dinesh', role: 'tech', team: 'KPHB' },
+      'GGS/HYD/020': { pass: 'GGS/HYD/020', name: 'Nimmala Madhu', role: 'tech', team: 'HMT' },
+      'GGS/HYD/008': { pass: 'GGS/HYD/008', name: 'K.Rajesh', role: 'tech', team: 'KPHB' },
+      'GGS/HYD/009': { pass: 'GGS/HYD/009', name: 'Rathod Ramesh', role: 'tech', team: 'KPHB' },
+      'GGS/HYD/036': { pass: 'GGS/HYD/036', name: 'Salendra yadagiri', role: 'tech', team: 'HMT' },
+      'GGS/HYD/018': { pass: 'GGS/HYD/018', name: 'Vagamari Sai', role: 'tech', team: 'HMT' },
+      'GGS/HYD/037': { pass: 'GGS/HYD/037', name: 'Yavapuram Anilkumar', role: 'tech', team: 'HMT' },
+      'GGS/HYD/038': { pass: 'GGS/HYD/038', name: 'Md Sadab', role: 'tech', team: 'HMT' },
+      'GGS/HYD/023': { pass: 'GGS/HYD/023', name: 'Naralakanti Vijay', role: 'tech', team: 'KPHB' }
     };
-
-    // Preloaded Default Assets from your BGL network for immediate preview
-    const INITIAL_ASSETS = [
-      { id: "S07-D04-SR102", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5684817, lng: 78.4718986, lastDate: "2026-08-15", freqDays: 90, assignedTech: null },
-      { id: "S07-D04-SR103", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5684774, lng: 78.4718246, lastDate: "2026-07-20", freqDays: 90, assignedTech: null },
-      { id: "S07-D04-SR101", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5863404, lng: 78.4748154, lastDate: "2026-09-01", freqDays: 90, assignedTech: "HMT Field Tech" },
-      { id: "S07-D04-SR100", type: "SR", team: "HMT", location: "Suchitra Junction", lat: 17.5111404, lng: 78.4808035, lastDate: "2026-06-10", freqDays: 90, assignedTech: null },
-      { id: "S10-D06-SR04", type: "SR", team: "KPHB", location: "Erragadda", lat: 17.4585855, lng: 78.4306944, lastDate: "2026-05-12", freqDays: 90, assignedTech: "KPHB Field Tech" },
-      { id: "DRS-HMT-01", type: "DRS", team: "HMT", location: "HMT Sector 1", lat: 17.5215, lng: 78.3912, lastDate: "2026-08-10", freqDays: 180, assignedTech: null }
-    ];
 
     let teams = [];
     let users = {};
@@ -732,8 +745,9 @@
       const storedTeams = safeStore.get('bgl_teams_list');
       teams = storedTeams ? JSON.parse(storedTeams) : [...DEFAULT_TEAMS];
 
+      // Always merge default users so newly added staff never get erased
       const storedUsers = safeStore.get('bgl_team_users');
-      users = storedUsers ? JSON.parse(storedUsers) : { ...DEFAULT_USERS };
+      users = { ...DEFAULT_USERS, ...(storedUsers ? JSON.parse(storedUsers) : {}) };
       users['admin'] = { pass: 'admin123', name: 'Satish M (Admin)', role: 'admin', team: 'ALL' };
 
       const storedIcons = safeStore.get('bgl_custom_png_icons');
@@ -741,9 +755,7 @@
 
       const storedAssets = safeStore.get('bgl_assets_v2') || safeStore.get('bgl_assets_v1');
       if (storedAssets) {
-        try { assets = JSON.parse(storedAssets); } catch(e) { assets = [...INITIAL_ASSETS]; }
-      } else {
-        assets = [...INITIAL_ASSETS];
+        try { assets = JSON.parse(storedAssets); } catch(e) { assets = []; }
       }
 
       const historyStored = safeStore.get('bgl_maint_history_v2');
@@ -752,28 +764,36 @@
       }
     }
 
-    // --- INSTANT DIRECT 1-CLICK LOGIN ---
-    function directLogin(roleKey) {
-      if (roleKey === 'admin') {
-        currentUser = { id: 'admin', pass: 'admin123', name: 'Satish M (Admin)', role: 'admin', team: 'ALL' };
-      } else if (users[roleKey]) {
-        currentUser = { id: roleKey, ...users[roleKey] };
-      } else {
-        currentUser = { id: roleKey, ...DEFAULT_USERS[roleKey] };
+    // --- CASE-INSENSITIVE / FLEXIBLE USER FINDER ---
+    function findUserRecord(enteredId) {
+      if (!enteredId) return null;
+      const clean = enteredId.trim().toLowerCase();
+      for (const k of Object.keys(users)) {
+        if (k.trim().toLowerCase() === clean) {
+          return { id: k, ...users[k] };
+        }
       }
-
-      try { sessionStorage.setItem('bgl_current_user', JSON.stringify(currentUser)); } catch(e) {}
-      showAppScreen();
-      initAppView();
-      showToast(`Logged in as ${currentUser.name}!`);
+      return null;
     }
 
+    // --- FAST DROPDOWN SELECTOR ---
+    function handleQuickSelect(val) {
+      if (!val) return;
+      document.getElementById('loginUsername').value = val;
+      const u = findUserRecord(val);
+      if (u) {
+        document.getElementById('loginPassword').value = u.pass;
+        doLogin();
+      }
+    }
+
+    // --- BULLETPROOF LOGIN EXECUTION ---
     function doLogin() {
       const uInput = document.getElementById('loginUsername');
       const pInput = document.getElementById('loginPassword');
       const err = document.getElementById('loginError');
 
-      const u = (uInput ? uInput.value : '').trim().toLowerCase();
+      const u = (uInput ? uInput.value : '').trim();
       const p = (pInput ? pInput.value : '').trim();
 
       if (!u || !p) {
@@ -784,29 +804,32 @@
         return;
       }
 
-      let matched = null;
-      if (u === 'admin' && p === 'admin123') {
-        matched = { id: 'admin', pass: 'admin123', name: 'Satish M (Admin)', role: 'admin', team: 'ALL' };
-      } else if (users[u] && String(users[u].pass) === p) {
-        matched = { id: u, ...users[u] };
+      // 1. Direct Admin Bypass
+      if (u.toLowerCase() === 'admin' && p === 'admin123') {
+        currentUser = { id: 'admin', pass: 'admin123', name: 'Satish M (Admin)', role: 'admin', team: 'ALL' };
+        loginSuccess();
+        return;
       }
 
-      if (matched) {
+      // 2. Technician Match (Case-insensitive & Trimmed)
+      const matched = findUserRecord(u);
+      if (matched && matched.pass.trim().toLowerCase() === p.toLowerCase()) {
         currentUser = matched;
-        try { sessionStorage.setItem('bgl_current_user', JSON.stringify(currentUser)); } catch(e) {}
-        if (err) err.classList.add('hidden');
-        showAppScreen();
-        initAppView();
-        showToast(`Welcome ${currentUser.name}!`);
-      } else {
-        if (err) {
-          err.textContent = "Invalid User ID or Password";
-          err.classList.remove('hidden');
-        }
+        loginSuccess();
+        return;
+      }
+
+      if (err) {
+        err.textContent = "Invalid User ID or Password. (Note: ID and Password are the same, e.g. GGS/HYD/022)";
+        err.classList.remove('hidden');
       }
     }
 
-    function showAppScreen() {
+    function loginSuccess() {
+      try { sessionStorage.setItem('bgl_current_user', JSON.stringify(currentUser)); } catch(e) {}
+      const err = document.getElementById('loginError');
+      if (err) err.classList.add('hidden');
+
       const loginSec = document.getElementById('loginSection');
       const appCon = document.getElementById('appContainer');
       if (loginSec) loginSec.style.setProperty('display', 'none', 'important');
@@ -814,6 +837,9 @@
         appCon.style.setProperty('display', 'flex', 'important');
         appCon.classList.remove('hidden');
       }
+
+      initAppView();
+      showToast(`Welcome, ${currentUser.name}!`);
     }
 
     function togglePassVisibility() {
@@ -833,7 +859,13 @@
         const sess = sessionStorage.getItem('bgl_current_user');
         if (sess) {
           currentUser = JSON.parse(sess);
-          showAppScreen();
+          const loginSec = document.getElementById('loginSection');
+          const appCon = document.getElementById('appContainer');
+          if (loginSec) loginSec.style.setProperty('display', 'none', 'important');
+          if (appCon) {
+            appCon.style.setProperty('display', 'flex', 'important');
+            appCon.classList.remove('hidden');
+          }
           initAppView();
         }
       } catch(e) {}
@@ -937,7 +969,7 @@
       markersLayer = L.layerGroup().addTo(map);
     }
 
-    // --- DATE PARSING (DD-MM-YYYY) ---
+    // --- STRICT DATE PARSING (DD-MM-YYYY) ---
     function safeParseDate(val) {
       if (!val) return new Date().toISOString().split('T')[0];
       val = String(val).trim();
@@ -1049,7 +1081,6 @@
         const info = computeStatus(asset.lastDate, asset.freqDays);
         let dist = userLocation ? getDistance(userLocation.lat, userLocation.lng, asset.lat, asset.lng) : '--';
 
-        // Add Leaflet Marker
         if (map && asset.lat && asset.lng) {
           let marker;
           if (customIcons[asset.type]) {
@@ -1099,7 +1130,6 @@
           markersLayer.addLayer(marker);
         }
 
-        // Table Row
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-800/40 transition';
         tr.innerHTML = `
@@ -1498,10 +1528,14 @@
 
     function renderTeamMembers() {
       const tbody = document.getElementById('teamMembersTableBody');
+      const countEl = document.getElementById('totalUsersCount');
       if (!tbody) return;
       tbody.innerHTML = '';
+      
+      const uKeys = Object.keys(users);
+      if (countEl) countEl.textContent = uKeys.length;
 
-      Object.keys(users).forEach(uid => {
+      uKeys.forEach(uid => {
         const u = users[uid];
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-800/40';
@@ -1514,7 +1548,7 @@
               <button onclick="deleteTeamMember('${uid}')" class="text-rose-400 hover:text-rose-300">
                 <i class="fa-solid fa-trash"></i>
               </button>
-            ` : '<span class="text-slate-500">Admin</span>'}
+            ` : '<span class="text-slate-500 font-semibold">Admin</span>'}
           </td>
         `;
         tbody.appendChild(tr);
@@ -1523,7 +1557,7 @@
 
     async function saveNewTeamMember(e) {
       e.preventDefault();
-      const id = document.getElementById('newUserId').value.trim().toLowerCase();
+      const id = document.getElementById('newUserId').value.trim().toUpperCase();
       const pass = document.getElementById('newUserPass').value.trim();
       const name = document.getElementById('newUserName').value.trim();
       const team = document.getElementById('newUserTeamSelect').value;
