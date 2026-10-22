@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CGD Asset & Maintenance Management System</title>
+    <title>BGL CGD - Asset & Maintenance Management Portal</title>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,7 +14,6 @@
                 extend: {
                     colors: {
                         gas: {
-                            50: '#f0fdf4',
                             500: '#22c55e',
                             600: '#16a34a',
                             700: '#15803d'
@@ -25,10 +24,10 @@
         }
     </script>
 
-    <!-- Lucide Icons -->
+    <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- Leaflet.js CSS & JS (Free OpenStreetMap & Satellite) -->
+    <!-- Leaflet.js CSS & JS for Mapping -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -36,68 +35,126 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
-        
-        body {
-            font-family: 'Inter', sans-serif;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
 
-        .font-mono {
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        /* Custom Leaflet Map Dark Theme Overrides */
+        /* Custom Leaflet Dark Popup */
         .leaflet-popup-content-wrapper {
             background-color: #0f172a !important;
-            color: #f1f5f9 !important;
-            border-radius: 14px !important;
+            color: #f8fafc !important;
+            border-radius: 12px !important;
             border: 1px solid #334155 !important;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6) !important;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.6) !important;
             padding: 2px !important;
         }
-
         .leaflet-popup-tip {
             background-color: #0f172a !important;
             border: 1px solid #334155 !important;
         }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0f172a;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #334155;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #475569;
-        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0b1120; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
-        .pulse-ring {
-            display: block;
-            width: 22px;
-            height: 22px;
+        .pulse-marker {
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
-            background: rgba(59, 130, 246, 0.4);
-            animation: pulseAnimation 2s infinite;
+            background: #3b82f6;
+            box-shadow: 0 0 0 rgba(59, 130, 246, 0.6);
+            animation: pulseAnim 1.8s infinite;
+        }
+        @keyframes pulseAnim {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { box-shadow: 0 0 0 16px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
         }
 
-        @keyframes pulseAnimation {
-            0% { transform: scale(0.9); opacity: 0.9; }
-            50% { transform: scale(1.6); opacity: 0.2; }
-            100% { transform: scale(0.9); opacity: 0.9; }
+        .map-custom-pin {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+        .map-custom-pin:hover {
+            transform: scale(1.18);
+            z-index: 1000 !important;
         }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased select-none sm:select-auto">
 
-    <!-- Top Navigation Bar -->
+    <!-- ========================================== -->
+    <!-- 1. MANDATORY LOGIN SCREEN (Default Gatekeeper) -->
+    <!-- ========================================== -->
+    <div id="login-screen" class="fixed inset-0 z-[100] bg-slate-950 flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+            <!-- Glow background decor -->
+            <div class="absolute -top-16 -right-16 w-36 h-36 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-16 -left-16 w-36 h-36 bg-emerald-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="text-center mb-6 relative">
+                <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-xl shadow-blue-500/20 mb-3">
+                    <i data-lucide="flame" class="w-8 h-8"></i>
+                </div>
+                <h2 class="text-xl font-bold tracking-tight text-white">BGL City Gas Network</h2>
+                <p class="text-xs text-slate-400 mt-1">Asset Tracking & Preventive Maintenance Portal</p>
+                <div class="inline-block mt-2 px-3 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] font-mono font-semibold">
+                    Authorized Personnel Only
+                </div>
+            </div>
+
+            <!-- Quick Profile Selection Buttons -->
+            <div class="mb-5">
+                <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Select User Account:</label>
+                <div class="grid grid-cols-3 gap-2" id="login-preset-pills">
+                    <!-- Dynamic Pill selections -->
+                </div>
+            </div>
+
+            <!-- Login Form -->
+            <form id="auth-form" onsubmit="handleLoginSubmit(event)" class="space-y-3.5 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">User ID / Username</label>
+                    <div class="relative">
+                        <i data-lucide="user" class="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                        <input type="text" id="login-input-username" required placeholder="Enter username" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-slate-200 outline-none focus:border-blue-500 transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Password</label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                        <input type="password" id="login-input-password" required placeholder="Enter password" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-slate-200 outline-none focus:border-blue-500 transition">
+                    </div>
+                </div>
+
+                <div id="login-error-msg" class="hidden text-[11px] text-rose-400 bg-rose-950/40 border border-rose-800/60 p-2 rounded-lg text-center font-medium"></div>
+
+                <button type="submit" class="w-full py-2.5 mt-2 bg-blue-600 hover:bg-blue-500 font-bold text-white rounded-xl shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2">
+                    <i data-lucide="log-in" class="w-4 h-4"></i>
+                    <span>Sign In to Network</span>
+                </button>
+            </form>
+
+            <div class="mt-5 pt-4 border-t border-slate-800/80 text-center">
+                <p class="text-[11px] text-slate-500">
+                    Default Passwords: <span class="font-mono text-slate-400">123</span> • Admin: <span class="font-mono text-slate-400">admin</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- 2. MAIN APPLICATION PORTAL (Protected) -->
+    <!-- ========================================== -->
     <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-3 sm:px-6 py-2.5">
-        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2.5">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
             
             <!-- Brand / Logo -->
             <div class="flex items-center gap-3">
@@ -116,16 +173,22 @@
             <!-- Action Toolbar & User Management -->
             <div class="flex items-center flex-wrap gap-2">
                 
-                <!-- Current GPS Location Button -->
+                <!-- GPS Location Toggle -->
                 <button id="gps-btn" onclick="toggleGPS()" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold border flex items-center gap-1.5 transition bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700">
                     <i data-lucide="crosshair" id="gps-icon" class="w-3.5 h-3.5"></i>
                     <span id="gps-btn-label">My GPS</span>
                 </button>
 
-                <!-- Admin Action: Add New Asset -->
+                <!-- Admin Action: Add Asset -->
                 <button id="admin-add-asset-btn" onclick="openAddAssetModal()" class="hidden px-2.5 sm:px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-semibold text-white shadow-md shadow-blue-600/30 items-center gap-1.5 transition">
                     <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
                     <span>Add Asset</span>
+                </button>
+
+                <!-- Admin Action: Category Frequency & PNG Icons Config -->
+                <button id="admin-category-cfg-btn" onclick="openCategoryConfigModal()" class="hidden px-2.5 sm:px-3 py-1.5 bg-amber-950/80 hover:bg-amber-900 border border-amber-700/50 rounded-lg text-xs font-semibold text-amber-300 items-center gap-1.5 transition">
+                    <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
+                    <span>Config & Icons</span>
                 </button>
 
                 <!-- Admin Action: Manage Tech Accounts -->
@@ -134,10 +197,9 @@
                     <span>Techs</span>
                 </button>
 
-                <!-- Admin Action: Data Management Tools (Clear Mock Data) -->
-                <button id="admin-data-tools-btn" onclick="openDataManagementModal()" title="Manage or Clear Data" class="hidden px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-medium text-rose-400 border border-slate-700 items-center gap-1 transition">
+                <!-- Admin Action: Data Management Tools -->
+                <button id="admin-data-tools-btn" onclick="openDataManagementModal()" title="Data Tools" class="hidden px-2 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-medium text-rose-400 border border-slate-700 items-center gap-1 transition">
                     <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                    <span class="hidden sm:inline">Data Tools</span>
                 </button>
 
                 <!-- Import KMZ / CSV -->
@@ -159,15 +221,18 @@
                     <span>Progress</span>
                 </button>
 
-                <!-- User Profile / Switch Account -->
-                <div id="user-badge" class="flex items-center gap-2 pl-1 border-l border-slate-800">
-                    <button onclick="openSwitchAccountModal()" class="flex items-center gap-2 bg-slate-800/90 hover:bg-slate-700 border border-slate-700 px-2.5 py-1.5 rounded-lg text-xs transition">
+                <!-- User Profile & Logout -->
+                <div class="flex items-center gap-2 pl-2 border-l border-slate-800">
+                    <div class="flex items-center gap-2 bg-slate-800/90 border border-slate-700 px-2.5 py-1.5 rounded-lg text-xs">
                         <div class="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-[10px]" id="user-avatar-initial">A</div>
                         <div class="text-left leading-none">
-                            <span class="font-semibold text-slate-200 block" id="user-name-display">Admin</span>
-                            <span class="text-[9px] text-purple-400 font-mono" id="user-team-display">Network Lead</span>
+                            <span class="font-semibold text-slate-200 block" id="user-name-display">User</span>
+                            <span class="text-[9px] text-purple-400 font-mono" id="user-team-display">Team</span>
                         </div>
-                        <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400 ml-0.5"></i>
+                    </div>
+
+                    <button onclick="logoutUser()" title="Logout" class="p-1.5 bg-rose-950/70 hover:bg-rose-900 border border-rose-800/60 rounded-lg text-rose-300 transition">
+                        <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
                     </button>
                 </div>
 
@@ -243,13 +308,13 @@
             </div>
         </div>
 
-        <!-- Interactive GIS Map Section -->
+        <!-- Interactive GIS Map Section with Custom PNG Markers -->
         <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl relative">
             <div class="px-4 py-2.5 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between flex-wrap gap-2 text-xs">
                 <div class="flex items-center gap-2">
                     <i data-lucide="map-pin" class="w-4 h-4 text-blue-400"></i>
                     <span class="font-bold text-slate-200">GIS Field Map</span>
-                    <span class="text-slate-400 text-[11px]">(Click any marker to view asset & navigate)</span>
+                    <span class="text-slate-400 text-[11px]">(Markers show your custom PNG icons or category badges)</span>
                 </div>
                 <div class="flex items-center gap-3 text-[11px]">
                     <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Healthy</span>
@@ -258,13 +323,13 @@
                 </div>
             </div>
             
-            <div id="map" class="w-full h-72 sm:h-96 z-0 bg-slate-950"></div>
+            <div id="map" class="w-full h-80 sm:h-96 z-0 bg-slate-950"></div>
         </div>
 
         <!-- Asset Filter Tabs & Search Bar -->
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             
-            <!-- Category Tabs (Matches Google Sheets) -->
+            <!-- Category Tabs (Strictly matches Google Sheets) -->
             <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 text-xs font-semibold no-scrollbar" id="category-tabs">
                 <button onclick="setCategoryFilter('ALL')" class="cat-btn px-3 py-1.5 rounded-lg bg-blue-600 text-white shadow-md shadow-blue-600/30 whitespace-nowrap" data-cat="ALL">All Assets</button>
                 <button onclick="setCategoryFilter('SR')" class="cat-btn px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 whitespace-nowrap" data-cat="SR">SR</button>
@@ -299,18 +364,18 @@
                     <thead>
                         <tr class="bg-slate-950/70 border-b border-slate-800 text-slate-400 font-semibold uppercase text-[10px] tracking-wider">
                             <th class="py-3 px-3.5">Asset ID / Team</th>
-                            <th class="py-3 px-3">Type</th>
+                            <th class="py-3 px-3">Type & Icon</th>
                             <th class="py-3 px-3.5">Location & Landmark</th>
                             <th class="py-3 px-3">Distance</th>
                             <th class="py-3 px-3">Last Maint.</th>
                             <th class="py-3 px-3">Next Due</th>
-                            <th class="py-3 px-3">Assigned</th>
+                            <th class="py-3 px-3">Cycle</th>
                             <th class="py-3 px-3">Status</th>
                             <th class="py-3 px-3.5 text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="asset-table-body" class="divide-y divide-slate-800/60 font-normal">
-                        <!-- Populated by JavaScript -->
+                        <!-- Populated dynamically by JS -->
                     </tbody>
                 </table>
             </div>
@@ -323,6 +388,10 @@
         BGL City Gas Distribution Network • Asset Tracking & Preventive Maintenance Portal
     </footer>
 
+
+    <!-- ========================================== -->
+    <!-- 3. MODALS AND DIALOGS -->
+    <!-- ========================================== -->
 
     <!-- Modal 1: Maintenance Sign-Off (With Camera/Before & After Photos) -->
     <div id="maint-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4">
@@ -364,13 +433,8 @@
                         <input type="date" id="maint-date" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:border-blue-500 outline-none">
                     </div>
                     <div>
-                        <label class="block font-semibold text-slate-300 mb-1">Next Cycle (Freq.)</label>
-                        <select id="maint-freq" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:border-blue-500 outline-none">
-                            <option value="30">Monthly (30 Days)</option>
-                            <option value="90">Quarterly (90 Days)</option>
-                            <option value="180">Half-Yearly (180 Days)</option>
-                            <option value="365">Annual (365 Days)</option>
-                        </select>
+                        <label class="block font-semibold text-slate-300 mb-1">Next Cycle (Days)</label>
+                        <input type="number" id="maint-freq" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:border-blue-500 outline-none">
                     </div>
                 </div>
 
@@ -421,7 +485,7 @@
         </div>
     </div>
 
-    <!-- Modal 2: Admin Create / Edit Asset Modal -->
+    <!-- Modal 2: Admin Add / Edit Asset Modal -->
     <div id="asset-form-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4">
         <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl p-5 shadow-2xl relative max-h-[92vh] overflow-y-auto">
             <button onclick="closeModal('asset-form-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
@@ -450,7 +514,7 @@
 
                     <div>
                         <label class="block font-semibold text-slate-300 mb-1">Asset Type <span class="text-rose-400">*</span></label>
-                        <select id="asset-input-type" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:border-blue-500 outline-none">
+                        <select id="asset-input-type" onchange="syncFreqOnTypeChange()" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:border-blue-500 outline-none">
                             <option value="SR">SR (Service Regulator)</option>
                             <option value="DRS">DRS (District Regulating Station)</option>
                             <option value="MRS">MRS (Meter Regulating Station)</option>
@@ -468,13 +532,8 @@
                     </div>
 
                     <div>
-                        <label class="block font-semibold text-slate-300 mb-1">Maintenance Frequency <span class="text-rose-400">*</span></label>
-                        <select id="asset-input-freq" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:border-blue-500 outline-none">
-                            <option value="30">Monthly (30 Days)</option>
-                            <option value="90">Quarterly (90 Days)</option>
-                            <option value="180" selected>Half-Yearly (180 Days)</option>
-                            <option value="365">Annual (365 Days)</option>
-                        </select>
+                        <label class="block font-semibold text-slate-300 mb-1">Maint. Frequency (Days) <span class="text-rose-400">*</span></label>
+                        <input type="number" id="asset-input-freq" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:border-blue-500 outline-none">
                     </div>
                 </div>
 
@@ -521,14 +580,50 @@
         </div>
     </div>
 
-    <!-- Modal 3: Confirmation Dialog (Clean custom UI instead of alert/confirm) -->
+    <!-- Modal 3: Category Frequency & PNG Icons Config Modal (Admin Only) -->
+    <div id="category-config-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl p-5 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+            <button onclick="closeModal('category-config-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            
+            <div class="flex items-center gap-2.5 mb-4">
+                <div class="w-9 h-9 rounded-xl bg-amber-600/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
+                    <i data-lucide="sliders" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">Category Frequency & Custom PNG Map Icons</h3>
+                    <p class="text-[11px] text-slate-400">Admin settings: set default maintenance cycles and upload custom PNG icons for the map.</p>
+                </div>
+            </div>
+
+            <div class="space-y-3.5 text-xs">
+                <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 text-[11px]">
+                    💡 <strong>Tip:</strong> Upload a small transparent PNG (e.g. 64x64) for each asset type. Once uploaded, the map will show your custom icon inside the asset pin so technicians can identify assets instantly!
+                </div>
+
+                <div id="category-settings-list" class="space-y-3">
+                    <!-- Populated dynamically by JS -->
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="closeModal('category-config-modal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 font-semibold">Cancel</button>
+                    <button type="button" onclick="saveCategoryConfigs()" class="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-bold shadow-lg shadow-amber-600/30 flex items-center gap-1.5">
+                        <i data-lucide="save" class="w-4 h-4"></i> Save Settings & Refresh Map
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 4: Confirmation Dialog (Custom UI - No alerts) -->
     <div id="confirm-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-2xl p-5 shadow-2xl relative text-center">
             <div class="w-12 h-12 mx-auto rounded-full bg-rose-950/80 border border-rose-600/40 flex items-center justify-center text-rose-400 mb-3">
                 <i data-lucide="alert-triangle" class="w-6 h-6"></i>
             </div>
             <h4 id="confirm-title" class="text-sm font-bold text-white mb-1.5">Are you sure?</h4>
-            <p id="confirm-message" class="text-xs text-slate-300 mb-5 leading-relaxed">Ee action chesthe data permanently delete avthundi.</p>
+            <p id="confirm-message" class="text-xs text-slate-300 mb-5 leading-relaxed">Action message here.</p>
 
             <div class="flex justify-center gap-3 text-xs">
                 <button onclick="closeModal('confirm-modal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl">Cancel</button>
@@ -537,7 +632,7 @@
         </div>
     </div>
 
-    <!-- Modal 4: Data Management Tools (Admin Only) -->
+    <!-- Modal 5: Data Management Tools (Admin Only) -->
     <div id="data-manage-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-5 shadow-2xl relative">
             <button onclick="closeModal('data-manage-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
@@ -555,11 +650,11 @@
             </div>
 
             <div class="space-y-3 text-xs">
-                <!-- Delete All Assets -->
+                <!-- Clear All Assets -->
                 <div class="p-3.5 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between gap-3">
                     <div>
-                        <h4 class="font-bold text-rose-400">Clear All Assets (Ready for KMZ)</h4>
-                        <p class="text-[11px] text-slate-400 mt-0.5">Mock demo assets anni delete aipothayi. Mee original BGL Gas KMZ/CSV file import chesukovadaniki idi vadandi.</p>
+                        <h4 class="font-bold text-rose-400">Clear All Assets</h4>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Mock assets anni delete aipothayi. Original CSV/KMZ upload chesukodaniki idi vadandi.</p>
                     </div>
                     <button onclick="confirmClearAllAssets()" class="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white font-bold rounded-lg border border-rose-600/40 whitespace-nowrap transition">
                         Clear All
@@ -591,47 +686,6 @@
         </div>
     </div>
 
-    <!-- Modal 5: Switch User / Login Modal -->
-    <div id="switch-account-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-5 shadow-2xl relative">
-            <button onclick="closeModal('switch-account-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-            <div class="text-center mb-4">
-                <div class="w-10 h-10 mx-auto rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center mb-2 border border-blue-500/30">
-                    <i data-lucide="user-check" class="w-5 h-5"></i>
-                </div>
-                <h3 class="text-base font-bold text-white">Technician / Admin Login</h3>
-                <p class="text-xs text-slate-400">Select user profile or enter credentials.</p>
-            </div>
-
-            <!-- Quick Profile Selection -->
-            <div class="space-y-2 mb-4" id="quick-profiles-list">
-                <!-- Populated by JS -->
-            </div>
-
-            <div class="relative flex py-2 items-center">
-                <div class="flex-grow border-t border-slate-800"></div>
-                <span class="flex-shrink mx-3 text-slate-500 text-[10px] uppercase font-bold tracking-wider">Or Login with ID</span>
-                <div class="flex-grow border-t border-slate-800"></div>
-            </div>
-
-            <form onsubmit="handleManualLogin(event)" class="space-y-3 text-xs">
-                <div>
-                    <label class="block text-slate-300 font-semibold mb-1">User ID / Username</label>
-                    <input type="text" id="login-username" required placeholder="e.g. hmt_ramesh or admin" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 outline-none focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-slate-300 font-semibold mb-1">Password</label>
-                    <input type="password" id="login-password" required placeholder="Enter password" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 outline-none focus:border-blue-500">
-                </div>
-                <button type="submit" class="w-full py-2 bg-blue-600 hover:bg-blue-500 font-bold text-white rounded-xl shadow-lg shadow-blue-600/30 transition">
-                    Sign In
-                </button>
-            </form>
-        </div>
-    </div>
-
     <!-- Modal 6: Admin Manage Technicians Modal -->
     <div id="admin-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
@@ -657,7 +711,7 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <input type="text" id="new-user-username" placeholder="Login ID (e.g. hmt_ramesh)" required class="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-200 outline-none focus:border-purple-500">
-                    <input type="text" id="new-user-password" placeholder="Password (e.g. 1234)" required class="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-200 outline-none focus:border-purple-500">
+                    <input type="text" id="new-user-password" placeholder="Password (e.g. 123)" required class="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-200 outline-none focus:border-purple-500">
                 </div>
                 <button type="submit" class="w-full py-1.5 bg-purple-600 hover:bg-purple-500 font-bold text-white rounded-lg transition shadow-md shadow-purple-600/30">
                     + Add Technician
@@ -686,14 +740,14 @@
                 </div>
                 <div>
                     <h3 class="text-base font-bold text-white">Import KMZ or CSV</h3>
-                    <p class="text-[11px] text-slate-400">Load your Google Earth KMZ or Google Sheets CSV.</p>
+                    <p class="text-[11px] text-slate-400">Load Google Earth KMZ or Google Sheets CSV.</p>
                 </div>
             </div>
 
             <div class="space-y-4 text-xs">
                 <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 space-y-1 text-[11px]">
-                    <p>• <strong>KMZ / KML:</strong> Reads placemark coordinates & names (Asset IDs).</p>
-                    <p>• <strong>Google Sheets (CSV):</strong> Ensure columns: <code>id, type, team, location, lat, lng, lastDate, freqDays, tech</code>.</p>
+                    <p>• <strong>CSV Format:</strong> Columns can be: <code>id, type, team, location, lat, lng, lastDate, freqDays, tech</code>.</p>
+                    <p>• <strong>Category Detection:</strong> If 'type' is missing, it will auto-detect from ID (SR, DRS, MRS, Diaphragm meter, MDPE Valve, SV station) without defaulting to DRS!</p>
                 </div>
 
                 <div class="border-2 border-dashed border-slate-700 hover:border-blue-500 rounded-xl p-5 text-center cursor-pointer transition bg-slate-950" onclick="document.getElementById('file-upload-input').click()">
@@ -736,7 +790,21 @@
         <span id="toast-msg">Notification</span>
     </div>
 
+
+    <!-- ========================================== -->
+    <!-- 4. JAVASCRIPT APPLICATION CORE LOGIC -->
+    <!-- ========================================== -->
     <script>
+        // Default Category Configurations (Maintenance cycle in days + default emoji/custom PNG data URLs)
+        const initialCategoryConfigs = {
+            'SR': { name: 'SR', freqDays: 90, iconUrl: '', defaultEmoji: '🔄' },
+            'DRS': { name: 'DRS', freqDays: 180, iconUrl: '', defaultEmoji: '🏢' },
+            'MRS': { name: 'MRS', freqDays: 30, iconUrl: '', defaultEmoji: '🏭' },
+            'Diaphragm meter': { name: 'Diaphragm meter', freqDays: 180, iconUrl: '', defaultEmoji: '⏱️' },
+            'MDPE Valve': { name: 'MDPE Valve', freqDays: 180, iconUrl: '', defaultEmoji: '🚰' },
+            'SV station': { name: 'SV station', freqDays: 90, iconUrl: '', defaultEmoji: '⚙️' }
+        };
+
         // Default Mock Data for BGL Gas Distribution Network
         const initialMockAssets = [
             { id: "DRS-HMT-001", type: "DRS", team: "HMT", location: "Near Pipeline Junction, HMT Sector 1", lat: 17.5132, lng: 78.3845, freqDays: 180, lastDate: "2024-06-15", tech: "Ramesh V", observations: "Pressure balanced at 4.2 bar", remarks: "All filters clear" },
@@ -754,11 +822,12 @@
             { id: "u-kphb", username: "kphb_suresh", password: "123", name: "Suresh K", role: "tech", team: "KPHB" }
         ];
 
-        // Global State
+        // Application State
         let assets = [];
         let users = [];
         let currentUser = null;
         let maintenanceHistory = [];
+        let categoryConfigs = {};
         let currentCategory = 'ALL';
         let showEntireNetwork = false;
         let selectedRadius = null;
@@ -767,41 +836,34 @@
         let markersLayer = null;
         let userLocationMarker = null;
 
-        // Initialize Application
         window.onload = function() {
             loadStorage();
             initMap();
-            renderQuickProfiles();
-            updateDashboard();
+            checkAuthGate();
             lucide.createIcons();
         };
 
-        // Load data from LocalStorage
+        // Load storage
         function loadStorage() {
-            // Load Assets
+            // Assets
             const storedAssets = localStorage.getItem('cgd_assets_data');
             assets = storedAssets ? JSON.parse(storedAssets) : [...initialMockAssets];
 
-            // Load Users
+            // Users
             const storedUsers = localStorage.getItem('cgd_users_data');
             users = storedUsers ? JSON.parse(storedUsers) : [...defaultUsers];
 
-            // Load Maintenance History
+            // Maintenance History
             const storedHist = localStorage.getItem('cgd_maint_history');
             maintenanceHistory = storedHist ? JSON.parse(storedHist) : [];
 
-            // Set Current User (Default: Admin)
-            const storedCurrent = localStorage.getItem('cgd_current_user');
-            if (storedCurrent) {
-                try {
-                    currentUser = JSON.parse(storedCurrent);
-                } catch(e) {
-                    currentUser = users[0];
-                }
-            } else {
-                currentUser = users[0]; // Admin
-            }
-            applyUserRoleUI();
+            // Category Configurations (Frequency & PNG Icons)
+            const storedConfigs = localStorage.getItem('cgd_category_configs');
+            categoryConfigs = storedConfigs ? JSON.parse(storedConfigs) : JSON.parse(JSON.stringify(initialCategoryConfigs));
+
+            // Current logged-in user
+            const storedUser = localStorage.getItem('cgd_current_user');
+            currentUser = storedUser ? JSON.parse(storedUser) : null;
         }
 
         function saveAssetsToStorage() {
@@ -816,6 +878,76 @@
             localStorage.setItem('cgd_maint_history', JSON.stringify(maintenanceHistory));
         }
 
+        function saveCategoryConfigsToStorage() {
+            localStorage.setItem('cgd_category_configs', JSON.stringify(categoryConfigs));
+        }
+
+        // ==========================================
+        // 5. AUTHENTICATION & ACCESS CONTROL
+        // ==========================================
+        function checkAuthGate() {
+            const loginScreen = document.getElementById('login-screen');
+            renderLoginPills();
+
+            if (!currentUser) {
+                // User is not logged in: SHOW LOGIN SCREEN ONLY, HIDE DATA
+                loginScreen.classList.remove('hidden');
+            } else {
+                // User is authenticated
+                loginScreen.classList.add('hidden');
+                applyUserRoleUI();
+                updateDashboard();
+            }
+        }
+
+        function renderLoginPills() {
+            const pillsContainer = document.getElementById('login-preset-pills');
+            pillsContainer.innerHTML = '';
+
+            users.forEach(u => {
+                const pill = document.createElement('button');
+                pill.type = 'button';
+                pill.className = "p-2 bg-slate-950 border border-slate-800 hover:border-blue-500 rounded-xl text-left transition";
+                pill.onclick = () => {
+                    document.getElementById('login-input-username').value = u.username;
+                    document.getElementById('login-input-password').value = u.password;
+                };
+
+                pill.innerHTML = `
+                    <span class="block font-bold text-white text-[11px] truncate">${u.name}</span>
+                    <span class="block text-[9px] text-blue-400 font-mono">${u.team}</span>
+                `;
+                pillsContainer.appendChild(pill);
+            });
+        }
+
+        function handleLoginSubmit(e) {
+            e.preventDefault();
+            const uname = document.getElementById('login-input-username').value.trim();
+            const pword = document.getElementById('login-input-password').value.trim();
+            const errorDiv = document.getElementById('login-error-msg');
+
+            const found = users.find(u => u.username.toLowerCase() === uname.toLowerCase() && u.password === pword);
+            if (found) {
+                errorDiv.classList.add('hidden');
+                currentUser = found;
+                localStorage.setItem('cgd_current_user', JSON.stringify(currentUser));
+                showEntireNetwork = (currentUser.role === 'admin');
+                checkAuthGate();
+                showToast(`Welcome ${currentUser.name}! (${currentUser.team})`);
+            } else {
+                errorDiv.textContent = "Invalid Username or Password. Please try again.";
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        function logoutUser() {
+            currentUser = null;
+            localStorage.removeItem('cgd_current_user');
+            checkAuthGate();
+            showToast("Logged out successfully.");
+        }
+
         // Apply UI according to current logged in role
         function applyUserRoleUI() {
             if (!currentUser) return;
@@ -826,6 +958,7 @@
 
             const isAdmin = currentUser.role === 'admin';
             document.getElementById('admin-add-asset-btn').style.display = isAdmin ? 'inline-flex' : 'none';
+            document.getElementById('admin-category-cfg-btn').style.display = isAdmin ? 'inline-flex' : 'none';
             document.getElementById('admin-users-btn').style.display = isAdmin ? 'inline-flex' : 'none';
             document.getElementById('admin-data-tools-btn').style.display = isAdmin ? 'inline-flex' : 'none';
 
@@ -839,11 +972,11 @@
             document.getElementById('show-all-teams-checkbox').checked = showEntireNetwork;
         }
 
-        // Initialize Leaflet Map (Using 100% Free OpenStreetMap & ESRI Satellite)
+        // ==========================================
+        // 6. MAPPING & CUSTOM PNG MARKER LOGIC
+        // ==========================================
         function initMap() {
-            map = L.map('map', {
-                zoomControl: true
-            }).setView([17.5050, 78.3950], 13);
+            map = L.map('map', { zoomControl: true }).setView([17.5050, 78.3950], 13);
 
             // Layer 1: OpenStreetMap Standard (Clean, zero API key required)
             const osmStreet = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -884,7 +1017,8 @@
 
         // Calculate Maintenance Health Info
         function getMaintenanceStatus(asset) {
-            const freq = parseInt(asset.freqDays, 10) || 180;
+            const defaultCycle = (categoryConfigs[asset.type] && categoryConfigs[asset.type].freqDays) || 180;
+            const freq = parseInt(asset.freqDays, 10) || defaultCycle;
             const lastDate = asset.lastDate ? new Date(asset.lastDate) : new Date(Date.now() - (freq * 86400000));
             
             const nextDueDate = new Date(lastDate);
@@ -917,7 +1051,6 @@
         function updateDashboard() {
             let total = 0, healthy = 0, dueSoon = 0, overdue = 0;
 
-            // 1. Calculate summary counters
             assets.forEach(a => {
                 const info = getMaintenanceStatus(a);
                 total++;
@@ -939,15 +1072,14 @@
             const query = (document.getElementById('search-input').value || '').toLowerCase().trim();
             const isAdmin = currentUser && currentUser.role === 'admin';
 
-            // Filter logic
             let filtered = assets.filter(asset => {
                 // 1. Category Filter
                 if (currentCategory !== 'ALL' && asset.type !== currentCategory) {
                     return false;
                 }
 
-                // 2. Team Scope Filter (Technician only sees their team unless Show Entire Network is enabled)
-                if (!isAdmin && !showEntireNetwork) {
+                // 2. Team Scope Filter
+                if (!isAdmin && !showEntireNetwork && currentUser) {
                     if (asset.team && asset.team.toUpperCase() !== currentUser.team.toUpperCase()) {
                         return false;
                     }
@@ -1027,6 +1159,12 @@
                 if (info.status === 'OVERDUE') badgeClass = 'bg-rose-500/10 text-rose-400 border border-rose-500/20';
                 else if (info.status === 'DUE SOON') badgeClass = 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
 
+                // Category custom icon or emoji
+                const cfg = categoryConfigs[asset.type] || {};
+                const iconPreview = cfg.iconUrl ? 
+                    `<img src="${cfg.iconUrl}" class="w-5 h-5 object-contain rounded" alt="${asset.type}">` : 
+                    `<span>${cfg.defaultEmoji || '📍'}</span>`;
+
                 // Admin buttons (Edit & Delete)
                 const adminActions = isAdmin ? `
                     <button onclick="openEditAssetModal('${asset.id}')" title="Edit Asset" class="p-1.5 bg-amber-600/20 text-amber-300 hover:bg-amber-600 hover:text-white rounded-lg transition border border-amber-500/30">
@@ -1043,13 +1181,16 @@
                         <span class="block text-[10px] text-purple-400 font-mono font-semibold">TEAM: ${asset.team || 'N/A'}</span>
                     </td>
                     <td class="py-3 px-3">
-                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">${asset.type}</span>
+                        <div class="flex items-center gap-1.5">
+                            ${iconPreview}
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">${asset.type}</span>
+                        </div>
                     </td>
                     <td class="py-3 px-3.5 max-w-[200px] truncate" title="${asset.location}">${asset.location}</td>
                     <td class="py-3 px-3">${distText}</td>
                     <td class="py-3 px-3 text-slate-400 font-mono">${asset.lastDate || 'N/A'}</td>
                     <td class="py-3 px-3 font-semibold text-slate-200 font-mono">${info.nextDueDateStr}</td>
-                    <td class="py-3 px-3 text-slate-300">${asset.tech || 'Unassigned'}</td>
+                    <td class="py-3 px-3 text-slate-400 font-mono">${asset.freqDays || cfg.freqDays || 180}d</td>
                     <td class="py-3 px-3">
                         <span class="px-2 py-0.5 rounded text-[10px] font-bold ${badgeClass}">${info.status}</span>
                     </td>
@@ -1071,7 +1212,7 @@
             lucide.createIcons();
         }
 
-        // Render Map Markers
+        // Render Map Markers with Custom PNG Images
         function renderMapMarkers(list) {
             if (!markersLayer) return;
             markersLayer.clearLayers();
@@ -1082,13 +1223,29 @@
             list.forEach(asset => {
                 if (asset.lat && asset.lng) {
                     const info = getMaintenanceStatus(asset);
+                    const cfg = categoryConfigs[asset.type] || {};
+
+                    // Pin Content: Use Custom PNG Image if uploaded by Admin, else fall back to emoji/colored circle
+                    let markerInner = '';
+                    if (cfg.iconUrl) {
+                        markerInner = `
+                            <div class="map-custom-pin" style="background-color: #0f172a; border: 2px solid ${info.color}; border-radius: 50%; width: 34px; height: 34px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); padding: 3px;">
+                                <img src="${cfg.iconUrl}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;" alt="${asset.type}">
+                            </div>
+                        `;
+                    } else {
+                        markerInner = `
+                            <div class="map-custom-pin font-bold text-xs" style="background-color: #0f172a; border: 2px solid ${info.color}; border-radius: 50%; width: 28px; height: 28px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;">
+                                <span>${cfg.defaultEmoji || '📍'}</span>
+                            </div>
+                        `;
+                    }
+
                     const markerIcon = L.divIcon({
-                        className: 'custom-map-icon',
-                        html: `
-                            <div style="background-color: ${info.color}; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #ffffff; box-shadow: 0 0 8px ${info.color};"></div>
-                        `,
-                        iconSize: [14, 14],
-                        iconAnchor: [7, 7]
+                        className: 'custom-png-icon-wrapper',
+                        html: markerInner,
+                        iconSize: cfg.iconUrl ? [34, 34] : [28, 28],
+                        iconAnchor: cfg.iconUrl ? [17, 17] : [14, 14]
                     });
 
                     const marker = L.marker([asset.lat, asset.lng], { icon: markerIcon });
@@ -1126,7 +1283,6 @@
                 }
             });
 
-            // Adjust bounds if markers exist
             if (bounds.length > 0 && !userLocation) {
                 map.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
             }
@@ -1135,7 +1291,6 @@
         // Toggle GPS Location
         function toggleGPS() {
             if (userLocation) {
-                // Turn off GPS
                 userLocation = null;
                 if (userLocationMarker) {
                     map.removeLayer(userLocationMarker);
@@ -1168,14 +1323,13 @@
                     document.getElementById('gps-btn-label').textContent = "GPS Active";
                     document.getElementById('radius-filter-group').classList.remove('hidden');
 
-                    // Add pulsing blue marker for technician
                     if (userLocationMarker) map.removeLayer(userLocationMarker);
 
                     const userIcon = L.divIcon({
                         className: 'pulse-container',
-                        html: `<span class="pulse-ring"></span>`,
-                        iconSize: [22, 22],
-                        iconAnchor: [11, 11]
+                        html: `<span class="pulse-marker inline-block"></span>`,
+                        iconSize: [20, 20],
+                        iconAnchor: [10, 10]
                     });
 
                     userLocationMarker = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon }).addTo(map);
@@ -1221,14 +1375,126 @@
             applyFiltersAndRender();
         }
 
-        // Toggle entire network view checkbox
         function toggleEntireNetworkScope(checked) {
             showEntireNetwork = checked;
             applyUserRoleUI();
             applyFiltersAndRender();
         }
 
-        // Open Add Asset Modal (Admin Only)
+        // ==========================================
+        // 7. CATEGORY CONFIG & PNG ICON MANAGEMENT
+        // ==========================================
+        function openCategoryConfigModal() {
+            if (!currentUser || currentUser.role !== 'admin') {
+                showToast("Only Admin can configure category settings.");
+                return;
+            }
+
+            const list = document.getElementById('category-settings-list');
+            list.innerHTML = '';
+
+            Object.keys(categoryConfigs).forEach(catKey => {
+                const item = categoryConfigs[catKey];
+                const card = document.createElement('div');
+                card.className = "p-3 bg-slate-950 border border-slate-800 rounded-xl flex flex-wrap items-center justify-between gap-3";
+
+                const iconPreviewHtml = item.iconUrl ? 
+                    `<img id="icon-preview-${catKey}" src="${item.iconUrl}" class="w-10 h-10 object-contain rounded-lg border border-slate-700 p-1 bg-slate-900" alt="${catKey}">` :
+                    `<div id="icon-preview-${catKey}" class="w-10 h-10 rounded-lg border border-slate-700 bg-slate-900 flex items-center justify-center text-lg">${item.defaultEmoji || '📍'}</div>`;
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        ${iconPreviewHtml}
+                        <div>
+                            <span class="font-bold text-white text-xs block">${item.name}</span>
+                            <span class="text-[10px] text-slate-400">Current Icon Marker</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <div>
+                            <label class="block text-[10px] text-slate-400 mb-0.5">Frequency (Days)</label>
+                            <input type="number" id="cfg-freq-${catKey}" value="${item.freqDays}" min="1" class="w-24 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-slate-200 font-mono text-xs focus:border-amber-500 outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] text-slate-400 mb-0.5">Upload PNG Icon</label>
+                            <input type="file" accept="image/png,image/svg+xml,image/jpeg" onchange="handleCategoryIconUpload(event, '${catKey}')" class="text-[10px] text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[10px] file:bg-slate-800 file:text-amber-300 hover:file:bg-slate-700 cursor-pointer">
+                        </div>
+
+                        ${item.iconUrl ? `<button type="button" onclick="removeCategoryIcon('${catKey}')" title="Reset to Default" class="text-[10px] text-rose-400 hover:underline pt-3">Remove PNG</button>` : ''}
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+
+            document.getElementById('category-config-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        // Upload custom PNG icon for category
+        function handleCategoryIconUpload(event, catKey) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Resize to standard 64x64 icon to preserve storage
+                    const size = 64;
+                    canvas.width = size;
+                    canvas.height = size;
+                    ctx.drawImage(img, 0, 0, size, size);
+
+                    const compressedIcon = canvas.toDataURL('image/png');
+                    categoryConfigs[catKey].iconUrl = compressedIcon;
+
+                    const preview = document.getElementById(`icon-preview-${catKey}`);
+                    if (preview) {
+                        preview.outerHTML = `<img id="icon-preview-${catKey}" src="${compressedIcon}" class="w-10 h-10 object-contain rounded-lg border border-slate-700 p-1 bg-slate-900" alt="${catKey}">`;
+                    }
+                    showToast(`Custom icon uploaded for ${catKey}!`);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeCategoryIcon(catKey) {
+            if (categoryConfigs[catKey]) {
+                categoryConfigs[catKey].iconUrl = '';
+                openCategoryConfigModal(); // Re-render modal
+                showToast(`Reset icon for ${catKey} to default.`);
+            }
+        }
+
+        function saveCategoryConfigs() {
+            Object.keys(categoryConfigs).forEach(catKey => {
+                const freqInput = document.getElementById(`cfg-freq-${catKey}`);
+                if (freqInput) {
+                    categoryConfigs[catKey].freqDays = parseInt(freqInput.value, 10) || 180;
+                }
+            });
+
+            saveCategoryConfigsToStorage();
+            closeModal('category-config-modal');
+            updateDashboard();
+            showToast("Category frequencies & PNG map icons saved!");
+        }
+
+        function syncFreqOnTypeChange() {
+            const selectedType = document.getElementById('asset-input-type').value;
+            const defaultDays = (categoryConfigs[selectedType] && categoryConfigs[selectedType].freqDays) || 180;
+            document.getElementById('asset-input-freq').value = defaultDays;
+        }
+
+        // ==========================================
+        // 8. ASSET CRUD (ADMIN)
+        // ==========================================
         function openAddAssetModal() {
             if (!currentUser || currentUser.role !== 'admin') {
                 showToast("Only Admin is authorized to add assets.");
@@ -1241,11 +1507,10 @@
             document.getElementById('asset-input-id').readOnly = false;
             document.getElementById('asset-input-id').classList.remove('opacity-60');
 
-            // Reset fields
             document.getElementById('asset-input-id').value = '';
             document.getElementById('asset-input-type').value = 'DRS';
             document.getElementById('asset-input-team').value = 'HMT';
-            document.getElementById('asset-input-freq').value = '180';
+            document.getElementById('asset-input-freq').value = (categoryConfigs['DRS'] && categoryConfigs['DRS'].freqDays) || 180;
             document.getElementById('asset-input-location').value = '';
             document.getElementById('asset-input-lat').value = userLocation ? userLocation.lat.toFixed(6) : '';
             document.getElementById('asset-input-lng').value = userLocation ? userLocation.lng.toFixed(6) : '';
@@ -1256,7 +1521,6 @@
             lucide.createIcons();
         }
 
-        // Open Edit Asset Modal (Admin Only)
         function openEditAssetModal(assetId) {
             if (!currentUser || currentUser.role !== 'admin') {
                 showToast("Only Admin is authorized to edit assets.");
@@ -1277,7 +1541,7 @@
 
             document.getElementById('asset-input-type').value = asset.type || 'DRS';
             document.getElementById('asset-input-team').value = asset.team || 'HMT';
-            document.getElementById('asset-input-freq').value = asset.freqDays || '180';
+            document.getElementById('asset-input-freq').value = asset.freqDays || ((categoryConfigs[asset.type] && categoryConfigs[asset.type].freqDays) || 180);
             document.getElementById('asset-input-location').value = asset.location || '';
             document.getElementById('asset-input-lat').value = asset.lat !== undefined ? asset.lat : '';
             document.getElementById('asset-input-lng').value = asset.lng !== undefined ? asset.lng : '';
@@ -1288,7 +1552,6 @@
             lucide.createIcons();
         }
 
-        // Auto-fill GPS with user's current location in Add/Edit modal
         function fillAssetGPSWithUserPos() {
             if (userLocation) {
                 document.getElementById('asset-input-lat').value = userLocation.lat.toFixed(6);
@@ -1299,7 +1562,6 @@
             }
         }
 
-        // Save Asset (Create or Edit)
         function handleSaveAsset(e) {
             e.preventDefault();
             if (!currentUser || currentUser.role !== 'admin') {
@@ -1369,7 +1631,6 @@
             }
         }
 
-        // Delete Single Asset
         function promptDeleteSingleAsset(assetId) {
             if (!currentUser || currentUser.role !== 'admin') {
                 showToast("Only Admin is authorized to delete assets.");
@@ -1389,7 +1650,6 @@
             );
         }
 
-        // Data Tools: Delete ALL Assets
         function confirmClearAllAssets() {
             if (!currentUser || currentUser.role !== 'admin') {
                 showToast("Admin authorization required.");
@@ -1398,7 +1658,7 @@
 
             showConfirmDialog(
                 "Clear ALL Assets?",
-                "Moththam existing assets (mock demo data) delete aipothayi. Mee original KMZ / CSV import chesukovadaniki clean ga untundi. Ee action undo cheyalemu.",
+                "Existing assets anni delete aipothayi. Mee original KMZ / CSV import chesukodaniki clean ga untundi.",
                 "Delete All Assets",
                 () => {
                     assets = [];
@@ -1410,7 +1670,6 @@
             );
         }
 
-        // Data Tools: Clear History
         function confirmClearHistory() {
             if (!currentUser || currentUser.role !== 'admin') {
                 showToast("Admin authorization required.");
@@ -1419,7 +1678,7 @@
 
             showConfirmDialog(
                 "Clear Maintenance Sign-off Logs?",
-                "Anni completed maintenance records mariyu uploaded photos permanent ga delete aipothayi.",
+                "Anni completed maintenance records mariyu uploaded photos delete aipothayi.",
                 "Clear History",
                 () => {
                     maintenanceHistory = [];
@@ -1430,7 +1689,6 @@
             );
         }
 
-        // Data Tools: Reset to Defaults
         function confirmResetToDefaults() {
             if (!currentUser || currentUser.role !== 'admin') {
                 showToast("Admin authorization required.");
@@ -1451,7 +1709,9 @@
             );
         }
 
-        // Open Maintenance Closure Modal
+        // ==========================================
+        // 9. MAINTENANCE SIGN-OFF (PHOTOS & WORK)
+        // ==========================================
         let currentBeforePhoto = '';
         let currentAfterPhoto = '';
 
@@ -1462,15 +1722,15 @@
             document.getElementById('maint-asset-id').value = asset.id;
             document.getElementById('maint-asset-id-display').textContent = asset.id;
             
-            // Auto-lock logged-in user name & team
             document.getElementById('maint-tech-name').value = currentUser ? currentUser.name : 'Technician';
             document.getElementById('maint-team-name').value = currentUser ? currentUser.team : (asset.team || 'HMT');
             document.getElementById('maint-date').value = new Date().toISOString().split('T')[0];
-            document.getElementById('maint-freq').value = asset.freqDays || 180;
+            
+            const defCycle = (categoryConfigs[asset.type] && categoryConfigs[asset.type].freqDays) || 180;
+            document.getElementById('maint-freq').value = asset.freqDays || defCycle;
             document.getElementById('maint-observations').value = asset.observations || '';
             document.getElementById('maint-remarks').value = asset.remarks || '';
 
-            // Reset photos
             currentBeforePhoto = '';
             currentAfterPhoto = '';
             document.getElementById('before-preview').innerHTML = 'No photo selected';
@@ -1482,7 +1742,6 @@
             lucide.createIcons();
         }
 
-        // Photo preview and compression using HTML5 canvas
         function previewPhoto(input, previewElementId) {
             if (input.files && input.files[0]) {
                 const file = input.files[0];
@@ -1494,7 +1753,6 @@
                         const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d');
                         
-                        // Resize image to max 800px width/height for fast storage
                         const maxDim = 800;
                         let width = img.width;
                         let height = img.height;
@@ -1525,7 +1783,6 @@
             }
         }
 
-        // Save Maintenance Sign-Off
         function handleSaveMaintenance(e) {
             e.preventDefault();
             const assetId = document.getElementById('maint-asset-id').value;
@@ -1539,14 +1796,12 @@
             const assetIndex = assets.findIndex(a => a.id === assetId);
             if (assetIndex === -1) return;
 
-            // Update Asset
             assets[assetIndex].lastDate = finishDate;
             assets[assetIndex].freqDays = freqDays;
             assets[assetIndex].tech = techName;
             assets[assetIndex].observations = obs;
             assets[assetIndex].remarks = remarks;
 
-            // Add to Maintenance Audit History
             const historyItem = {
                 id: 'LOG-' + Date.now(),
                 assetId: assetId,
@@ -1570,7 +1825,6 @@
             showToast(`Maintenance completed for ${assetId}!`);
         }
 
-        // Open Progress / Audit History Modal
         function openProgressModal() {
             const container = document.getElementById('progress-history-container');
             container.innerHTML = '';
@@ -1633,112 +1887,40 @@
             lucide.createIcons();
         }
 
-        // Render quick profiles in switch modal
-        function renderQuickProfiles() {
-            const list = document.getElementById('quick-profiles-list');
-            list.innerHTML = '';
-
-            users.forEach(u => {
-                const btn = document.createElement('button');
-                btn.className = "w-full text-left p-2.5 rounded-xl border border-slate-800 hover:border-blue-500/50 bg-slate-950 flex items-center justify-between text-xs transition";
-                btn.onclick = () => switchUser(u.username);
-
-                btn.innerHTML = `
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-7 h-7 rounded-lg ${u.role === 'admin' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'} flex items-center justify-center font-bold">
-                            ${u.name.charAt(0)}
-                        </div>
-                        <div>
-                            <span class="font-bold text-slate-200 block">${u.name}</span>
-                            <span class="text-[10px] text-slate-400 font-mono">Team: ${u.team} • Role: ${u.role.toUpperCase()}</span>
-                        </div>
-                    </div>
-                    <i data-lucide="check" class="w-4 h-4 text-blue-400 ${currentUser && currentUser.username === u.username ? '' : 'hidden'}"></i>
-                `;
-                list.appendChild(btn);
-            });
-
-            // Also render in admin tech users list
-            const adminList = document.getElementById('tech-users-list');
-            if (adminList) {
-                adminList.innerHTML = '';
-                users.forEach(u => {
-                    const row = document.createElement('div');
-                    row.className = "p-2.5 bg-slate-950 border border-slate-800 rounded-lg flex items-center justify-between text-xs";
-                    row.innerHTML = `
-                        <div>
-                            <span class="font-bold text-slate-200">${u.name}</span>
-                            <span class="text-slate-400 block font-mono text-[11px]">ID: ${u.username} | Team: ${u.team} | Pass: ${u.password}</span>
-                        </div>
-                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${u.role === 'admin' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}">
-                            ${u.role.toUpperCase()}
-                        </span>
-                    `;
-                    adminList.appendChild(row);
-                });
-            }
-            lucide.createIcons();
-        }
-
-        function switchUser(username) {
-            const user = users.find(u => u.username === username);
-            if (!user) return;
-            currentUser = user;
-            localStorage.setItem('cgd_current_user', JSON.stringify(currentUser));
-            showEntireNetwork = (currentUser.role === 'admin'); // Admins see all by default
-            applyUserRoleUI();
-            updateDashboard();
-            renderQuickProfiles();
-            closeModal('switch-account-modal');
-            showToast(`Logged in as ${currentUser.name} (${currentUser.team})`);
-        }
-
-        function handleManualLogin(e) {
-            e.preventDefault();
-            const uname = document.getElementById('login-username').value.trim();
-            const pword = document.getElementById('login-password').value.trim();
-
-            const found = users.find(u => u.username.toLowerCase() === uname.toLowerCase() && u.password === pword);
-            if (found) {
-                switchUser(found.username);
-            } else {
-                showToast("Invalid username or password.");
-            }
-        }
-
-        function handleCreateUser(e) {
-            e.preventDefault();
-            const name = document.getElementById('new-user-name').value.trim();
-            const team = document.getElementById('new-user-team').value.trim().toUpperCase();
-            const uname = document.getElementById('new-user-username').value.trim();
-            const pword = document.getElementById('new-user-password').value.trim();
-
-            if (users.some(u => u.username.toLowerCase() === uname.toLowerCase())) {
-                showToast("User ID already exists!");
-                return;
+        // ==========================================
+        // 10. ACCURATE CSV & KMZ IMPORT (NO AUTO-DRS BUG)
+        // ==========================================
+        function detectAssetType(id, rawType) {
+            if (rawType && rawType.trim() !== '') {
+                const rt = rawType.trim().toUpperCase();
+                if (rt === 'SR' || rt.includes('SERVICE REGULATOR')) return 'SR';
+                if (rt === 'DRS' || rt.includes('DISTRICT')) return 'DRS';
+                if (rt === 'MRS' || rt.includes('METER REGULATING')) return 'MRS';
+                if (rt.includes('DIAPHRAGM') || rt.includes('DM')) return 'Diaphragm meter';
+                if (rt.includes('MDPE') || rt.includes('PE VALVE')) return 'MDPE Valve';
+                if (rt.includes('SV') || rt.includes('SECTIONALIZING')) return 'SV station';
             }
 
-            const newUser = {
-                id: 'u-' + Date.now(),
-                username: uname,
-                password: pword,
-                name: name,
-                role: 'tech',
-                team: team
-            };
+            // Auto-detect from ID string
+            const upperId = (id || '').toUpperCase();
+            if (upperId.startsWith('SR') || upperId.includes('-SR-') || upperId.includes('_SR_')) return 'SR';
+            if (upperId.startsWith('MRS') || upperId.includes('-MRS-')) return 'MRS';
+            if (upperId.startsWith('MDPE') || upperId.includes('VALVE') || upperId.startsWith('PE-')) return 'MDPE Valve';
+            if (upperId.startsWith('SV') || upperId.includes('-SV-') || upperId.includes('STATION')) return 'SV station';
+            if (upperId.startsWith('DM') || upperId.includes('METER') || upperId.includes('DIAPHRAGM')) return 'Diaphragm meter';
+            if (upperId.startsWith('DRS') || upperId.includes('-DRS-')) return 'DRS';
 
-            users.push(newUser);
-            saveUsersToStorage();
-            renderQuickProfiles();
-            showToast(`Technician ${name} added to Team ${team}!`);
-
-            document.getElementById('new-user-name').value = '';
-            document.getElementById('new-user-team').value = '';
-            document.getElementById('new-user-username').value = '';
-            document.getElementById('new-user-password').value = '';
+            return 'DRS'; // Fallback only if no match
         }
 
-        // File Upload Handler (KMZ & CSV)
+        function detectAssetTeam(id, rawTeam) {
+            if (rawTeam && rawTeam.trim() !== '') return rawTeam.trim().toUpperCase();
+            const upperId = (id || '').toUpperCase();
+            if (upperId.includes('KPHB')) return 'KPHB';
+            if (upperId.includes('HMT')) return 'HMT';
+            return currentUser && currentUser.team !== 'ALL' ? currentUser.team : 'HMT';
+        }
+
         async function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1751,7 +1933,6 @@
 
             try {
                 if (fileName.endsWith('.kmz')) {
-                    // Extract KMZ with JSZip
                     const zip = new JSZip();
                     const zipContent = await zip.loadAsync(file);
                     
@@ -1777,7 +1958,6 @@
             }
         }
 
-        // Parse KML Placemarks
         function parseKMLAndImport(kmlString) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(kmlString, "text/xml");
@@ -1803,18 +1983,9 @@
                     const lat = parseFloat(rawCoords[1]);
 
                     if (!isNaN(lat) && !isNaN(lng)) {
-                        // Guess type from ID or default
-                        let type = "DRS";
-                        if (id.includes("SR")) type = "SR";
-                        else if (id.includes("MRS")) type = "MRS";
-                        else if (id.includes("MDPE") || id.includes("VALVE")) type = "MDPE Valve";
-                        else if (id.includes("SV")) type = "SV station";
-                        else if (id.includes("METER") || id.includes("DM")) type = "Diaphragm meter";
-
-                        // Guess team from ID (e.g. DRS-HMT-01 -> HMT)
-                        let team = "HMT";
-                        if (id.includes("KPHB")) team = "KPHB";
-                        else if (id.includes("HMT")) team = "HMT";
+                        const type = detectAssetType(id, "");
+                        const team = detectAssetTeam(id, "");
+                        const defFreq = (categoryConfigs[type] && categoryConfigs[type].freqDays) || 180;
 
                         newAssets.push({
                             id: id,
@@ -1823,7 +1994,7 @@
                             location: `Imported via KMZ (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
                             lat: lat,
                             lng: lng,
-                            freqDays: 180,
+                            freqDays: defFreq,
                             lastDate: new Date().toISOString().split('T')[0],
                             tech: "Unassigned",
                             observations: "",
@@ -1834,7 +2005,6 @@
                 }
             }
 
-            // Merge avoiding duplicates
             newAssets.forEach(item => {
                 const existingIndex = assets.findIndex(a => a.id.toLowerCase() === item.id.toLowerCase());
                 if (existingIndex >= 0) {
@@ -1850,7 +2020,6 @@
             showToast(`Imported ${importedCount} assets from KMZ!`);
         }
 
-        // Parse CSV
         function parseCSVAndImport(csvText) {
             const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
             if (lines.length < 2) {
@@ -1858,30 +2027,45 @@
                 return;
             }
 
-            const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+            const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]+/g, ''));
             let count = 0;
+
+            const idxId = headers.findIndex(h => h === 'id' || h === 'asset id' || h === 'asset_id' || h === 'unique id');
+            const idxType = headers.findIndex(h => h === 'type' || h === 'asset type' || h === 'asset_type' || h === 'category');
+            const idxTeam = headers.findIndex(h => h === 'team' || h === 'area' || h === 'zone');
+            const idxLoc = headers.findIndex(h => h === 'location' || h === 'landmark' || h === 'address');
+            const idxLat = headers.findIndex(h => h === 'lat' || h === 'latitude');
+            const idxLng = headers.findIndex(h => h === 'lng' || h === 'lon' || h === 'longitude');
+            const idxFreq = headers.findIndex(h => h === 'freqdays' || h === 'frequency' || h === 'freq');
+            const idxLast = headers.findIndex(h => h === 'lastdate' || h === 'last maintenance' || h === 'last_date');
+            const idxTech = headers.findIndex(h => h === 'tech' || h === 'technician');
 
             for (let i = 1; i < lines.length; i++) {
                 const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-                if (cols.length >= 4) {
-                    const id = cols[headers.indexOf('id')] || cols[0];
-                    const type = cols[headers.indexOf('type')] || 'DRS';
-                    const team = cols[headers.indexOf('team')] || 'HMT';
-                    const location = cols[headers.indexOf('location')] || cols[1] || 'Network Location';
-                    const lat = parseFloat(cols[headers.indexOf('lat')] || cols[2]);
-                    const lng = parseFloat(cols[headers.indexOf('lng')] || cols[3]);
+                if (cols.length >= 3) {
+                    const rawId = cols[idxId >= 0 ? idxId : 0];
+                    const rawType = idxType >= 0 ? cols[idxType] : '';
+                    const rawTeam = idxTeam >= 0 ? cols[idxTeam] : '';
+                    const rawLoc = idxLoc >= 0 ? cols[idxLoc] : 'Network Location';
+                    const lat = parseFloat(idxLat >= 0 ? cols[idxLat] : cols[1]);
+                    const lng = parseFloat(idxLng >= 0 ? cols[idxLng] : cols[2]);
 
-                    if (id && !isNaN(lat) && !isNaN(lng)) {
+                    if (rawId && !isNaN(lat) && !isNaN(lng)) {
+                        const type = detectAssetType(rawId, rawType);
+                        const team = detectAssetTeam(rawId, rawTeam);
+                        const defFreq = (categoryConfigs[type] && categoryConfigs[type].freqDays) || 180;
+                        const freqDays = parseInt(idxFreq >= 0 ? cols[idxFreq] : defFreq, 10) || defFreq;
+
                         const newAsset = {
-                            id: id.toUpperCase(),
+                            id: rawId.toUpperCase(),
                             type: type,
-                            team: team.toUpperCase(),
-                            location: location,
+                            team: team,
+                            location: rawLoc,
                             lat: lat,
                             lng: lng,
-                            freqDays: parseInt(cols[headers.indexOf('freqdays')] || 180, 10),
-                            lastDate: cols[headers.indexOf('lastdate')] || new Date().toISOString().split('T')[0],
-                            tech: cols[headers.indexOf('tech')] || 'Unassigned',
+                            freqDays: freqDays,
+                            lastDate: (idxLast >= 0 && cols[idxLast]) ? cols[idxLast] : new Date().toISOString().split('T')[0],
+                            tech: (idxTech >= 0 && cols[idxTech]) ? cols[idxTech] : 'Unassigned',
                             observations: '',
                             remarks: ''
                         };
@@ -1943,30 +2127,68 @@
             showToast("CSV exported successfully!");
         }
 
-        // UI Helpers
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toast-msg').textContent = message;
-            toast.classList.remove('hidden');
-            setTimeout(() => {
-                toast.classList.add('hidden');
-            }, 3500);
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.add('hidden');
-        }
-
-        function openSwitchAccountModal() {
-            renderQuickProfiles();
-            document.getElementById('switch-account-modal').classList.remove('hidden');
-            lucide.createIcons();
-        }
-
+        // ==========================================
+        // 11. ADMIN USER MANAGEMENT & MODALS
+        // ==========================================
         function openAdminModal() {
-            renderQuickProfiles();
+            renderTechList();
             document.getElementById('admin-modal').classList.remove('hidden');
             lucide.createIcons();
+        }
+
+        function renderTechList() {
+            const adminList = document.getElementById('tech-users-list');
+            if (!adminList) return;
+            adminList.innerHTML = '';
+
+            users.forEach(u => {
+                const row = document.createElement('div');
+                row.className = "p-2.5 bg-slate-950 border border-slate-800 rounded-lg flex items-center justify-between text-xs";
+                row.innerHTML = `
+                    <div>
+                        <span class="font-bold text-slate-200">${u.name}</span>
+                        <span class="text-slate-400 block font-mono text-[11px]">ID: ${u.username} | Team: ${u.team} | Pass: ${u.password}</span>
+                    </div>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold ${u.role === 'admin' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}">
+                        ${u.role.toUpperCase()}
+                    </span>
+                `;
+                adminList.appendChild(row);
+            });
+            lucide.createIcons();
+        }
+
+        function handleCreateUser(e) {
+            e.preventDefault();
+            const name = document.getElementById('new-user-name').value.trim();
+            const team = document.getElementById('new-user-team').value.trim().toUpperCase();
+            const uname = document.getElementById('new-user-username').value.trim();
+            const pword = document.getElementById('new-user-password').value.trim();
+
+            if (users.some(u => u.username.toLowerCase() === uname.toLowerCase())) {
+                showToast("User ID already exists!");
+                return;
+            }
+
+            const newUser = {
+                id: 'u-' + Date.now(),
+                username: uname,
+                password: pword,
+                name: name,
+                role: 'tech',
+                team: team
+            };
+
+            users.push(newUser);
+            saveUsersToStorage();
+            renderTechList();
+            renderLoginPills();
+            showToast(`Technician ${name} added to Team ${team}!`);
+
+            document.getElementById('new-user-name').value = '';
+            document.getElementById('new-user-team').value = '';
+            document.getElementById('new-user-username').value = '';
+            document.getElementById('new-user-password').value = '';
         }
 
         function openDataManagementModal() {
@@ -1980,23 +2202,32 @@
             lucide.createIcons();
         }
 
-        // Custom in-app confirmation modal
-        let onConfirmAction = null;
-
         function showConfirmDialog(title, message, confirmBtnLabel, onConfirm) {
             document.getElementById('confirm-title').textContent = title;
             document.getElementById('confirm-message').textContent = message;
             const actionBtn = document.getElementById('confirm-action-btn');
             actionBtn.textContent = confirmBtnLabel || "Yes, Delete";
             
-            onConfirmAction = onConfirm;
             actionBtn.onclick = function() {
-                if (onConfirmAction) onConfirmAction();
+                if (onConfirm) onConfirm();
                 closeModal('confirm-modal');
             };
 
             document.getElementById('confirm-modal').classList.remove('hidden');
             lucide.createIcons();
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3500);
         }
     </script>
 </body>
