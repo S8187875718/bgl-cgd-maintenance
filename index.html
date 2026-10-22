@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CGD Asset & Maintenance Portal - Field GIS</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Leaflet Map CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- JSZip for KMZ extraction -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Google Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-active {
+            border-bottom: 3px solid #3b82f6;
+            color: #60a5fa;
+            font-weight: 600;
+            background-color: rgba(30, 41, 59, 0.6);
+        }
+        .custom-popup .leaflet-popup-content-wrapper {
+            background-color: #0f172a;
+            color: #f8fafc;
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+            padding: 4px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
+        }
+        .custom-popup .leaflet-popup-tip {
+            background-color: #0f172a;
+        }
+        /* User location pulsing marker */
+        .user-pulse-marker {
+            position: relative;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #2563eb;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 12px rgba(37, 99, 235, 0.9);
+        }
+        .user-pulse-ring {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(59, 130, 246, 0.35);
+            animation: ring-pulse 1.8s infinite ease-out;
+            pointer-events: none;
+        }
+        @keyframes ring-pulse {
+            0% { transform: scale(0.6); opacity: 1; }
+            100% { transform: scale(2.2); opacity: 0; }
+        }
+        /* Custom Pin Marker */
+        .asset-pin {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            font-weight: 700;
+            font-size: 11px;
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            transition: transform 0.2s ease;
+        }
+        .asset-pin:hover {
+            transform: scale(1.18);
+        }
+        .img-preview-box {
+            width: 100%;
+            height: 110px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+            border: 1px dashed #475569;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased">
+
+    <!-- Full-screen Authentication Modal / View -->
+    <div id="auth-screen" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative">
+            <div class="text-center mb-6">
+                <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-xl shadow-blue-500/25 mb-3">
+                    <i data-lucide="flame" class="w-8 h-8"></i>
+                </div>
+                <h2 class="text-xl sm:text-2xl font-black text-white tracking-wide">CGD Field Maintenance</h2>
+                <p class="text-xs text-slate-400 mt-1">Sign in with your Technician ID or Admin Credentials</p>
+            </div>
+
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1.5">User ID / Technician ID</label>
+                    <div class="relative">
+                        <i data-lucide="user" class="w-4 h-4 text-slate-500 absolute left-3 top-3"></i>
+                        <input type="text" id="login-username" required placeholder="e.g., hmt_tech1 or admin" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-slate-100 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1.5">Password</label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="w-4 h-4 text-slate-500 absolute left-3 top-3"></i>
+                        <input type="password" id="login-password" required placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-slate-100 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div id="login-error" class="text-red-400 text-xs hidden font-medium"></div>
+
+                <button type="submit" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold text-white shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2 text-sm mt-2">
+                    <i data-lucide="log-in" class="w-4 h-4"></i> Login to Portal
+                </button>
+            </form>
+
+            <div class="mt-6 pt-4 border-t border-slate-800/80 text-[11px] text-slate-400 space-y-1">
+                <p class="font-semibold text-slate-300">Default Quick Logins:</p>
+                <div class="flex flex-wrap gap-2 pt-1">
+                    <button onclick="fillLogin('hmt_ramesh', '1234')" type="button" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300">HMT Team (Ramesh)</button>
+                    <button onclick="fillLogin('kphb_suresh', '1234')" type="button" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300">KPHB Team (Suresh)</button>
+                    <button onclick="fillLogin('admin', 'admin123')" type="button" class="px-2 py-1 bg-blue-950/80 border border-blue-600/30 text-blue-300 hover:bg-blue-900 rounded">Admin Portal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Navigation Header -->
+    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-30 px-3 sm:px-6 py-2.5 shadow-md">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/25">
+                    <i data-lucide="flame" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-bold text-white tracking-wide flex items-center gap-2">
+                        CGD Field O&M Portal
+                        <span id="current-user-badge" class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-blue-900/80 text-blue-300 border border-blue-500/30">Guest</span>
+                    </h1>
+                    <p class="text-xs text-slate-400" id="current-team-status">Gas Network Preventive Maintenance & Proximity Navigator</p>
+                </div>
+            </div>
+
+            <div class="flex items-center flex-wrap gap-2">
+                <!-- Live GPS Button -->
+                <button id="gps-toggle-btn" onclick="toggleLiveGPS()" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition duration-200 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 shadow-sm">
+                    <span id="gps-dot" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
+                    <span id="gps-label">Enable My Location</span>
+                    <i data-lucide="crosshair" class="w-4 h-4 ml-0.5"></i>
+                </button>
+
+                <!-- Pick / Simulate Location Button -->
+                <button id="pick-location-btn" onclick="togglePickLocationMode()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-medium text-slate-300 border border-slate-700 flex items-center gap-1.5 transition" title="Click on the map to set current field position">
+                    <i data-lucide="map-pin" class="w-4 h-4 text-amber-400"></i> Set Location on Map
+                </button>
+
+                <!-- Team Work Progress Dashboard Button -->
+                <button onclick="openProgressModal()" class="px-3 py-1.5 bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/50 rounded-lg text-xs font-semibold text-indigo-300 flex items-center gap-1.5 transition">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Progress
+                </button>
+
+                <!-- Admin: Manage Users & Teams -->
+                <button id="admin-users-btn" onclick="openAdminModal()" class="hidden px-3 py-1.5 bg-purple-950/80 hover:bg-purple-900 border border-purple-700/50 rounded-lg text-xs font-semibold text-purple-300 items-center gap-1.5 transition">
+                    <i data-lucide="users" class="w-4 h-4"></i> Manage Techs
+                </button>
+
+                <!-- Import / Export Actions -->
+                <button onclick="openImportModal()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-medium text-slate-300 border border-slate-700 flex items-center gap-1.5 transition">
+                    <i data-lucide="file-up" class="w-4 h-4 text-blue-400"></i> <span class="hidden sm:inline">Import</span>
+                </button>
+
+                <button onclick="exportToCSV()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-medium text-slate-300 border border-slate-700 flex items-center gap-1.5 transition">
+                    <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i> Export
+                </button>
+
+                <!-- Logout Button -->
+                <button onclick="logoutUser()" title="Logout" class="px-2.5 py-1.5 bg-rose-950/70 hover:bg-rose-900 border border-rose-800/50 text-rose-300 rounded-lg text-xs font-semibold flex items-center gap-1 transition">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sub-Bar: Live Location Alert, Team Filter Banner & Quick Radius Filter -->
+    <div class="bg-blue-950/40 border-b border-blue-900/60 px-4 py-2">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between text-xs gap-3">
+            <!-- Team Isolation & Show All Toggle for Easy Identification -->
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-900/70 text-blue-200 border border-blue-700/60 font-semibold" id="team-zone-pill">
+                    <i data-lucide="shield" class="w-3.5 h-3.5 text-blue-400"></i>
+                    Team Zone: <strong id="active-team-name">ALL</strong>
+                </span>
+
+                <label class="flex items-center gap-1.5 text-slate-300 cursor-pointer select-none bg-slate-900/80 px-2.5 py-1 rounded-md border border-slate-800 hover:border-slate-700">
+                    <input type="checkbox" id="toggle-show-all-teams" onchange="toggleTeamScope()" class="rounded bg-slate-950 border-slate-700 text-blue-600 focus:ring-0">
+                    <span class="font-medium text-[11px]">Show other teams' data (Entire Network)</span>
+                </label>
+            </div>
+
+            <!-- Proximity Radius Selector -->
+            <div class="flex items-center gap-2">
+                <span class="text-slate-400">Within:</span>
+                <div class="inline-flex rounded-lg bg-slate-900 border border-slate-800 p-0.5">
+                    <button onclick="setRadiusFilter(500)" id="rad-500" class="radius-btn px-2.5 py-1 rounded text-[11px] font-medium text-slate-300 hover:text-white">500 m</button>
+                    <button onclick="setRadiusFilter(1000)" id="rad-1000" class="radius-btn px-2.5 py-1 rounded text-[11px] font-medium text-slate-300 hover:text-white">1 km</button>
+                    <button onclick="setRadiusFilter(3000)" id="rad-3000" class="radius-btn px-2.5 py-1 rounded text-[11px] font-medium text-slate-300 hover:text-white">3 km</button>
+                    <button onclick="setRadiusFilter(5000)" id="rad-5000" class="radius-btn px-2.5 py-1 rounded text-[11px] font-medium text-slate-300 hover:text-white">5 km</button>
+                    <button onclick="setRadiusFilter(Infinity)" id="rad-all" class="radius-btn bg-blue-600 text-white px-2.5 py-1 rounded text-[11px] font-medium">All</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-5 space-y-5">
+
+        <!-- KPI Summary Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div class="bg-slate-900 border border-slate-800/90 rounded-xl p-3.5 sm:p-4 shadow flex items-center justify-between">
+                <div>
+                    <p class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Network Assets</p>
+                    <h3 id="kpi-total" class="text-xl sm:text-2xl font-bold text-white mt-0.5">0</h3>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-blue-950/60 border border-blue-800/40 flex items-center justify-center text-blue-400">
+                    <i data-lucide="layers" class="w-5 h-5"></i>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 border border-red-900/40 rounded-xl p-3.5 sm:p-4 shadow flex items-center justify-between">
+                <div>
+                    <p class="text-[11px] font-medium text-red-400 uppercase tracking-wider">Overdue Maintenance</p>
+                    <h3 id="kpi-overdue" class="text-xl sm:text-2xl font-bold text-red-400 mt-0.5">0</h3>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-red-950/60 border border-red-800/40 flex items-center justify-center text-red-400">
+                    <i data-lucide="alert-octagon" class="w-5 h-5"></i>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 border border-amber-900/40 rounded-xl p-3.5 sm:p-4 shadow flex items-center justify-between">
+                <div>
+                    <p class="text-[11px] font-medium text-amber-400 uppercase tracking-wider">Due Soon (&lt;15 Days)</p>
+                    <h3 id="kpi-due-soon" class="text-xl sm:text-2xl font-bold text-amber-400 mt-0.5">0</h3>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-amber-950/60 border border-amber-800/40 flex items-center justify-center text-amber-400">
+                    <i data-lucide="clock" class="w-5 h-5"></i>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 border border-emerald-900/40 rounded-xl p-3.5 sm:p-4 shadow flex items-center justify-between">
+                <div>
+                    <p class="text-[11px] font-medium text-emerald-400 uppercase tracking-wider">Healthy / Inspected</p>
+                    <h3 id="kpi-healthy" class="text-xl sm:text-2xl font-bold text-emerald-400 mt-0.5">0</h3>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-emerald-950/60 border border-emerald-800/40 flex items-center justify-center text-emerald-400">
+                    <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive Map Module -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+            <div class="p-3 sm:p-4 bg-slate-900/95 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center space-x-2">
+                    <div class="w-2.5 h-2.5 rounded-full bg-blue-500 animate-ping"></div>
+                    <h2 class="text-sm sm:text-base font-bold text-white flex items-center gap-1.5">
+                        <i data-lucide="map" class="w-4 h-4 text-blue-400"></i> GIS Network Map
+                    </h2>
+                    <span id="map-asset-counter" class="text-xs text-slate-400">(0 mapped)</span>
+                </div>
+
+                <!-- Filters -->
+                <div class="flex flex-wrap items-center gap-2 text-xs">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-slate-400">Status:</span>
+                        <select id="map-status-filter" onchange="renderMapMarkers()" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
+                            <option value="ALL">All Status</option>
+                            <option value="OVERDUE">🔴 Overdue</option>
+                            <option value="DUE_SOON">🟡 Due Soon</option>
+                            <option value="HEALTHY">🟢 Healthy</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-slate-400">Layer:</span>
+                        <select id="map-layer-filter" onchange="renderMapMarkers()" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500">
+                            <option value="ALL">All Categories</option>
+                            <option value="SR">SR</option>
+                            <option value="DRS">DRS</option>
+                            <option value="MRS">MRS</option>
+                            <option value="Diaphragm meter">Diaphragm meter</option>
+                            <option value="MDPE Valve">MDPE Valve</option>
+                            <option value="SV station">SV station</option>
+                        </select>
+                    </div>
+
+                    <button onclick="recenterMap()" title="Fit all assets in view" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition">
+                        <i data-lucide="maximize" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- Leaflet Container -->
+            <div id="map" class="w-full h-80 sm:h-[420px] bg-slate-950 z-10"></div>
+        </div>
+
+        <!-- Asset Roster & Proximity Table -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl flex flex-col">
+            <!-- Google Sheets Equivalent Category Tabs -->
+            <div class="border-b border-slate-800 px-3 sm:px-4 pt-3 flex flex-nowrap overflow-x-auto gap-1 sm:gap-2 text-xs sm:text-sm no-scrollbar">
+                <button onclick="switchCategory('ALL')" class="category-tab tab-active px-3 py-2 text-slate-300 whitespace-nowrap rounded-t-lg transition" data-cat="ALL">All Assets</button>
+                <button onclick="switchCategory('SR')" class="category-tab px-3 py-2 text-slate-400 hover:text-white whitespace-nowrap rounded-t-lg transition" data-cat="SR">SR</button>
+                <button onclick="switchCategory('DRS')" class="category-tab px-3 py-2 text-slate-400 hover:text-white whitespace-nowrap rounded-t-lg transition" data-cat="DRS">DRS</button>
+                <button onclick="switchCategory('MRS')" class="category-tab px-3 py-2 text-slate-400 hover:text-white whitespace-nowrap rounded-t-lg transition" data-cat="MRS">MRS</button>
+                <button onclick="switchCategory('Diaphragm meter')" class="category-tab px-3 py-2 text-slate-400 hover:text-white whitespace-nowrap rounded-t-lg transition" data-cat="Diaphragm meter">Diaphragm Meter</button>
+                <button onclick="switchCategory('MDPE Valve')" class="category-tab px-3 py-2 text-slate-400 hover:text-white whitespace-nowrap rounded-t-lg transition" data-cat="MDPE Valve">MDPE Valve</button>
+                <button onclick="switchCategory('SV station')" class="category-tab px-3 py-2 text-slate-400 hover:text-white whitespace-nowrap rounded-t-lg transition" data-cat="SV station">SV Station</button>
+            </div>
+
+            <!-- Controls: Search & Nearest Sorting Status -->
+            <div class="p-3.5 bg-slate-900/60 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                <div class="relative w-full sm:w-80">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
+                    <input type="text" id="table-search" oninput="renderTable()" placeholder="Search ID, location, technician..." class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs sm:text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div class="flex items-center space-x-3 text-xs">
+                    <span id="sort-indicator" class="text-slate-400 flex items-center gap-1.5">
+                        <i data-lucide="list-ordered" class="w-3.5 h-3.5 text-blue-400"></i>
+                        <span>Sorted by: <strong>Default</strong></span>
+                    </span>
+                    <span class="text-slate-500">|</span>
+                    <span class="text-slate-400">Showing <strong id="visible-count" class="text-white">0</strong> records</span>
+                </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="bg-slate-950/70 text-slate-400 uppercase font-semibold border-b border-slate-800">
+                        <tr>
+                            <th class="py-3 px-3.5">Asset ID</th>
+                            <th class="py-3 px-3">Type</th>
+                            <th class="py-3 px-3.5">Location / Area</th>
+                            <th class="py-3 px-3" id="distance-header">Proximity Distance</th>
+                            <th class="py-3 px-3">Last Maint.</th>
+                            <th class="py-3 px-3">Next Due</th>
+                            <th class="py-3 px-3">Assigned Tech</th>
+                            <th class="py-3 px-3">Status</th>
+                            <th class="py-3 px-3.5 text-center">Field Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="asset-table-body" class="divide-y divide-slate-800/80 text-slate-200">
+                        <!-- Dynamic content -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal: Log Maintenance with Before/After Photos -->
+    <div id="maintenance-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-xl rounded-2xl p-5 sm:p-6 shadow-2xl relative my-auto max-h-[92vh] overflow-y-auto">
+            <button onclick="closeModal('maintenance-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <h3 class="text-base font-bold text-white flex items-center gap-2 mb-1">
+                <i data-lucide="wrench" class="w-5 h-5 text-blue-400"></i> Complete & Close Maintenance
+            </h3>
+            <p class="text-xs text-slate-400 mb-4">Inspection & job sign-off for Asset: <strong id="modal-asset-id" class="text-blue-400 font-mono"></strong></p>
+
+            <form id="maintenance-form" onsubmit="saveMaintenance(event)" class="space-y-4 text-xs">
+                <input type="hidden" id="form-asset-id">
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Inspection / Service Date</label>
+                        <input type="date" id="form-last-date" required class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Assigned Field Technician (Auto Locked)</label>
+                        <input type="text" id="form-technician" readonly required class="w-full bg-slate-950/80 border border-slate-800 text-blue-300 font-semibold rounded-lg p-2.5 cursor-not-allowed">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Asset Operational Team</label>
+                        <input type="text" id="form-team" readonly class="w-full bg-slate-950/80 border border-slate-800 text-slate-300 rounded-lg p-2.5 cursor-not-allowed">
+                    </div>
+
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Next Maintenance Interval</label>
+                        <select id="form-freq-days" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
+                            <option value="30">Monthly (30 Days)</option>
+                            <option value="90">Quarterly (90 Days)</option>
+                            <option value="180">Half-Yearly (180 Days)</option>
+                            <option value="365">Annual (365 Days)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Before & After Photos Section -->
+                <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-xl space-y-3">
+                    <p class="font-bold text-slate-200 flex items-center gap-1.5">
+                        <i data-lucide="camera" class="w-4 h-4 text-emerald-400"></i> Field Proof Photos (Mandatory Before / After)
+                    </p>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- Before Photo -->
+                        <div class="flex flex-col items-center">
+                            <span class="text-[11px] text-amber-400 font-semibold mb-1">1. Before Maintenance Photo</span>
+                            <div class="relative w-full">
+                                <img id="preview-before" src="https://placehold.co/400x250/1e293b/64748b?text=Tap+to+Take+Before+Photo" class="img-preview-box cursor-pointer" onclick="document.getElementById('input-before-photo').click()">
+                                <input type="file" id="input-before-photo" accept="image/*" capture="environment" class="hidden" onchange="previewImage(event, 'preview-before', 'data-before')">
+                            </div>
+                            <button type="button" onclick="document.getElementById('input-before-photo').click()" class="mt-1.5 text-[11px] text-slate-400 hover:text-white flex items-center gap-1">
+                                <i data-lucide="upload" class="w-3 h-3"></i> Upload / Capture
+                            </button>
+                            <input type="hidden" id="data-before">
+                        </div>
+
+                        <!-- After Photo -->
+                        <div class="flex flex-col items-center">
+                            <span class="text-[11px] text-emerald-400 font-semibold mb-1">2. After Maintenance Photo</span>
+                            <div class="relative w-full">
+                                <img id="preview-after" src="https://placehold.co/400x250/1e293b/64748b?text=Tap+to+Take+After+Photo" class="img-preview-box cursor-pointer" onclick="document.getElementById('input-after-photo').click()">
+                                <input type="file" id="input-after-photo" accept="image/*" capture="environment" class="hidden" onchange="previewImage(event, 'preview-after', 'data-after')">
+                            </div>
+                            <button type="button" onclick="document.getElementById('input-after-photo').click()" class="mt-1.5 text-[11px] text-slate-400 hover:text-white flex items-center gap-1">
+                                <i data-lucide="upload" class="w-3 h-3"></i> Upload / Capture
+                            </button>
+                            <input type="hidden" id="data-after">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Field Observations & Inspection Checklist</label>
+                    <textarea id="form-observation" rows="2" placeholder="e.g., Gas inlet/outlet pressure checked, slam shut operational, soap solution leakage test normal." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Remarks / Replaced Parts</label>
+                    <input type="text" id="form-remarks" placeholder="e.g., Filter cartridge cleaned, diaphragm greased, no leakages found." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="closeModal('maintenance-modal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 font-semibold">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold flex items-center gap-1.5 shadow-lg shadow-emerald-600/30">
+                        <i data-lucide="check-check" class="w-4 h-4"></i> Sign & Close Maintenance
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Technician Progress & Work Completion Dashboard -->
+    <div id="progress-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-3xl rounded-2xl p-5 sm:p-6 shadow-2xl relative my-auto max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModal('progress-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <h3 class="text-base font-bold text-white flex items-center gap-2 mb-1">
+                <i data-lucide="award" class="w-5 h-5 text-indigo-400"></i> Maintenance Progress & Inspection History
+            </h3>
+            <p class="text-xs text-slate-400 mb-4">Completed maintenance work orders and technician performance audit.</p>
+
+            <!-- Summary KPI Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 text-center">
+                <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                    <p class="text-[10px] text-slate-400 uppercase font-semibold">Total Completed</p>
+                    <p id="prog-total-done" class="text-xl font-bold text-emerald-400 mt-1">0</p>
+                </div>
+                <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                    <p class="text-[10px] text-slate-400 uppercase font-semibold">My Team Completed</p>
+                    <p id="prog-team-done" class="text-xl font-bold text-blue-400 mt-1">0</p>
+                </div>
+                <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                    <p class="text-[10px] text-slate-400 uppercase font-semibold">Pending / Due</p>
+                    <p id="prog-pending" class="text-xl font-bold text-amber-400 mt-1">0</p>
+                </div>
+                <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                    <p class="text-[10px] text-slate-400 uppercase font-semibold">Active Technicians</p>
+                    <p id="prog-tech-count" class="text-xl font-bold text-indigo-400 mt-1">0</p>
+                </div>
+            </div>
+
+            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                <i data-lucide="history" class="w-4 h-4 text-blue-400"></i> Recent Completed Maintenance Records & Photos
+            </h4>
+
+            <div class="overflow-x-auto max-h-72 border border-slate-800 rounded-xl">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="bg-slate-950 text-slate-400 uppercase sticky top-0 border-b border-slate-800">
+                        <tr>
+                            <th class="py-2.5 px-3">Date</th>
+                            <th class="py-2.5 px-3">Asset ID</th>
+                            <th class="py-2.5 px-3">Team</th>
+                            <th class="py-2.5 px-3">Technician</th>
+                            <th class="py-2.5 px-3">Photos</th>
+                            <th class="py-2.5 px-3">Observation & Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody id="maintenance-history-tbody" class="divide-y divide-slate-800/80 text-slate-300">
+                        <!-- Dynamic History Records -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-end pt-4">
+                <button type="button" onclick="closeModal('progress-modal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 font-semibold text-xs">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Admin Technician Account Creator -->
+    <div id="admin-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl p-5 sm:p-6 shadow-2xl relative my-auto">
+            <button onclick="closeModal('admin-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <h3 class="text-base font-bold text-white flex items-center gap-2 mb-1">
+                <i data-lucide="user-plus" class="w-5 h-5 text-purple-400"></i> Admin: Manage Technician Accounts
+            </h3>
+            <p class="text-xs text-slate-400 mb-4">Create new technician credentials and assign their home team zone.</p>
+
+            <form id="create-user-form" onsubmit="createUser(event)" class="space-y-3 text-xs bg-slate-950/70 p-3.5 rounded-xl border border-slate-800">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Username (Login ID) *</label>
+                        <input type="text" id="new-user-id" required placeholder="e.g. hmt_ravi" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Technician Full Name *</label>
+                        <input type="text" id="new-user-name" required placeholder="e.g. Ravi Varma" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Assigned Team Name *</label>
+                        <input type="text" id="new-user-team" required placeholder="e.g. HMT or KPHB" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 uppercase">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Password *</label>
+                        <input type="text" id="new-user-pass" required placeholder="Password" value="1234" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200">
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-1">
+                    <button type="submit" class="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold flex items-center gap-1 shadow-md">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Create Login ID
+                    </button>
+                </div>
+            </form>
+
+            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wide mt-4 mb-2">Registered Accounts</h4>
+            <div class="max-h-48 overflow-y-auto border border-slate-800 rounded-xl">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="bg-slate-950 text-slate-400 border-b border-slate-800">
+                        <tr>
+                            <th class="py-2 px-3">User ID</th>
+                            <th class="py-2 px-3">Name</th>
+                            <th class="py-2 px-3">Team</th>
+                            <th class="py-2 px-3">Role</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-tbody" class="divide-y divide-slate-800/80 text-slate-300">
+                        <!-- Dynamic Users List -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Photo Viewer Lightbox Modal -->
+    <div id="photo-viewer-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4" onclick="closeModal('photo-viewer-modal')">
+        <div class="max-w-2xl w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-2xl relative" onclick="event.stopPropagation()">
+            <button onclick="closeModal('photo-viewer-modal')" class="absolute top-3 right-3 text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <h4 id="photo-modal-title" class="text-sm font-bold text-white mb-2">Inspection Photo</h4>
+            <img id="enlarged-photo" src="" class="w-full max-h-[75vh] object-contain rounded-xl border border-slate-800">
+        </div>
+    </div>
+
+    <!-- Modal: Add New Asset -->
+    <div id="new-asset-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl p-6 shadow-2xl relative">
+            <button onclick="closeModal('new-asset-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <h3 class="text-base font-bold text-white flex items-center gap-2 mb-1">
+                <i data-lucide="plus-circle" class="w-5 h-5 text-emerald-400"></i> Register Gas Network Asset
+            </h3>
+            <p class="text-xs text-slate-400 mb-4">Commission a new asset into the maintenance registry.</p>
+
+            <form id="new-asset-form" onsubmit="saveNewAsset(event)" class="space-y-3 text-xs">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Asset ID (Unique) *</label>
+                        <input type="text" id="new-id" required placeholder="e.g. DRS-05 or SV-14" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Operational Team *</label>
+                        <input type="text" id="new-team" required placeholder="e.g. HMT or KPHB" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 uppercase">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Category *</label>
+                    <select id="new-type" required class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200">
+                        <option value="SR">SR (Service Regulator)</option>
+                        <option value="DRS">DRS (District Regulating Station)</option>
+                        <option value="MRS">MRS (Meter Regulating Station)</option>
+                        <option value="Diaphragm meter">Diaphragm meter</option>
+                        <option value="MDPE Valve">MDPE Valve</option>
+                        <option value="SV station">SV station</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Location / Landmark *</label>
+                    <input type="text" id="new-location" required placeholder="e.g. Madhapur Near Main Gas Valve Pit" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Latitude (GPS) *</label>
+                        <input type="number" step="any" id="new-lat" required placeholder="e.g. 17.4485" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Longitude (GPS) *</label>
+                        <input type="number" step="any" id="new-lng" required placeholder="e.g. 78.3741" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200">
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="fillWithCurrentGps()" class="text-[11px] text-blue-400 hover:text-blue-300 underline flex items-center gap-1">
+                        <i data-lucide="locate-fixed" class="w-3.5 h-3.5"></i> Set to my current GPS location
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Last Maintenance Date</label>
+                        <input type="date" id="new-last-date" required class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Interval (Days)</label>
+                        <input type="number" id="new-freq" value="180" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Default Technician</label>
+                    <input type="text" id="new-tech" placeholder="e.g. Team Lead - Area 2" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200">
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-3">
+                    <button type="button" onclick="closeModal('new-asset-modal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 font-semibold">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold flex items-center gap-1">
+                        <i data-lucide="check" class="w-4 h-4"></i> Create Asset
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Import KMZ / KML / CSV -->
+    <div id="import-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl relative">
+            <button onclick="closeModal('import-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <h3 class="text-base font-bold text-white flex items-center gap-2 mb-2">
+                <i data-lucide="file-up" class="w-5 h-5 text-blue-400"></i> Import Google Earth KMZ / Sheets CSV
+            </h3>
+            <p class="text-xs text-slate-400 mb-4">
+                Upload your <strong>.KMZ</strong> file (from Google Earth with Placemark names as Asset IDs) or a <strong>.CSV</strong> exported from your Google Sheets.
+            </p>
+
+            <div class="border-2 border-dashed border-slate-700 hover:border-blue-500 rounded-2xl p-6 text-center cursor-pointer transition bg-slate-950/50" onclick="document.getElementById('file-input').click()">
+                <i data-lucide="upload-cloud" class="w-10 h-10 text-slate-400 mx-auto mb-2"></i>
+                <p class="text-xs font-semibold text-slate-200">Click to browse .KMZ, .KML, or .CSV</p>
+                <p class="text-[10px] text-slate-500 mt-1">Placemark IDs & GPS points are parsed automatically</p>
+                <input type="file" id="file-input" accept=".kmz,.kml,.csv" class="hidden" onchange="handleFileUpload(event)">
+            </div>
+            
+            <div id="import-status" class="mt-3 text-xs text-slate-300"></div>
+
+            <div class="flex justify-end pt-3">
+                <button type="button" onclick="closeModal('import-modal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 font-semibold text-xs">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 border border-slate-700 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 transform translate-y-20 opacity-0 transition duration-300 z-50">
+        <i data-lucide="info" class="w-5 h-5 text-blue-400"></i>
+        <span id="toast-message" class="text-xs font-medium">Notification message</span>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        // Default System Users (Admin + Technicians in specific teams like HMT, KPHB)
+        const initialUsers = [
+            { username: "admin", name: "Maintenance Head (Admin)", team: "ADMIN", role: "ADMIN", pass: "admin123" },
+            { username: "hmt_ramesh", name: "Ramesh Reddy", team: "HMT", role: "TECH", pass: "1234" },
+            { username: "kphb_suresh", name: "Suresh K.", team: "KPHB", role: "TECH", pass: "1234" },
+            { username: "hmt_anil", name: "Anil Kumar", team: "HMT", role: "TECH", pass: "1234" },
+            { username: "kphb_venkat", name: "Venkatesh P.", team: "KPHB", role: "TECH", pass: "1234" }
+        ];
+
+        // Initial Mock Network Assets with Teams (HMT, KPHB)
+        const initialMockAssets = [
+            { id: "DRS-01", type: "DRS", team: "KPHB", location: "Kukatpally Industrial Area Main Gate", lat: 17.4947, lng: 78.3996, lastDate: "2024-01-10", freqDays: 90, tech: "Suresh K.", notes: "Filter cartridge checked, pressure set.", observations: "Inlet pressure normal, slam shut valve tested.", remarks: "O-ring replaced" },
+            { id: "MRS-01", type: "MRS", team: "HMT", location: "BHEL Township Main Entry Skid", lat: 17.5020, lng: 78.2910, lastDate: "2024-03-01", freqDays: 180, tech: "Ramesh Reddy", notes: "Differential pressure transmitter calibrated.", observations: "DP transmitter fine, no vibration.", remarks: "Cleaned filter" },
+            { id: "SV-01", type: "SV station", team: "HMT", location: "Miyapur Crossroad Section Valve Vault", lat: 17.4965, lng: 78.3550, lastDate: "2023-09-15", freqDays: 180, tech: "Anil Kumar", notes: "Greasing done. Operability confirmed.", observations: "Valve chamber clean, greasing done.", remarks: "Lubricated stem" },
+            { id: "SR-101", type: "SR", team: "KPHB", location: "KPHB Colony Road No. 1, Block 3", lat: 17.4890, lng: 78.3920, lastDate: "2024-04-10", freqDays: 180, tech: "Suresh K.", notes: "Slam-shut valve operational.", observations: "Pressure setting verified at 21 mbar.", remarks: "Routine service done" },
+            { id: "DM-2041", type: "Diaphragm meter", team: "HMT", location: "Plot 42, HMT Hills Domestic Riser", lat: 17.5080, lng: 78.4020, lastDate: "2024-04-18", freqDays: 365, tech: "Ramesh Reddy", notes: "No leak, index readable.", observations: "Soap bubble test on connections: Negative.", remarks: "Index seal verified" },
+            { id: "MDPE-V09", type: "MDPE Valve", team: "HMT", location: "Pragathi Nagar Sub-line chamber", lat: 17.5140, lng: 78.3890, lastDate: "2023-11-20", freqDays: 180, tech: "Ramesh Reddy", notes: "Valve chamber dewatered.", observations: "Chamber dewatered, spindle checked.", remarks: "Chamber cover repainted" },
+            { id: "SR-102", type: "SR", team: "KPHB", location: "Chanda Nagar Commercial Lane", lat: 17.4912, lng: 78.3280, lastDate: "2023-08-05", freqDays: 180, tech: "Suresh K.", notes: "Overdue for maintenance inspection.", observations: "Slight regulator weep noticed.", remarks: "Requires seal replacement" },
+            { id: "MRS-02", type: "MRS", team: "HMT", location: "Bachupally Industrial Park Skid", lat: 17.5350, lng: 78.3680, lastDate: "2024-04-05", freqDays: 90, tech: "Anil Kumar", notes: "Slam-shut trip test passed.", observations: "Telemetry working, solar battery healthy.", remarks: "Inspected" },
+            { id: "SV-02", type: "SV station", team: "KPHB", location: "Nizampet Main Road Sectionalizing Valve", lat: 17.5190, lng: 78.3750, lastDate: "2024-03-25", freqDays: 180, tech: "Suresh K.", notes: "Chamber sealed, no water ingress.", observations: "Valve open indicator aligned.", remarks: "OK" },
+            { id: "DRS-02", type: "DRS", team: "KPHB", location: "Gachibowli Near ORR Junction", lat: 17.4401, lng: 78.3489, lastDate: "2024-02-12", freqDays: 90, tech: "Venkatesh P.", notes: "Inlet & outlet filters serviced.", observations: "Active/Monitor stream switched successfully.", remarks: "Cleaned" },
+            { id: "MDPE-V12", type: "MDPE Valve", team: "HMT", location: "Madhapur Hitec City Valve Pit 3", lat: 17.4485, lng: 78.3741, lastDate: "2024-04-01", freqDays: 180, tech: "Ramesh Reddy", notes: "Greased, spindle free.", observations: "Rotated 90 degrees and returned to position.", remarks: "Good condition" }
+        ];
+
+        // State Management
+        let users = [];
+        let currentUser = null; // Logged in user object
+        let showAllTeams = false; // By default FALSE: show only technician's own team data
+        let maintenanceHistory = [];
+        let assets = [];
+        let currentTab = 'ALL';
+        let userLocation = null;
+        let gpsWatchId = null;
+        let radiusFilter = Infinity;
+        let map;
+        let mapMarkers = [];
+        let userMarker = null;
+        let userAccuracyCircle = null;
+        let isPickLocationMode = false;
+
+        const STATUS_COLORS = {
+            OVERDUE: '#ef4444',
+            DUE_SOON: '#f59e0b',
+            HEALTHY: '#10b981'
+        };
+
+        window.onload = function() {
+            lucide.createIcons();
+            loadUsers();
+            loadMaintenanceHistory();
+            loadAssets();
+            checkSession();
+            initMap();
+        };
+
+        function loadUsers() {
+            const saved = localStorage.getItem('cgd_users_v2');
+            if (saved) {
+                try { users = JSON.parse(saved); } catch(e) { users = [...initialUsers]; }
+            } else {
+                users = [...initialUsers];
+                saveUsers();
+            }
+        }
+
+        function saveUsers() {
+            localStorage.setItem('cgd_users_v2', JSON.stringify(users));
+        }
+
+        function loadMaintenanceHistory() {
+            const saved = localStorage.getItem('cgd_history_v2');
+            if (saved) {
+                try { maintenanceHistory = JSON.parse(saved); } catch(e) { maintenanceHistory = []; }
+            } else {
+                // Initialize default history entries
+                maintenanceHistory = [
+                    {
+                        assetId: "DRS-01",
+                        team: "KPHB",
+                        technician: "Suresh K.",
+                        date: "2024-01-10",
+                        observations: "Inlet pressure normal, slam shut valve tested.",
+                        remarks: "O-ring replaced and test pressure normalized.",
+                        beforePhoto: "https://placehold.co/400x250/1e293b/f8fafc?text=DRS-01+Before+Maint",
+                        afterPhoto: "https://placehold.co/400x250/1e293b/10b981?text=DRS-01+After+Clean"
+                    },
+                    {
+                        assetId: "MRS-01",
+                        team: "HMT",
+                        technician: "Ramesh Reddy",
+                        date: "2024-03-01",
+                        observations: "Differential pressure transmitter calibrated, soap test OK.",
+                        remarks: "Cleaned filter mesh.",
+                        beforePhoto: "https://placehold.co/400x250/1e293b/f8fafc?text=MRS-01+Before+Service",
+                        afterPhoto: "https://placehold.co/400x250/1e293b/10b981?text=MRS-01+After+Service"
+                    }
+                ];
+                saveMaintenanceHistory();
+            }
+        }
+
+        function saveMaintenanceHistory() {
+            localStorage.setItem('cgd_history_v2', JSON.stringify(maintenanceHistory));
+        }
+
+        function loadAssets() {
+            const saved = localStorage.getItem('cgd_assets_v2');
+            if (saved) {
+                try { assets = JSON.parse(saved); } catch(e) { assets = [...initialMockAssets]; }
+            } else {
+                assets = [...initialMockAssets];
+                saveToStorage();
+            }
+            // Ensure all assets have a team assigned
+            assets.forEach(a => {
+                if (!a.team) a.team = "HMT";
+            });
+        }
+
+        function saveToStorage() {
+            localStorage.setItem('cgd_assets_v2', JSON.stringify(assets));
+        }
+
+        function checkSession() {
+            const saved = localStorage.getItem('cgd_active_session');
+            if (saved) {
+                try {
+                    currentUser = JSON.parse(saved);
+                    applyUserUI();
+                    return;
+                } catch(e) {}
+            }
+            // Show Login Modal
+            document.getElementById('auth-screen').classList.remove('hidden');
+        }
+
+        function fillLogin(u, p) {
+            document.getElementById('login-username').value = u;
+            document.getElementById('login-password').value = p;
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('login-username').value.trim().toLowerCase();
+            const p = document.getElementById('login-password').value.trim();
+
+            const user = users.find(usr => usr.username.toLowerCase() === u && usr.pass === p);
+            if (!user) {
+                const err = document.getElementById('login-error');
+                err.textContent = "Invalid User ID or Password! Please try again.";
+                err.classList.remove('hidden');
+                return;
+            }
+
+            currentUser = user;
+            localStorage.setItem('cgd_active_session', JSON.stringify(user));
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('login-error').classList.add('hidden');
+            
+            showToast(`Welcome ${user.name}! Default team view: ${user.team}`);
+            applyUserUI();
+        }
+
+        function logoutUser() {
+            localStorage.removeItem('cgd_active_session');
+            currentUser = null;
+            document.getElementById('auth-screen').classList.remove('hidden');
+            showToast("Logged out successfully.");
+        }
+
+        function applyUserUI() {
+            if (!currentUser) return;
+
+            document.getElementById('current-user-badge').textContent = `${currentUser.name} (${currentUser.team})`;
+            document.getElementById('current-team-status').textContent = `Logged into Team Zone: ${currentUser.team} | Digital Maintenance Registry`;
+            document.getElementById('active-team-name').textContent = currentUser.team;
+
+            const adminBtn = document.getElementById('admin-users-btn');
+            if (currentUser.role === 'ADMIN') {
+                adminBtn.classList.remove('hidden');
+                adminBtn.classList.add('flex');
+            } else {
+                adminBtn.classList.add('hidden');
+                adminBtn.classList.remove('flex');
+            }
+
+            // Default to only showing their own team (less clutter for field technicians)
+            const toggle = document.getElementById('toggle-show-all-teams');
+            if (currentUser.role === 'ADMIN') {
+                toggle.checked = true;
+                showAllTeams = true;
+            } else {
+                toggle.checked = false;
+                showAllTeams = false;
+            }
+
+            updateDashboard();
+        }
+
+        function toggleTeamScope() {
+            showAllTeams = document.getElementById('toggle-show-all-teams').checked;
+            updateDashboard();
+            if (showAllTeams) {
+                showToast("Viewing all teams across the network.");
+            } else {
+                showToast(`Filtered exclusively for Team ${currentUser ? currentUser.team : ''}`);
+            }
+        }
+
+        function openAdminModal() {
+            if (!currentUser || currentUser.role !== 'ADMIN') {
+                showToast("Only Admin can manage users.");
+                return;
+            }
+            renderUsersTable();
+            document.getElementById('admin-modal').classList.remove('hidden');
+        }
+
+        function renderUsersTable() {
+            const tbody = document.getElementById('users-tbody');
+            tbody.innerHTML = '';
+            users.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="py-2 px-3 font-mono text-purple-300 font-bold">${u.username}</td>
+                    <td class="py-2 px-3">${u.name}</td>
+                    <td class="py-2 px-3"><span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-blue-300">${u.team}</span></td>
+                    <td class="py-2 px-3 font-semibold text-[11px]">${u.role}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function createUser(e) {
+            e.preventDefault();
+            const username = document.getElementById('new-user-id').value.trim();
+            const name = document.getElementById('new-user-name').value.trim();
+            const team = document.getElementById('new-user-team').value.trim().toUpperCase();
+            const pass = document.getElementById('new-user-pass').value.trim();
+
+            if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+                showToast("Username already exists!");
+                return;
+            }
+
+            users.push({ username, name, team, role: "TECH", pass });
+            saveUsers();
+            renderUsersTable();
+            document.getElementById('create-user-form').reset();
+            showToast(`User ${name} [Team ${team}] created successfully!`);
+        }
+
+        function previewImage(event, previewId, dataTargetId) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const rawImg = new Image();
+                rawImg.onload = function() {
+                    // Compress image using canvas so it fits smoothly in localStorage
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800;
+                    const scale = MAX_WIDTH / rawImg.width;
+                    const width = (rawImg.width > MAX_WIDTH) ? MAX_WIDTH : rawImg.width;
+                    const height = (rawImg.width > MAX_WIDTH) ? rawImg.height * scale : rawImg.height;
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(rawImg, 0, 0, width, height);
+
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.65);
+                    document.getElementById(previewId).src = compressedBase64;
+                    document.getElementById(dataTargetId).value = compressedBase64;
+                    showToast("Photo captured & attached!");
+                };
+                rawImg.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function openPhotoViewer(url, title = "Maintenance Photo") {
+            document.getElementById('enlarged-photo').src = url;
+            document.getElementById('photo-modal-title').textContent = title;
+            document.getElementById('photo-viewer-modal').classList.remove('hidden');
+        }
+
+        function openMaintenanceModal(id) {
+            if (!currentUser) {
+                showToast("Please login first to log maintenance!");
+                document.getElementById('auth-screen').classList.remove('hidden');
+                return;
+            }
+
+            const asset = assets.find(a => a.id === id);
+            if (!asset) return;
+
+            document.getElementById('modal-asset-id').textContent = `${asset.id} [${asset.type}]`;
+            document.getElementById('form-asset-id').value = asset.id;
+            document.getElementById('form-last-date').value = new Date().toISOString().split('T')[0];
+            
+            // Auto lock logged-in technician's name and team so there's zero confusion
+            document.getElementById('form-technician').value = currentUser.name;
+            document.getElementById('form-team').value = asset.team || currentUser.team;
+            document.getElementById('form-freq-days').value = asset.freqDays || '180';
+            document.getElementById('form-observation').value = asset.observations || '';
+            document.getElementById('form-remarks').value = asset.remarks || '';
+
+            // Reset photos
+            document.getElementById('preview-before').src = "https://placehold.co/400x250/1e293b/64748b?text=Tap+to+Take+Before+Photo";
+            document.getElementById('preview-after').src = "https://placehold.co/400x250/1e293b/64748b?text=Tap+to+Take+After+Photo";
+            document.getElementById('data-before').value = "";
+            document.getElementById('data-after').value = "";
+
+            document.getElementById('maintenance-modal').classList.remove('hidden');
+        }
+
+        function saveMaintenance(e) {
+            e.preventDefault();
+            const id = document.getElementById('form-asset-id').value;
+            const asset = assets.find(a => a.id === id);
+            
+            if (asset) {
+                const serviceDate = document.getElementById('form-last-date').value;
+                const technicianName = currentUser ? currentUser.name : document.getElementById('form-technician').value;
+                const freq = parseInt(document.getElementById('form-freq-days').value);
+                const observations = document.getElementById('form-observation').value.trim();
+                const remarks = document.getElementById('form-remarks').value.trim();
+                const beforePhoto = document.getElementById('data-before').value;
+                const afterPhoto = document.getElementById('data-after').value;
+
+                // Update asset master record
+                asset.lastDate = serviceDate;
+                asset.tech = technicianName;
+                asset.freqDays = freq;
+                asset.observations = observations;
+                asset.remarks = remarks;
+
+                // Add to audit trail / history
+                maintenanceHistory.unshift({
+                    assetId: asset.id,
+                    team: asset.team || currentUser.team,
+                    technician: technicianName,
+                    date: serviceDate,
+                    observations: observations || "Inspection completed as per standard procedure.",
+                    remarks: remarks || "Normal",
+                    beforePhoto: beforePhoto || null,
+                    afterPhoto: afterPhoto || null
+                });
+
+                saveMaintenanceHistory();
+                saveToStorage();
+                updateDashboard();
+                closeModal('maintenance-modal');
+                showToast(`Maintenance for ${id} signed off by ${technicianName}!`);
+            }
+        }
+
+        function openProgressModal() {
+            renderProgressAnalytics();
+            document.getElementById('progress-modal').classList.remove('hidden');
+        }
+
+        function renderProgressAnalytics() {
+            const userTeam = currentUser ? currentUser.team : 'ALL';
+            
+            // Total completions
+            const totalDone = maintenanceHistory.length;
+            const teamDone = maintenanceHistory.filter(h => h.team === userTeam).length;
+
+            // Pending assets
+            let pendingCount = 0;
+            assets.forEach(a => {
+                if (!showAllTeams && currentUser && currentUser.role !== 'ADMIN' && a.team !== currentUser.team) return;
+                const info = getAssetStatus(a);
+                if (info.status === 'OVERDUE' || info.status === 'DUE_SOON') pendingCount++;
+            });
+
+            document.getElementById('prog-total-done').textContent = totalDone;
+            document.getElementById('prog-team-done').textContent = (currentUser && currentUser.role === 'ADMIN') ? totalDone : teamDone;
+            document.getElementById('prog-pending').textContent = pendingCount;
+            document.getElementById('prog-tech-count').textContent = users.filter(u => u.role === 'TECH').length;
+
+            const tbody = document.getElementById('maintenance-history-tbody');
+            tbody.innerHTML = '';
+
+            if (maintenanceHistory.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-slate-500">No maintenance records logged yet.</td></tr>`;
+                return;
+            }
+
+            maintenanceHistory.forEach(h => {
+                const tr = document.createElement('tr');
+                
+                // Photo previews
+                let photoBadge = '<span class="text-slate-500 text-[10px]">No photos</span>';
+                if (h.beforePhoto || h.afterPhoto) {
+                    photoBadge = `
+                        <div class="flex items-center gap-1.5">
+                            ${h.beforePhoto ? `<img src="${h.beforePhoto}" onclick="openPhotoViewer('${h.beforePhoto}', 'Before: ${h.assetId}')" class="w-7 h-7 rounded object-cover border border-amber-500/50 cursor-pointer hover:scale-110 transition" title="View Before Photo">` : ''}
+                            ${h.afterPhoto ? `<img src="${h.afterPhoto}" onclick="openPhotoViewer('${h.afterPhoto}', 'After: ${h.assetId}')" class="w-7 h-7 rounded object-cover border border-emerald-500/50 cursor-pointer hover:scale-110 transition" title="View After Photo">` : ''}
+                        </div>
+                    `;
+                }
+
+                tr.innerHTML = `
+                    <td class="py-2.5 px-3 font-mono text-slate-400">${h.date}</td>
+                    <td class="py-2.5 px-3 font-bold font-mono text-blue-400">${h.assetId}</td>
+                    <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-blue-300 font-semibold border border-slate-700">${h.team}</span></td>
+                    <td class="py-2.5 px-3 font-medium text-slate-200">${h.technician}</td>
+                    <td class="py-2.5 px-3">${photoBadge}</td>
+                    <td class="py-2.5 px-3 max-w-xs">
+                        <p class="truncate font-medium text-slate-200">${h.observations}</p>
+                        <p class="text-[10px] text-slate-400 truncate">${h.remarks}</p>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Haversine Distance Formula (Distance in Meters)
+        function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3;
+            const phi1 = lat1 * Math.PI / 180;
+            const phi2 = lat2 * Math.PI / 180;
+            const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+            const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+
+            const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+                      Math.cos(phi1) * Math.cos(phi2) *
+                      Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            return R * c;
+        }
+
+        function formatDistance(meters) {
+            if (meters === null || meters === undefined || isNaN(meters)) return '--';
+            if (meters < 1000) {
+                return `${Math.round(meters)} m`;
+            } else {
+                return `${(meters / 1000).toFixed(2)} km`;
+            }
+        }
+
+        function getAssetStatus(asset) {
+            if (!asset.lastDate) return { status: 'OVERDUE', daysRemaining: -999, nextDueDateStr: 'Overdue' };
+            
+            const last = new Date(asset.lastDate);
+            const freq = parseInt(asset.freqDays || 180);
+            const nextDue = new Date(last.getTime() + freq * 24 * 60 * 60 * 1000);
+            const now = new Date();
+            
+            const diffTime = nextDue.getTime() - now.getTime();
+            const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            let status = 'HEALTHY';
+            if (daysRemaining < 0) {
+                status = 'OVERDUE';
+            } else if (daysRemaining <= 15) {
+                status = 'DUE_SOON';
+            }
+            
+            return {
+                status,
+                daysRemaining,
+                nextDueDateStr: nextDue.toISOString().split('T')[0]
+            };
+        }
+
+        // Initialize Leaflet Map
+        function initMap() {
+            map = L.map('map', { zoomControl: true }).setView([17.4947, 78.3750], 12);
+            
+            // Standard 100% Free OpenStreetMap layer (No API Key Required)
+            const osmStandard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            });
+
+            // ESRI High-Resolution Satellite Imagery Layer (Free, Great for Pipeline & Field Inspection)
+            const esriSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+                maxZoom: 19
+            });
+
+            // Add standard street map by default
+            osmStandard.addTo(map);
+
+            // Layer switcher control for Street vs Satellite view
+            const baseMaps = {
+                "Street Map": osmStandard,
+                "Satellite (Field View)": esriSatellite
+            };
+            L.control.layers(baseMaps).addTo(map);
+
+            map.on('click', function(e) {
+                if (isPickLocationMode) {
+                    setUserLocation(e.latlng.lat, e.latlng.lng, 15, "Manual Pinpoint");
+                    togglePickLocationMode();
+                }
+            });
+
+            renderMapMarkers();
+        }
+
+        function togglePickLocationMode() {
+            isPickLocationMode = !isPickLocationMode;
+            const btn = document.getElementById('pick-location-btn');
+            if (isPickLocationMode) {
+                btn.classList.add('bg-amber-600', 'text-white', 'border-amber-500');
+                btn.classList.remove('bg-slate-800', 'text-slate-300');
+                showToast("Click anywhere on the map to set your location!");
+            } else {
+                btn.classList.remove('bg-amber-600', 'text-white', 'border-amber-500');
+                btn.classList.add('bg-slate-800', 'text-slate-300');
+            }
+        }
+
+        function setUserLocation(lat, lng, accuracy = 20, sourceLabel = "Live GPS") {
+            userLocation = { lat, lng, accuracy };
+
+            document.getElementById('gps-label').textContent = `${sourceLabel} Active`;
+            document.getElementById('gps-dot').className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping';
+            document.getElementById('sort-indicator').innerHTML = `<i data-lucide="navigation-2" class="w-3.5 h-3.5 text-emerald-400"></i><span>Sorted by: <strong class="text-emerald-400">Nearest (Closest First)</strong></span>`;
+
+            updateUserMapMarker();
+            updateDashboard();
+            showToast(`Location set via ${sourceLabel}! Assets sorted by nearest.`);
+        }
+
+        function toggleLiveGPS() {
+            if (gpsWatchId) {
+                navigator.geolocation.clearWatch(gpsWatchId);
+                gpsWatchId = null;
+                userLocation = null;
+                
+                if (userMarker) map.removeLayer(userMarker);
+                if (userAccuracyCircle) map.removeLayer(userAccuracyCircle);
+                userMarker = null;
+                userAccuracyCircle = null;
+
+                document.getElementById('gps-label').textContent = 'Enable My Location';
+                document.getElementById('gps-dot').className = 'w-2.5 h-2.5 rounded-full bg-slate-500';
+                document.getElementById('sort-indicator').innerHTML = `<i data-lucide="list-ordered" class="w-3.5 h-3.5 text-blue-400"></i><span>Sorted by: <strong>Default</strong></span>`;
+                
+                showToast("Live GPS disabled.");
+                updateDashboard();
+                return;
+            }
+
+            if (!navigator.geolocation) {
+                showToast("Geolocation is not supported by this browser.");
+                return;
+            }
+
+            document.getElementById('gps-label').textContent = 'Acquiring GPS...';
+            document.getElementById('gps-dot').className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    setUserLocation(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy, "GPS");
+
+                    gpsWatchId = navigator.geolocation.watchPosition(
+                        (watchPos) => {
+                            setUserLocation(watchPos.coords.latitude, watchPos.coords.longitude, watchPos.coords.accuracy, "GPS");
+                        },
+                        (watchErr) => {
+                            console.warn("Continuous GPS watch warning:", watchErr.message || watchErr.code);
+                        },
+                        { enableHighAccuracy: false, maximumAge: 30000, timeout: 20000 }
+                    );
+                },
+                (err) => {
+                    const errorCode = err ? err.code : 0;
+                    document.getElementById('gps-label').textContent = 'Enable My Location';
+                    document.getElementById('gps-dot').className = 'w-2.5 h-2.5 rounded-full bg-red-500';
+                    gpsWatchId = null;
+
+                    let tip = "GPS unavailable. Use 'Set Location on Map' button!";
+                    if (errorCode === 1) tip = "GPS Permission denied. Use 'Set Location on Map' button!";
+                    showToast(tip);
+                },
+                { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+            );
+        }
+
+        function updateUserMapMarker() {
+            if (!userLocation || !map) return;
+
+            const userLatLng = [userLocation.lat, userLocation.lng];
+
+            if (!userMarker) {
+                const userIcon = L.divIcon({
+                    className: 'user-marker-icon',
+                    html: `
+                        <div class="user-pulse-marker">
+                            <div class="user-pulse-ring"></div>
+                        </div>
+                    `,
+                    iconSize: [22, 22],
+                    iconAnchor: [11, 11]
+                });
+
+                userMarker = L.marker(userLatLng, { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
+                userMarker.bindPopup(`<strong class="text-blue-400">Your Current Field Location</strong><br>Accuracy: ±${Math.round(userLocation.accuracy)}m`, { className: 'custom-popup' });
+                
+                userAccuracyCircle = L.circle(userLatLng, {
+                    radius: userLocation.accuracy,
+                    color: '#3b82f6',
+                    fillColor: '#3b82f6',
+                    fillOpacity: 0.12,
+                    weight: 1
+                }).addTo(map);
+
+                map.flyTo(userLatLng, 14, { duration: 1.2 });
+            } else {
+                userMarker.setLatLng(userLatLng);
+                if (userAccuracyCircle) {
+                    userAccuracyCircle.setLatLng(userLatLng);
+                    userAccuracyCircle.setRadius(userLocation.accuracy);
+                }
+            }
+        }
+
+        function setRadiusFilter(radiusMeters) {
+            radiusFilter = radiusMeters;
+            document.querySelectorAll('.radius-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('text-slate-300');
+            });
+
+            if (radiusMeters === 500) document.getElementById('rad-500').classList.add('bg-blue-600', 'text-white');
+            else if (radiusMeters === 1000) document.getElementById('rad-1000').classList.add('bg-blue-600', 'text-white');
+            else if (radiusMeters === 3000) document.getElementById('rad-3000').classList.add('bg-blue-600', 'text-white');
+            else if (radiusMeters === 5000) document.getElementById('rad-5000').classList.add('bg-blue-600', 'text-white');
+            else document.getElementById('rad-all').classList.add('bg-blue-600', 'text-white');
+
+            renderTable();
+            renderMapMarkers();
+        }
+
+        function renderMapMarkers() {
+            if (!map) return;
+            mapMarkers.forEach(m => map.removeLayer(m));
+            mapMarkers = [];
+
+            const statusFilter = document.getElementById('map-status-filter').value;
+            const layerFilter = document.getElementById('map-layer-filter').value;
+            const bounds = [];
+
+            let mappedCount = 0;
+
+            assets.forEach(asset => {
+                if (!asset.lat || !asset.lng) return;
+
+                // TEAM SCOPING: If user is technician and hasn't ticked "show all", filter out other teams
+                if (!showAllTeams && currentUser && currentUser.role !== 'ADMIN') {
+                    if (asset.team !== currentUser.team) return;
+                }
+
+                const info = getAssetStatus(asset);
+                let distanceMeters = null;
+
+                if (userLocation) {
+                    distanceMeters = calculateHaversineDistance(userLocation.lat, userLocation.lng, asset.lat, asset.lng);
+                    if (distanceMeters > radiusFilter) return;
+                }
+
+                if (statusFilter !== 'ALL' && info.status !== statusFilter) return;
+                if (layerFilter !== 'ALL' && asset.type !== layerFilter) return;
+
+                mappedCount++;
+                const color = STATUS_COLORS[info.status];
+                const prefix = asset.type.substring(0, 2).toUpperCase();
+
+                const customIcon = L.divIcon({
+                    className: 'asset-marker-wrapper',
+                    html: `<div class="asset-pin" style="background-color: ${color}; width: 28px; height: 28px;">
+                            ${prefix}
+                           </div>`,
+                    iconSize: [28, 28],
+                    iconAnchor: [14, 14]
+                });
+
+                const marker = L.marker([asset.lat, asset.lng], { icon: customIcon }).addTo(map);
+
+                const distanceBadge = distanceMeters !== null 
+                    ? `<span class="bg-blue-900/60 text-blue-300 px-2 py-0.5 rounded text-[10px] font-semibold">📍 ${formatDistance(distanceMeters)} away</span>` 
+                    : '';
+
+                const popupHtml = `
+                    <div class="text-xs p-1">
+                        <div class="flex items-center justify-between border-b border-slate-700/80 pb-1.5 mb-2">
+                            <span class="font-bold text-sm text-blue-400 font-mono">${asset.id}</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold" style="background-color: ${color}25; color: ${color}; border: 1px solid ${color};">
+                                ${info.status}
+                            </span>
+                        </div>
+                        <div class="space-y-1 text-slate-300">
+                            <p><strong>Team:</strong> <span class="text-blue-300 font-semibold">${asset.team || 'N/A'}</span></p>
+                            <p><strong>Type:</strong> ${asset.type}</p>
+                            <p><strong>Location:</strong> ${asset.location}</p>
+                            ${distanceBadge ? `<p class="mt-1">${distanceBadge}</p>` : ''}
+                            <p><strong>Next Due:</strong> ${info.nextDueDateStr} (${info.daysRemaining}d)</p>
+                            <p><strong>Assigned:</strong> ${asset.tech || 'Unassigned'}</p>
+                        </div>
+                        <div class="mt-3 pt-2 border-t border-slate-700/80 flex items-center justify-between gap-2">
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=${asset.lat},${asset.lng}" target="_blank" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-600 text-white rounded text-[11px] font-semibold flex items-center gap-1 transition">
+                                <i data-lucide="navigation"></i> Navigate
+                            </a>
+                            <button onclick="openMaintenanceModal('${asset.id}')" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-[11px] font-semibold transition">
+                                Close Maint.
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                marker.bindPopup(popupHtml, { className: 'custom-popup' });
+                mapMarkers.push(marker);
+                bounds.push([asset.lat, asset.lng]);
+            });
+
+            document.getElementById('map-asset-counter').textContent = `(${mappedCount} in view)`;
+
+            if (bounds.length > 0 && !userLocation) {
+                map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+            }
+        }
+
+        function recenterMap() {
+            if (mapMarkers.length > 0) {
+                const group = new L.featureGroup(mapMarkers);
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
+
+        function switchCategory(cat) {
+            currentTab = cat;
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                if (tab.getAttribute('data-cat') === cat) {
+                    tab.classList.add('tab-active');
+                    tab.classList.remove('text-slate-400');
+                    tab.classList.add('text-slate-200');
+                } else {
+                    tab.classList.remove('tab-active');
+                    tab.classList.add('text-slate-400');
+                    tab.classList.remove('text-slate-200');
+                }
+            });
+            renderTable();
+        }
+
+        function renderTable() {
+            const search = document.getElementById('table-search').value.toLowerCase();
+            const tbody = document.getElementById('asset-table-body');
+            tbody.innerHTML = '';
+
+            let processedAssets = assets.map(a => {
+                let dist = null;
+                if (userLocation && a.lat && a.lng) {
+                    dist = calculateHaversineDistance(userLocation.lat, userLocation.lng, a.lat, a.lng);
+                }
+                return { ...a, distanceMeters: dist };
+            });
+
+            if (userLocation) {
+                processedAssets.sort((a, b) => {
+                    if (a.distanceMeters === null) return 1;
+                    if (b.distanceMeters === null) return -1;
+                    return a.distanceMeters - b.distanceMeters;
+                });
+            }
+
+            let visibleCount = 0;
+
+            processedAssets.forEach(asset => {
+                // Team Scoping
+                if (!showAllTeams && currentUser && currentUser.role !== 'ADMIN') {
+                    if (asset.team !== currentUser.team) return;
+                }
+
+                // Category Filter
+                if (currentTab !== 'ALL' && asset.type !== currentTab) return;
+
+                // Radius Filter
+                if (userLocation && asset.distanceMeters !== null && asset.distanceMeters > radiusFilter) return;
+
+                // Search Filter
+                const searchTarget = `${asset.id} ${asset.type} ${asset.team || ''} ${asset.location} ${asset.tech || ''}`.toLowerCase();
+                if (search && !searchTarget.includes(search)) return;
+
+                visibleCount++;
+                const info = getAssetStatus(asset);
+
+                let badge = '';
+                if (info.status === 'OVERDUE') {
+                    badge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-950/80 text-red-400 border border-red-500/40">🔴 Overdue (${Math.abs(info.daysRemaining)}d)</span>`;
+                } else if (info.status === 'DUE_SOON') {
+                    badge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-950/80 text-amber-400 border border-amber-500/40">🟡 Due Soon (${info.daysRemaining}d)</span>`;
+                } else {
+                    badge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-500/40">🟢 OK (${info.daysRemaining}d)</span>`;
+                }
+
+                let distanceContent = '<span class="text-slate-500">Enable GPS</span>';
+                if (asset.distanceMeters !== null) {
+                    const isClose = asset.distanceMeters <= 500;
+                    distanceContent = `
+                        <div class="flex items-center gap-1.5 font-mono ${isClose ? 'text-cyan-400 font-bold' : 'text-slate-300'}">
+                            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-blue-400"></i>
+                            <span>${formatDistance(asset.distanceMeters)}</span>
+                        </div>
+                    `;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/60 transition cursor-pointer";
+                tr.onclick = (e) => {
+                    if (e.target.closest('button') || e.target.closest('a')) return;
+                    zoomToAsset(asset.id);
+                };
+
+                tr.innerHTML = `
+                    <td class="py-3 px-3.5 font-bold font-mono text-blue-400">
+                        ${asset.id}
+                        <span class="block text-[10px] font-sans font-semibold text-purple-400 uppercase">Team: ${asset.team || 'HMT'}</span>
+                    </td>
+                    <td class="py-3 px-3">
+                        <span class="px-2 py-0.5 bg-slate-800 rounded text-slate-300 font-medium text-[11px] border border-slate-700">${asset.type}</span>
+                    </td>
+                    <td class="py-3 px-3.5 max-w-xs truncate" title="${asset.location}">${asset.location}</td>
+                    <td class="py-3 px-3">${distanceContent}</td>
+                    <td class="py-3 px-3 text-slate-300">${asset.lastDate || 'N/A'}</td>
+                    <td class="py-3 px-3 font-medium text-slate-200">${info.nextDueDateStr}</td>
+                    <td class="py-3 px-3 text-slate-300 font-medium">${asset.tech || '<span class="text-slate-500">Unassigned</span>'}</td>
+                    <td class="py-3 px-3">${badge}</td>
+                    <td class="py-3 px-3.5 text-center">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=${asset.lat},${asset.lng}" target="_blank" title="Navigate on Google Maps" class="p-1.5 bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white rounded-lg transition border border-emerald-500/30">
+                                <i data-lucide="navigation" class="w-3.5 h-3.5"></i>
+                            </a>
+                            <button onclick="openMaintenanceModal('${asset.id}')" title="Sign-off & Close" class="px-2 py-1 bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white rounded-lg text-[11px] font-semibold transition border border-blue-500/30 flex items-center gap-1">
+                                <i data-lucide="check-circle-2" class="w-3 h-3"></i> Close
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('visible-count').textContent = visibleCount;
+            lucide.createIcons();
+        }
+
+        function updateDashboard() {
+            renderTable();
+            renderMapMarkers();
+
+            let overdue = 0;
+            let dueSoon = 0;
+            let healthy = 0;
+            let visibleTotal = 0;
+
+            assets.forEach(asset => {
+                if (!showAllTeams && currentUser && currentUser.role !== 'ADMIN') {
+                    if (asset.team !== currentUser.team) return;
+                }
+
+                visibleTotal++;
+                const info = getAssetStatus(asset);
+                if (info.status === 'OVERDUE') overdue++;
+                else if (info.status === 'DUE_SOON') dueSoon++;
+                else healthy++;
+            });
+
+            document.getElementById('kpi-total').textContent = visibleTotal;
+            document.getElementById('kpi-overdue').textContent = overdue;
+            document.getElementById('kpi-due-soon').textContent = dueSoon;
+            document.getElementById('kpi-healthy').textContent = healthy;
+        }
+
+        function zoomToAsset(id) {
+            const asset = assets.find(a => a.id === id);
+            if (asset && asset.lat && asset.lng) {
+                map.flyTo([asset.lat, asset.lng], 16, { duration: 1.2 });
+                
+                mapMarkers.forEach(m => {
+                    const latLng = m.getLatLng();
+                    if (Math.abs(latLng.lat - asset.lat) < 0.00001 && Math.abs(latLng.lng - asset.lng) < 0.00001) {
+                        m.openPopup();
+                    }
+                });
+
+                window.scrollTo({ top: 180, behavior: 'smooth' });
+            } else {
+                showToast("Coordinates not available for asset: " + id);
+            }
+        }
+
+        function openNewAssetModal() {
+            document.getElementById('new-last-date').value = new Date().toISOString().split('T')[0];
+            if (currentUser && currentUser.team && currentUser.team !== 'ADMIN') {
+                document.getElementById('new-team').value = currentUser.team;
+            }
+            document.getElementById('new-asset-modal').classList.remove('hidden');
+        }
+
+        function fillWithCurrentGps() {
+            if (userLocation) {
+                document.getElementById('new-lat').value = userLocation.lat.toFixed(6);
+                document.getElementById('new-lng').value = userLocation.lng.toFixed(6);
+                showToast("Set coordinates from active location.");
+            } else {
+                navigator.geolocation.getCurrentPosition(
+                    (p) => {
+                        document.getElementById('new-lat').value = p.coords.latitude.toFixed(6);
+                        document.getElementById('new-lng').value = p.coords.longitude.toFixed(6);
+                        showToast("Acquired current GPS coordinates.");
+                    },
+                    (err) => {
+                        console.warn("Modal GPS error:", err.message);
+                        showToast("Could not access GPS. Please enter coordinates manually.");
+                    },
+                    { enableHighAccuracy: false, timeout: 8000 }
+                );
+            }
+        }
+
+        function saveNewAsset(e) {
+            e.preventDefault();
+            const newId = document.getElementById('new-id').value.trim();
+
+            if (assets.some(a => a.id.toLowerCase() === newId.toLowerCase())) {
+                showToast("An asset with this ID already exists!");
+                return;
+            }
+
+            const newAsset = {
+                id: newId,
+                team: document.getElementById('new-team').value.trim().toUpperCase(),
+                type: document.getElementById('new-type').value,
+                location: document.getElementById('new-location').value.trim(),
+                lat: parseFloat(document.getElementById('new-lat').value),
+                lng: parseFloat(document.getElementById('new-lng').value),
+                lastDate: document.getElementById('new-last-date').value,
+                freqDays: parseInt(document.getElementById('new-freq').value) || 180,
+                tech: document.getElementById('new-tech').value.trim() || (currentUser ? currentUser.name : "Unassigned"),
+                notes: 'Commissioned',
+                observations: 'Initial installation inspected.',
+                remarks: 'Commissioned into network'
+            };
+
+            assets.unshift(newAsset);
+            saveToStorage();
+            updateDashboard();
+            closeModal('new-asset-modal');
+            showToast(`Asset ${newAsset.id} [Team ${newAsset.team}] added successfully!`);
+            document.getElementById('new-asset-form').reset();
+        }
+
+        function openImportModal() {
+            document.getElementById('import-modal').classList.remove('hidden');
+            document.getElementById('import-status').textContent = '';
+        }
+
+        async function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const status = document.getElementById('import-status');
+            status.textContent = `Reading ${file.name}...`;
+
+            try {
+                if (file.name.endsWith('.kmz')) {
+                    const zip = await JSZip.loadAsync(file);
+                    const kmlFileName = Object.keys(zip.files).find(n => n.toLowerCase().endsWith('.kml'));
+                    if (!kmlFileName) throw new Error("No KML file found inside KMZ package.");
+                    const kmlContent = await zip.files[kmlFileName].async("string");
+                    parseKML(kmlContent);
+                } else if (file.name.endsWith('.kml')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => parseKML(e.target.result);
+                    reader.readAsText(file);
+                } else if (file.name.endsWith('.csv')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => parseCSV(e.target.result);
+                    reader.readAsText(file);
+                } else {
+                    throw new Error("Invalid format. Please upload .kmz, .kml or .csv");
+                }
+            } catch (err) {
+                status.innerHTML = `<span class="text-red-400">Error: ${err.message}</span>`;
+            }
+        }
+
+        function parseKML(kmlText) {
+            const parser = new DOMParser();
+            const xml = parser.parseFromString(kmlText, "text/xml");
+            const placemarks = xml.getElementsByTagName("Placemark");
+            
+            let addedCount = 0;
+            let updatedCount = 0;
+
+            for (let i = 0; i < placemarks.length; i++) {
+                const nameNode = placemarks[i].getElementsByTagName("name")[0];
+                const coordsNode = placemarks[i].getElementsByTagName("coordinates")[0];
+                const descNode = placemarks[i].getElementsByTagName("description")[0];
+
+                if (nameNode && coordsNode) {
+                    const id = nameNode.textContent.trim();
+                    const rawCoords = coordsNode.textContent.trim().split(',');
+                    const lng = parseFloat(rawCoords[0]);
+                    const lat = parseFloat(rawCoords[1]);
+                    const description = descNode ? descNode.textContent.trim() : "Imported from GIS KMZ";
+
+                    let inferredType = "SR";
+                    if (/DRS/i.test(id)) inferredType = "DRS";
+                    else if (/MRS/i.test(id)) inferredType = "MRS";
+                    else if (/SV/i.test(id)) inferredType = "SV station";
+                    else if (/VALVE|MDPE/i.test(id)) inferredType = "MDPE Valve";
+                    else if (/METER|DM/i.test(id)) inferredType = "Diaphragm meter";
+
+                    // Inferred Team from description or default to HMT
+                    let teamName = "HMT";
+                    if (/KPHB/i.test(id) || /KPHB/i.test(description)) teamName = "KPHB";
+
+                    const existing = assets.find(a => a.id.toLowerCase() === id.toLowerCase());
+                    if (existing) {
+                        existing.lat = lat;
+                        existing.lng = lng;
+                        updatedCount++;
+                    } else {
+                        assets.push({
+                            id: id,
+                            team: teamName,
+                            type: inferredType,
+                            location: description || `Field Point (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
+                            lat: lat,
+                            lng: lng,
+                            lastDate: new Date().toISOString().split('T')[0],
+                            freqDays: 180,
+                            tech: "Unassigned",
+                            notes: "Extracted from KMZ",
+                            observations: "Imported via KMZ",
+                            remarks: "Placemark imported"
+                        });
+                        addedCount++;
+                    }
+                }
+            }
+
+            saveToStorage();
+            updateDashboard();
+            document.getElementById('import-status').innerHTML = 
+                `<span class="text-emerald-400 font-semibold">Processed ${placemarks.length} Placemarks (${addedCount} added, ${updatedCount} updated coordinates)!</span>`;
+            showToast(`KMZ imported: ${addedCount} new assets`);
+        }
+
+        function parseCSV(csvText) {
+            const rows = csvText.trim().split('\n');
+            let added = 0;
+
+            rows.forEach((row, idx) => {
+                if (idx === 0 && row.toLowerCase().includes('id')) return;
+                const cols = row.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+                if (cols.length >= 2 && cols[0]) {
+                    const id = cols[0];
+                    const existing = assets.find(a => a.id.toLowerCase() === id.toLowerCase());
+                    const assetData = {
+                        id: id,
+                        team: cols[1] || "HMT",
+                        type: cols[2] || "SR",
+                        location: cols[3] || "Gas Network Point",
+                        lastDate: cols[4] || new Date().toISOString().split('T')[0],
+                        freqDays: parseInt(cols[5]) || 180,
+                        tech: cols[6] || "Field Tech",
+                        lat: parseFloat(cols[7]) || (17.48 + Math.random() * 0.05),
+                        lng: parseFloat(cols[8]) || (78.38 + Math.random() * 0.05),
+                        notes: cols[9] || "CSV imported",
+                        observations: cols[10] || "Imported",
+                        remarks: cols[11] || "Normal"
+                    };
+
+                    if (existing) {
+                        Object.assign(existing, assetData);
+                    } else {
+                        assets.push(assetData);
+                        added++;
+                    }
+                }
+            });
+
+            saveToStorage();
+            updateDashboard();
+            document.getElementById('import-status').innerHTML = `<span class="text-emerald-400 font-semibold">CSV Imported: ${added} assets added!</span>`;
+            showToast(`Loaded ${added} assets from CSV!`);
+        }
+
+        function exportToCSV() {
+            const headers = ["Asset ID", "Team", "Asset Type", "Location", "Last Maintenance Date", "Frequency (Days)", "Next Due Date", "Technician", "Status", "Observations", "Remarks", "Latitude", "Longitude"];
+            
+            const rows = assets.map(a => {
+                const info = getAssetStatus(a);
+                return [
+                    `"${a.id}"`,
+                    `"${a.team || 'HMT'}"`,
+                    `"${a.type}"`,
+                    `"${(a.location || '').replace(/"/g, '""')}"`,
+                    `"${a.lastDate || ''}"`,
+                    `"${a.freqDays || 180}"`,
+                    `"${info.nextDueDateStr}"`,
+                    `"${(a.tech || '').replace(/"/g, '""')}"`,
+                    `"${info.status}"`,
+                    `"${(a.observations || '').replace(/"/g, '""')}"`,
+                    `"${(a.remarks || '').replace(/"/g, '""')}"`,
+                    `"${a.lat || ''}"`,
+                    `"${a.lng || ''}"`
+                ].join(',');
+            });
+
+            const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n');
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", `CGD_Maintenance_Roster_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("Exported CSV roster successfully!");
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
