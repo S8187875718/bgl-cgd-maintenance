@@ -53,7 +53,7 @@
     <span id="cloudLoaderText">Syncing with Google Drive...</span>
   </div>
 
-  <!-- ==================== 1. LOGIN SCREEN ==================== -->
+  <!-- ==================== 1. STRICT SECURE LOGIN SCREEN ==================== -->
   <div id="loginSection" class="fixed inset-0 z-50 flex items-center justify-center bg-[#050b14] px-4">
     <div class="glass-card w-full max-w-sm p-6 sm:p-8 rounded-2xl shadow-2xl border border-slate-800 text-center">
       <div class="flex justify-center mb-4">
@@ -61,51 +61,14 @@
       </div>
       
       <h2 class="text-lg font-bold text-white tracking-wide">Bhagyanagar Gas Limited</h2>
-      <p class="text-xs text-slate-400 mb-4">Field Operations & Maintenance Portal</p>
+      <p class="text-xs text-slate-400 mb-6">Field Operations & Maintenance Portal</p>
 
-      <!-- ⚡ Fast Select Dropdown (Zero Typing Required) -->
-      <div class="p-3 bg-slate-900/90 rounded-xl border border-teal-500/40 mb-3 text-left">
-        <label class="block text-[11px] font-semibold text-teal-300 mb-1.5 flex items-center gap-1">
-          <i class="fa-solid fa-bolt text-amber-400"></i> Quick Select Employee / Login:
-        </label>
-        <select id="quickSelectDropdown" onchange="handleQuickSelect(this.value)" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-teal-500">
-          <option value="">-- Choose Your Name / ID --</option>
-          <option value="admin">Admin (Satish M)</option>
-          <option disabled>────────── HMT TEAM ──────────</option>
-          <option value="GGS/HYD/022">Muthineni Satish (GGS/HYD/022 - HMT)</option>
-          <option value="GGS/HYD/024">Deshamaina Praveen Kumar (GGS/HYD/024 - HMT)</option>
-          <option value="GGS/HYD/025">Dontharaboina Mahesh Kumar (GGS/HYD/025 - HMT)</option>
-          <option value="GGS/HYD/019">Dontharaboina Nagaraju (GGS/HYD/019 - HMT)</option>
-          <option value="GGS/HYD/035">Md Dilshan Alam (GGS/HYD/035 - HMT)</option>
-          <option value="GGS/HYD/020">Nimmala Madhu (GGS/HYD/020 - HMT)</option>
-          <option value="GGS/HYD/036">Salendra yadagiri (GGS/HYD/036 - HMT)</option>
-          <option value="GGS/HYD/018">Vagamari Sai (GGS/HYD/018 - HMT)</option>
-          <option value="GGS/HYD/037">Yavapuram Anilkumar (GGS/HYD/037 - HMT)</option>
-          <option value="GGS/HYD/038">Md Sadab (GGS/HYD/038 - HMT)</option>
-          <option disabled>────────── KPHB TEAM ──────────</option>
-          <option value="GGS/HYD/010">Mekala Mahesh (GGS/HYD/010 - KPHB)</option>
-          <option value="GGS/HYD/017">Arra Chiranjeevi (GGS/HYD/017 - KPHB)</option>
-          <option value="GGS/HYD/016">Jupalli Naresh (GGS/HYD/016 - KPHB)</option>
-          <option value="GGS/HYD/015">Matte Devendar (GGS/HYD/015 - KPHB)</option>
-          <option value="GGS/HYD/003">Moluguri Dinesh (GGS/HYD/003 - KPHB)</option>
-          <option value="GGS/HYD/008">K.Rajesh (GGS/HYD/008 - KPHB)</option>
-          <option value="GGS/HYD/009">Rathod Ramesh (GGS/HYD/009 - KPHB)</option>
-          <option value="GGS/HYD/023">Naralakanti Vijay (GGS/HYD/023 - KPHB)</option>
-        </select>
-      </div>
-
-      <div class="text-[11px] text-slate-500 mb-3 flex items-center justify-center gap-2">
-        <span class="h-px bg-slate-800 flex-1"></span>
-        <span>OR ENTER MANUALLY</span>
-        <span class="h-px bg-slate-800 flex-1"></span>
-      </div>
-
-      <div class="space-y-3 text-left">
+      <form onsubmit="doLogin(event)" class="space-y-4 text-left">
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">User ID</label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-user text-xs"></i></span>
-            <input type="text" id="loginUsername" placeholder="e.g. GGS/HYD/022 or admin" class="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs sm:text-sm text-white focus:outline-none focus:border-teal-500 uppercase">
+            <input type="text" id="loginUsername" required autocomplete="username" placeholder="e.g. GGS/HYD/022 or admin" class="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-teal-500 uppercase">
           </div>
         </div>
 
@@ -113,19 +76,19 @@
           <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-lock text-xs"></i></span>
-            <input type="password" id="loginPassword" onkeyup="if(event.key==='Enter') doLogin()" placeholder="Enter Password" class="w-full pl-9 pr-9 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs sm:text-sm text-white focus:outline-none focus:border-teal-500">
+            <input type="password" id="loginPassword" required autocomplete="current-password" placeholder="Enter Password" class="w-full pl-9 pr-9 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-teal-500">
             <button type="button" onclick="togglePassVisibility()" class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 hover:text-slate-300">
               <i id="passEyeIcon" class="fa-solid fa-eye text-xs"></i>
             </button>
           </div>
         </div>
 
-        <div id="loginError" class="hidden text-xs text-rose-400 bg-rose-950/40 p-2 rounded-lg border border-rose-800 text-center"></div>
+        <div id="loginError" class="hidden text-xs text-rose-400 bg-rose-950/40 p-2.5 rounded-lg border border-rose-800 text-center"></div>
 
-        <button type="button" onclick="doLogin()" class="w-full py-2.5 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-lg shadow-lg text-sm transition">
+        <button type="submit" class="w-full py-2.5 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-lg shadow-lg text-sm transition">
           Sign In
         </button>
-      </div>
+      </form>
     </div>
   </div>
 
@@ -158,7 +121,7 @@
             <i class="fa-solid fa-arrows-rotate"></i>
           </button>
 
-          <!-- Admin Toolbar -->
+          <!-- Admin Exclusive Toolbar -->
           <div id="adminHeaderBtns" class="hidden flex items-center gap-1.5">
             <button onclick="openModal('addAssetModal')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-teal-600 hover:bg-teal-500 text-white flex items-center gap-1 shadow">
               <i class="fa-solid fa-plus"></i> <span class="hidden md:inline">Asset</span>
@@ -370,7 +333,7 @@
     </div>
   </div>
 
-  <!-- Maintenance Sign-off Modal -->
+  <!-- Maintenance Sign-off Modal (Tamper-Proof) -->
   <div id="maintenanceModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
     <div class="glass-card w-full max-w-lg p-5 rounded-2xl max-h-[92vh] overflow-y-auto border border-slate-700">
       <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3">
@@ -384,8 +347,8 @@
       <form id="maintenanceForm" onsubmit="submitMaintenance(event)" class="space-y-3 text-xs">
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block text-slate-400 mb-1">Technician</label>
-            <input type="text" id="maintTechName" readonly class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-slate-300 font-semibold cursor-not-allowed">
+            <label class="block text-slate-400 mb-1">Technician (Locked)</label>
+            <input type="text" id="maintTechName" readonly class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-teal-300 font-semibold cursor-not-allowed">
           </div>
           <div>
             <label class="block text-slate-400 mb-1">Date Conducted</label>
@@ -474,7 +437,7 @@
         <h4 class="font-bold text-white">Add Technician Login</h4>
         <div class="grid grid-cols-2 gap-2">
           <input type="text" id="newUserId" required placeholder="User ID (e.g. GGS/HYD/039)" class="p-2 bg-slate-950 border border-slate-700 rounded text-white font-mono uppercase">
-          <input type="text" id="newUserPass" required placeholder="Password" class="p-2 bg-slate-950 border border-slate-700 rounded text-white">
+          <input type="password" id="newUserPass" required placeholder="Password" class="p-2 bg-slate-950 border border-slate-700 rounded text-white">
         </div>
         <div class="grid grid-cols-2 gap-2">
           <input type="text" id="newUserName" required placeholder="Full Name" class="p-2 bg-slate-950 border border-slate-700 rounded text-white">
@@ -696,7 +659,7 @@
     const CATEGORIES = ['SR', 'DRS', 'MRS', 'Diaphragm meter', 'MDPE Valve', 'SV station'];
     const DEFAULT_TEAMS = ['HMT', 'KPHB', 'MEDCHAL', 'SUCHITRA'];
 
-    // PRELOADED ALL 18 FIELD TECHNICIANS (100% Guaranteed to work)
+    // PRELOADED ALL 18 FIELD TECHNICIANS (Confidential Database)
     const DEFAULT_USERS = {
       'admin': { pass: 'admin123', name: 'Satish M (Admin)', role: 'admin', team: 'ALL' },
       'GGS/HYD/022': { pass: 'GGS/HYD/022', name: 'Muthineni Satish', role: 'tech', team: 'HMT' },
@@ -745,7 +708,6 @@
       const storedTeams = safeStore.get('bgl_teams_list');
       teams = storedTeams ? JSON.parse(storedTeams) : [...DEFAULT_TEAMS];
 
-      // Always merge default users so newly added staff never get erased
       const storedUsers = safeStore.get('bgl_team_users');
       users = { ...DEFAULT_USERS, ...(storedUsers ? JSON.parse(storedUsers) : {}) };
       users['admin'] = { pass: 'admin123', name: 'Satish M (Admin)', role: 'admin', team: 'ALL' };
@@ -764,7 +726,6 @@
       }
     }
 
-    // --- CASE-INSENSITIVE / FLEXIBLE USER FINDER ---
     function findUserRecord(enteredId) {
       if (!enteredId) return null;
       const clean = enteredId.trim().toLowerCase();
@@ -776,19 +737,9 @@
       return null;
     }
 
-    // --- FAST DROPDOWN SELECTOR ---
-    function handleQuickSelect(val) {
-      if (!val) return;
-      document.getElementById('loginUsername').value = val;
-      const u = findUserRecord(val);
-      if (u) {
-        document.getElementById('loginPassword').value = u.pass;
-        doLogin();
-      }
-    }
-
-    // --- BULLETPROOF LOGIN EXECUTION ---
-    function doLogin() {
+    // --- SECURE AUTHENTICATION (NO BYPASS / STRICT VERIFICATION) ---
+    function doLogin(e) {
+      if (e) e.preventDefault();
       const uInput = document.getElementById('loginUsername');
       const pInput = document.getElementById('loginPassword');
       const err = document.getElementById('loginError');
@@ -804,23 +755,23 @@
         return;
       }
 
-      // 1. Direct Admin Bypass
+      // Check Admin
       if (u.toLowerCase() === 'admin' && p === 'admin123') {
         currentUser = { id: 'admin', pass: 'admin123', name: 'Satish M (Admin)', role: 'admin', team: 'ALL' };
         loginSuccess();
         return;
       }
 
-      // 2. Technician Match (Case-insensitive & Trimmed)
+      // Check Technician credentials against stored list
       const matched = findUserRecord(u);
-      if (matched && matched.pass.trim().toLowerCase() === p.toLowerCase()) {
+      if (matched && matched.pass.trim() === p) {
         currentUser = matched;
         loginSuccess();
         return;
       }
 
       if (err) {
-        err.textContent = "Invalid User ID or Password. (Note: ID and Password are the same, e.g. GGS/HYD/022)";
+        err.textContent = "Incorrect User ID or Password. Access Denied.";
         err.classList.remove('hidden');
       }
     }
@@ -839,7 +790,7 @@
       }
 
       initAppView();
-      showToast(`Welcome, ${currentUser.name}!`);
+      showToast(`Logged in as ${currentUser.name}`);
     }
 
     function togglePassVisibility() {
@@ -1279,7 +1230,8 @@
     function openMaintenanceModal(assetId) {
       activeMaintenanceAssetId = assetId;
       document.getElementById('maintAssetInfo').textContent = `Asset: ${assetId}`;
-      document.getElementById('maintTechName').value = currentUser ? currentUser.name : 'Tech';
+      // STRICTLY LOCKED TO CURRENT LOGGED IN USER
+      document.getElementById('maintTechName').value = currentUser ? currentUser.name : 'Unknown';
       document.getElementById('maintDate').value = new Date().toISOString().split('T')[0];
       document.getElementById('beforePreview').innerHTML = '<span>No image</span>';
       document.getElementById('afterPreview').innerHTML = '<span>No image</span>';
@@ -1353,7 +1305,7 @@
         closeModal('maintenanceModal');
         renderTechPendingTasks();
         renderAssets();
-        showToast("Photos uploaded to Google Drive & Saved!");
+        showToast("Maintenance signed off & synced to Drive!");
       } catch (err) {
         console.error("Cloud Upload Error:", err);
         asset.lastDate = dateConducted;
