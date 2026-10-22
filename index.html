@@ -36,7 +36,7 @@
     .font-mono { font-family: 'JetBrains Mono', monospace; }
     .glass-card { background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
     #map { height: 320px; width: 100%; border-radius: 0.75rem; z-index: 10; }
-    @media (min-width: 640px) { #map { height: 390px; } }
+    @media (min-width: 640px) { #map { height: 400px; } }
     .tap-copy { transition: background-color 0.15s ease, transform 0.1s ease; cursor: pointer; }
     .tap-copy:active { transform: scale(0.985); background-color: rgba(20, 184, 166, 0.18) !important; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -52,11 +52,26 @@
       70% { box-shadow: 0 0 0 16px rgba(2, 132, 199, 0); }
       100% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
     }
+    .custom-map-pin {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      border-width: 2.5px;
+      border-style: solid;
+      background: #0f172a;
+      transition: transform 0.15s ease;
+    }
+    .custom-map-pin:hover {
+      transform: scale(1.15);
+      z-index: 9999 !important;
+    }
   </style>
 </head>
-<body class="min-h-screen flex flex-col antialiased selection:bg-teal-500 selection:text-white pb-14 sm:pb-6">
+<body class="min-h-screen flex flex-col antialiased selection:bg-teal-500 selection:text-white pb-20 sm:pb-8">
 
-  <!-- Toast Notification Notification Bar -->
+  <!-- Toast Notification Bar -->
   <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-[100] hidden px-4 py-2.5 rounded-xl shadow-2xl bg-teal-600 text-white font-medium text-xs sm:text-sm flex items-center gap-2 transition-all border border-teal-400/40">
     <i class="fa-solid fa-circle-check"></i>
     <span id="toastMsg">Action Successful</span>
@@ -77,7 +92,7 @@
           <label class="block font-semibold text-slate-300 mb-1">User ID</label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-user"></i></span>
-            <input type="text" id="loginUsername" required placeholder="Enter User ID" class="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-teal-500 transition">
+            <input type="text" id="loginUsername" required placeholder="Enter User ID" class="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-teal-500 transition font-mono">
           </div>
         </div>
 
@@ -120,6 +135,22 @@
 
         <!-- Header Actions -->
         <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap text-xs">
+          <!-- Notification Bell -->
+          <div class="relative">
+            <button onclick="toggleNotificationDropdown()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 relative transition" title="Notifications">
+              <i class="fa-solid fa-bell text-xs"></i>
+              <span id="headerBellBadge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-[9px] font-bold text-white rounded-full flex items-center justify-center animate-pulse">0</span>
+            </button>
+            <!-- Dropdown -->
+            <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-72 glass-card rounded-xl p-3 shadow-2xl border border-slate-700 z-50 text-xs space-y-2">
+              <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                <span class="font-bold text-white">Alerts & Notifications</span>
+                <span id="notifDropdownCount" class="text-[10px] px-1.5 py-0.2 bg-teal-500/20 text-teal-300 rounded font-mono">0</span>
+              </div>
+              <div id="notificationItemsList" class="space-y-1.5 max-h-56 overflow-y-auto no-scrollbar"></div>
+            </div>
+          </div>
+
           <!-- Live GPS Button -->
           <button onclick="toggleGeolocation()" id="gpsBtn" class="px-2.5 py-1.5 rounded-lg font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 transition">
             <i class="fa-solid fa-location-crosshairs text-teal-400" id="gpsIcon"></i>
@@ -129,13 +160,14 @@
           <!-- Admin Exclusive Toolbar -->
           <div id="adminHeaderBtns" class="hidden flex items-center gap-1.5">
             <button onclick="openModal('addAssetModal')" class="px-2.5 py-1.5 rounded-lg font-medium bg-teal-600 hover:bg-teal-500 text-white flex items-center gap-1 shadow">
-              <i class="fa-solid fa-plus"></i> <span class="hidden md:inline">Add Asset</span>
+              <i class="fa-solid fa-plus"></i> <span class="hidden md:inline">Asset</span>
             </button>
             <button onclick="openModal('teamManageModal')" class="px-2.5 py-1.5 rounded-lg font-medium bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 flex items-center gap-1">
               <i class="fa-solid fa-users-gear"></i> <span class="hidden md:inline">Teams</span>
             </button>
+            <!-- Custom Map Icons & Batch Freq -->
             <button onclick="openCategoryFreqModal()" class="px-2.5 py-1.5 rounded-lg font-medium bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-700/60 flex items-center gap-1">
-              <i class="fa-solid fa-sliders"></i> <span class="hidden md:inline">Frequencies</span>
+              <i class="fa-solid fa-sliders"></i> <span class="hidden md:inline">Icons & Freq</span>
             </button>
             <button onclick="openModal('reportsModal')" class="px-2.5 py-1.5 rounded-lg font-medium bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 flex items-center gap-1">
               <i class="fa-solid fa-file-invoice"></i> <span class="hidden md:inline">Reports</span>
@@ -164,14 +196,18 @@
     <!-- Main Container -->
     <main class="max-w-7xl w-full mx-auto p-2.5 sm:p-4 space-y-3 flex-1">
 
-      <!-- ==================== TECHNICIAN ASSIGNED TASKS BANNER ==================== -->
-      <div id="techPendingBanner" class="hidden glass-card p-3 rounded-xl border border-amber-500/50 bg-amber-950/20 text-xs">
+      <!-- ==================== TECHNICIAN URGENT ALERT BANNER ==================== -->
+      <div id="techPendingBanner" class="hidden glass-card p-3 rounded-xl border border-amber-500/60 bg-gradient-to-r from-amber-950/40 to-slate-900/60 text-xs shadow-lg">
         <div class="flex items-center justify-between mb-2">
-          <span class="font-bold text-amber-300 flex items-center gap-1.5">
-            <i class="fa-solid fa-bell animate-bounce"></i> My Assigned Pending Tasks (This Cycle)
-          </span>
-          <span id="techPendingCount" class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-300 font-bold">0</span>
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+            <span class="font-bold text-amber-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Assigned Tasks For You (This Cycle)
+            </span>
+          </div>
+          <span id="techPendingCount" class="text-[11px] px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-300 font-mono font-bold">0</span>
         </div>
+        <p class="text-[11px] text-slate-400 mb-2">These assets have been assigned to you. Inspect and close to clear the tag automatically:</p>
         <div id="techPendingList" class="flex gap-2 overflow-x-auto pb-1 no-scrollbar"></div>
       </div>
 
@@ -217,12 +253,12 @@
       <div class="glass-card p-2 rounded-xl relative border border-slate-800">
         <div class="px-2 py-1 flex items-center justify-between text-[11px] text-slate-400">
           <span class="flex items-center gap-1.5 text-slate-300 font-semibold">
-            <i class="fa-solid fa-map-location-dot text-teal-400"></i> Field GIS Map
+            <i class="fa-solid fa-map-location-dot text-teal-400"></i> Field GIS Map (Custom Category Markers)
           </span>
           <div class="flex items-center gap-3">
-            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Safe</span>
-            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Due</span>
-            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span> Overdue</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Safe</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Due</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Overdue</span>
           </div>
         </div>
         <div id="map"></div>
@@ -268,6 +304,9 @@
           <table class="w-full text-left border-collapse text-xs">
             <thead>
               <tr class="bg-slate-900/90 text-slate-400 border-b border-slate-800 text-[10px] uppercase font-mono tracking-wider">
+                <th class="p-2.5 text-center w-8" id="thCheckbox">
+                  <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAllAssets(this.checked)" class="rounded bg-slate-800 border-slate-700 text-teal-500">
+                </th>
                 <th class="p-2.5">Asset ID / Team</th>
                 <th class="p-2.5 hidden sm:table-cell">Type</th>
                 <th class="p-2.5">Location</th>
@@ -287,11 +326,65 @@
       </div>
 
     </main>
+
+    <!-- ==================== FLOATING BULK ASSIGN ACTION BAR ==================== -->
+    <div id="bulkActionBar" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 hidden px-4 py-2.5 rounded-2xl glass-card border border-teal-500/50 shadow-2xl flex items-center gap-3 text-xs bg-slate-950/95">
+      <div class="flex items-center gap-1.5 font-bold text-white">
+        <span id="bulkSelectedCount" class="px-2 py-0.5 rounded-full bg-teal-500 text-black font-mono">0</span>
+        <span>Assets Selected</span>
+      </div>
+      <button onclick="openBulkAssignModal()" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-medium rounded-xl shadow flex items-center gap-1.5">
+        <i class="fa-solid fa-user-tag"></i> Assign to Technician
+      </button>
+      <button onclick="clearSelectedAssets()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-xl">
+        Cancel
+      </button>
+    </div>
+
   </div>
 
   <!-- ==================== 3. MODALS ==================== -->
 
-  <!-- Maintenance Sign-off Modal (Before/After Photos) -->
+  <!-- Bulk Assign Modal -->
+  <div id="bulkAssignModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
+    <div class="glass-card w-full max-w-sm p-5 rounded-2xl border border-slate-700 text-xs">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+        <h3 class="text-sm font-bold text-white">Bulk Assign to Technician</h3>
+        <button onclick="closeModal('bulkAssignModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p id="bulkAssignDesc" class="text-teal-400 font-mono font-bold mb-3"></p>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-slate-400 mb-1">Select Technician</label>
+          <select id="bulkAssignTechSelect" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white"></select>
+        </div>
+        <p class="text-[11px] text-amber-300/80 bg-amber-950/30 p-2 rounded border border-amber-800/40">
+          <i class="fa-solid fa-circle-info mr-1"></i> Assignment will apply for this cycle and auto-clear when technician completes maintenance!
+        </p>
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+          <button onclick="clearBulkAssignment()" class="px-3 py-1.5 bg-slate-800 text-rose-300 rounded">Clear Assignment</button>
+          <button onclick="saveBulkAssignment()" class="px-4 py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-medium rounded shadow">Confirm Assign</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Icons & Frequencies Settings Modal -->
+  <div id="categoryFreqModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
+    <div class="glass-card w-full max-w-2xl p-5 rounded-2xl max-h-[92vh] overflow-y-auto border border-slate-700 text-xs">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+        <div>
+          <h3 class="text-sm font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-sliders text-amber-400"></i> Map Icons & Maintenance Frequencies</h3>
+          <p class="text-[11px] text-slate-400">Upload custom PNG icons for map markers and set category frequency cycles</p>
+        </div>
+        <button onclick="closeModal('categoryFreqModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="space-y-3" id="categoryFreqContainer"></div>
+    </div>
+  </div>
+
+  <!-- Maintenance Sign-off Modal -->
   <div id="maintenanceModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
     <div class="glass-card w-full max-w-lg p-5 rounded-2xl max-h-[92vh] overflow-y-auto border border-slate-700 text-xs">
       <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3">
@@ -314,7 +407,6 @@
           </div>
         </div>
 
-        <!-- Before & After Photos -->
         <div class="grid grid-cols-2 gap-2.5 p-2.5 bg-slate-900/60 rounded-xl border border-slate-800">
           <div>
             <label class="block text-slate-300 font-medium mb-1"><i class="fa-solid fa-camera mr-1 text-teal-400"></i> Before Photo</label>
@@ -352,7 +444,7 @@
     </div>
   </div>
 
-  <!-- Asset Maintenance History Modal (Full Audit for Admin) -->
+  <!-- Asset Maintenance History Modal -->
   <div id="assetHistoryModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
     <div class="glass-card w-full max-w-xl p-5 rounded-2xl max-h-[92vh] overflow-y-auto border border-slate-700 text-xs">
       <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3">
@@ -365,33 +457,7 @@
         <button onclick="closeModal('assetHistoryModal')" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark fa-lg"></i></button>
       </div>
 
-      <div id="historyTimelineContainer" class="space-y-3">
-        <!-- Rendered history logs -->
-      </div>
-    </div>
-  </div>
-
-  <!-- Assign Technician Modal (One Cycle Only) -->
-  <div id="assignModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
-    <div class="glass-card w-full max-w-sm p-5 rounded-2xl border border-slate-700 text-xs">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
-        <h3 class="text-sm font-bold text-white">Assign Technician (This Cycle)</h3>
-        <button onclick="closeModal('assignModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <p id="assignAssetIdLabel" class="text-teal-400 font-mono font-bold mb-3"></p>
-      <div class="space-y-3">
-        <div>
-          <label class="block text-slate-400 mb-1">Select Technician</label>
-          <select id="assignTechSelect" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white"></select>
-        </div>
-        <p class="text-[11px] text-amber-300/80 bg-amber-950/30 p-2 rounded border border-amber-800/40">
-          <i class="fa-solid fa-circle-info mr-1"></i> Once maintenance is completed by this technician, the assignment tag will automatically be cleared!
-        </p>
-        <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
-          <button onclick="clearAssignment()" class="px-3 py-1.5 bg-slate-800 text-rose-300 rounded">Clear Tag</button>
-          <button onclick="saveAssignment()" class="px-4 py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-medium rounded">Assign Tag</button>
-        </div>
-      </div>
+      <div id="historyTimelineContainer" class="space-y-3"></div>
     </div>
   </div>
 
@@ -600,28 +666,6 @@
     </div>
   </div>
 
-  <!-- Category Frequencies Settings Modal -->
-  <div id="categoryFreqModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
-    <div class="glass-card w-full max-w-lg p-5 rounded-2xl max-h-[92vh] overflow-y-auto border border-slate-700 text-xs">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
-        <h3 class="text-sm font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-sliders text-amber-400"></i> Category Maintenance Cycles</h3>
-        <button onclick="closeModal('categoryFreqModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-
-      <div class="space-y-2.5" id="categoryFreqContainer"></div>
-
-      <div class="pt-3 border-t border-slate-800 flex items-center justify-between flex-wrap gap-2">
-        <label class="flex items-center gap-1.5 text-slate-300 select-none">
-          <input type="checkbox" id="applyFreqToAllAssetsCheck" class="rounded bg-slate-800 border-slate-700 text-amber-500">
-          <span>Apply to all existing assets in category</span>
-        </label>
-        <button onclick="saveCategorySettings()" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded shadow">
-          Save Settings
-        </button>
-      </div>
-    </div>
-  </div>
-
   <!-- Reports Modal (From to To Date Filter) -->
   <div id="reportsModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
     <div class="glass-card w-full max-w-3xl p-5 rounded-2xl max-h-[92vh] overflow-y-auto border border-slate-700 text-xs">
@@ -744,12 +788,12 @@
     };
 
     const DEFAULT_CATEGORY_CONFIG = {
-      'SR': { freqDays: 90, emoji: '🔄' },
-      'DRS': { freqDays: 180, emoji: '🏢' },
-      'MRS': { freqDays: 30, emoji: '🏭' },
-      'Diaphragm meter': { freqDays: 180, emoji: '⏱️' },
-      'MDPE Valve': { freqDays: 180, emoji: '🚰' },
-      'SV station': { freqDays: 90, emoji: '⚙️' }
+      'SR': { freqDays: 90, emoji: 'fa-regular fa-circle-dot', customIcon: null },
+      'DRS': { freqDays: 180, emoji: 'fa-solid fa-building-columns', customIcon: null },
+      'MRS': { freqDays: 30, emoji: 'fa-solid fa-industry', customIcon: null },
+      'Diaphragm meter': { freqDays: 180, emoji: 'fa-solid fa-gauge-high', customIcon: null },
+      'MDPE Valve': { freqDays: 180, emoji: 'fa-solid fa-faucet', customIcon: null },
+      'SV station': { freqDays: 90, emoji: 'fa-solid fa-gear', customIcon: null }
     };
 
     let teams = [];
@@ -765,6 +809,7 @@
     let map = null;
     let markersLayer = null;
     let userMarker = null;
+    let selectedAssetIds = new Set();
 
     // --- INITIALIZATION ---
     window.addEventListener('DOMContentLoaded', () => {
@@ -773,21 +818,46 @@
     });
 
     function loadStoredAppData() {
+      // 1. Teams
       const storedTeams = localStorage.getItem('bgl_teams_list');
       teams = storedTeams ? JSON.parse(storedTeams) : [...DEFAULT_TEAMS];
 
+      // 2. Users (Normalized persistence fix)
       const storedUsers = localStorage.getItem('bgl_team_users');
-      users = storedUsers ? JSON.parse(storedUsers) : { ...DEFAULT_USERS };
+      if (storedUsers) {
+        try {
+          users = JSON.parse(storedUsers);
+        } catch(e) {
+          users = { ...DEFAULT_USERS };
+        }
+      } else {
+        users = { ...DEFAULT_USERS };
+        localStorage.setItem('bgl_team_users', JSON.stringify(users));
+      }
 
+      // 3. Category Configs & Custom PNG Icons
       const storedCat = localStorage.getItem('bgl_cat_configs');
-      categoryConfigs = storedCat ? JSON.parse(storedCat) : JSON.parse(JSON.stringify(DEFAULT_CATEGORY_CONFIG));
+      if (storedCat) {
+        try {
+          categoryConfigs = JSON.parse(storedCat);
+        } catch(e) {
+          categoryConfigs = JSON.parse(JSON.stringify(DEFAULT_CATEGORY_CONFIG));
+        }
+      } else {
+        categoryConfigs = JSON.parse(JSON.stringify(DEFAULT_CATEGORY_CONFIG));
+      }
 
+      // Ensure all 6 categories exist
+      Object.keys(DEFAULT_CATEGORY_CONFIG).forEach(k => {
+        if (!categoryConfigs[k]) categoryConfigs[k] = { ...DEFAULT_CATEGORY_CONFIG[k] };
+      });
+
+      // 4. Assets
       const storedAssets = localStorage.getItem('bgl_assets_v2') || localStorage.getItem('bgl_assets_v1');
       if (storedAssets) {
         try { assets = JSON.parse(storedAssets); } catch(e) { assets = []; }
       }
 
-      // Preload realistic sample data if empty
       if (!assets || assets.length === 0) {
         assets = [
           { id: "S07-D04-SR102", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5684817, lng: 78.4718986, lastDate: "2024-05-10", freqDays: 90, assignedTech: "HMT Field Tech" },
@@ -802,6 +872,7 @@
         saveAssets();
       }
 
+      // 5. History
       const historyStored = localStorage.getItem('bgl_maint_history_v2');
       if (historyStored) {
         try { maintenanceHistory = JSON.parse(historyStored); } catch(e) { maintenanceHistory = []; }
@@ -812,6 +883,7 @@
       localStorage.setItem('bgl_assets_v2', JSON.stringify(assets));
     }
 
+    // --- AUTHENTICATION & SESSION (BUG FIX FOR CREATED USERS) ---
     function checkSession() {
       const sess = sessionStorage.getItem('bgl_current_user');
       if (sess) {
@@ -825,9 +897,12 @@
 
     function handleLogin(e) {
       e.preventDefault();
-      const u = document.getElementById('loginUsername').value.trim();
+      const u = document.getElementById('loginUsername').value.trim().toLowerCase();
       const p = document.getElementById('loginPassword').value.trim();
       const err = document.getElementById('loginError');
+
+      // Reload fresh users from localStorage to capture newly created accounts without desync
+      loadStoredAppData();
 
       if (users[u] && users[u].pass === p) {
         currentUser = { id: u, ...users[u] };
@@ -835,7 +910,7 @@
         err.classList.add('hidden');
         initAppView();
       } else {
-        err.textContent = "Invalid User ID or Password";
+        err.textContent = "Invalid User ID or Password. Check credentials.";
         err.classList.remove('hidden');
       }
     }
@@ -856,6 +931,7 @@
         document.getElementById('adminHeaderBtns').classList.remove('hidden');
         document.getElementById('teamFilterBanner').classList.add('hidden');
         document.getElementById('techPendingBanner').classList.add('hidden');
+        document.getElementById('thCheckbox').classList.remove('hidden');
         showAllTeams = true;
         renderTeamsUI();
         renderTeamMembers();
@@ -869,17 +945,18 @@
 
       initMap();
       renderDashboardKPI();
+      renderNotifications();
       renderAssets();
     }
 
-    // --- DATE FORMATTERS (Strict DD-MM-YYYY & Corrupted Date Recovery) ---
+    // --- STRICT DD-MM-YYYY DATE PARSING & CORRUPTED EPOCH FIX ---
     function safeParseDate(val) {
       if (!val || val === '' || val === 'null' || val === 'undefined') {
         return new Date().toISOString().split('T')[0];
       }
       const s = String(val).trim();
 
-      // Fix years < 2000 (like 0179, 1899 from Excel empty serial date bug)
+      // Catch dates like 0179-12-31 from Excel negative serial dates
       const yrMatch = s.match(/^(\d{4})/);
       if (yrMatch && parseInt(yrMatch[1], 10) < 2000) {
         return new Date().toISOString().split('T')[0];
@@ -929,14 +1006,14 @@
       const formattedDue = formatToDDMMYYYY(due.toISOString().split('T')[0]);
 
       if (diffDays < 0) {
-        return { status: 'Overdue', color: '#f43f5e', badge: 'bg-rose-500/20 text-rose-300 border border-rose-500/40', dueDateFormatted: formattedDue };
+        return { status: 'Overdue', color: '#f43f5e', border: '#e11d48', badge: 'bg-rose-500/20 text-rose-300 border border-rose-500/40', dueDateFormatted: formattedDue, isOverdue: true };
       } else if (diffDays <= 15) {
-        return { status: 'Due Soon', color: '#f59e0b', badge: 'bg-amber-500/20 text-amber-300 border border-amber-500/40', dueDateFormatted: formattedDue };
+        return { status: 'Due Soon', color: '#f59e0b', border: '#d97706', badge: 'bg-amber-500/20 text-amber-300 border border-amber-500/40', dueDateFormatted: formattedDue, isDueSoon: true };
       }
-      return { status: 'Healthy', color: '#10b981', badge: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40', dueDateFormatted: formattedDue };
+      return { status: 'Healthy', color: '#10b981', border: '#059669', badge: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40', dueDateFormatted: formattedDue };
     }
 
-    // --- LEAFLET MAP & HAVERSINE DISTANCE ---
+    // --- LEAFLET MAP & CUSTOM PNG/SVG CATEGORY MARKERS ---
     function initMap() {
       if (map) return;
       map = L.map('map').setView([17.5132, 78.4345], 12);
@@ -944,6 +1021,29 @@
         attribution: '&copy; OpenStreetMap'
       }).addTo(map);
       markersLayer = L.layerGroup().addTo(map);
+    }
+
+    function createCustomCategoryIcon(type, statusColor) {
+      const cfg = categoryConfigs[type] || DEFAULT_CATEGORY_CONFIG[type] || { emoji: 'fa-solid fa-location-dot', customIcon: null };
+      
+      let innerHtml = '';
+      if (cfg.customIcon) {
+        innerHtml = `<img src="${cfg.customIcon}" class="w-5 h-5 object-contain rounded-full" alt="${type}">`;
+      } else {
+        innerHtml = `<i class="${cfg.emoji} text-[13px]" style="color: ${statusColor}"></i>`;
+      }
+
+      return L.divIcon({
+        className: 'custom-div-pin',
+        html: `
+          <div class="custom-map-pin" style="width: 32px; height: 32px; border-color: ${statusColor}; background: #0b1329;">
+            ${innerHtml}
+          </div>
+        `,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -16]
+      });
     }
 
     function getDistance(lat1, lon1, lat2, lon2) {
@@ -1005,7 +1105,7 @@
       }, { enableHighAccuracy: true });
     }
 
-    // --- 4. TAP TO COPY (ASSET ID & LOCATION) ---
+    // --- TAP TO COPY ---
     function copyAssetDetails(assetId, location) {
       const copyText = `${assetId} - ${location}`;
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -1028,7 +1128,7 @@
       setTimeout(() => t.classList.add('hidden'), 2300);
     }
 
-    // --- TECHNICIAN PENDING TASKS BANNER ---
+    // --- TECHNICIAN ALERTS & HEADER NOTIFICATION BELL ---
     function renderTechPendingTasks() {
       const banner = document.getElementById('techPendingBanner');
       const list = document.getElementById('techPendingList');
@@ -1043,7 +1143,7 @@
       if (assignedToMe.length > 0) {
         banner.classList.remove('hidden');
         list.innerHTML = assignedToMe.map(a => `
-          <div class="px-2.5 py-1.5 rounded-lg bg-slate-900 border border-amber-500/50 flex items-center gap-2 whitespace-nowrap shrink-0">
+          <div class="px-2.5 py-1.5 rounded-lg bg-slate-900 border border-amber-500/50 flex items-center gap-2 whitespace-nowrap shrink-0 shadow">
             <span class="font-mono font-bold text-white">${a.id}</span>
             <span class="text-[10px] text-slate-400 truncate max-w-[110px]">${a.location}</span>
             <button onclick="openMaintenanceModal('${a.id}')" class="px-2 py-0.5 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded text-[10px]">
@@ -1054,6 +1154,147 @@
       } else {
         banner.classList.add('hidden');
       }
+    }
+
+    function renderNotifications() {
+      const bellBadge = document.getElementById('headerBellBadge');
+      const countEl = document.getElementById('notifDropdownCount');
+      const list = document.getElementById('notificationItemsList');
+
+      let alerts = [];
+
+      if (currentUser.role === 'admin') {
+        const overdue = assets.filter(a => computeStatus(a.lastDate, a.freqDays).status === 'Overdue');
+        if (overdue.length > 0) {
+          alerts.push({ title: 'High Alert: Overdue Assets', desc: `${overdue.length} assets require immediate maintenance`, icon: 'fa-solid fa-triangle-exclamation text-rose-400' });
+        }
+        const assigned = assets.filter(a => a.assignedTech);
+        alerts.push({ title: 'Active Task Assignments', desc: `${assigned.length} assets assigned across teams`, icon: 'fa-solid fa-user-tag text-teal-400' });
+      } else {
+        const myTasks = assets.filter(a => a.assignedTech && a.assignedTech.toLowerCase() === currentUser.name.toLowerCase());
+        if (myTasks.length > 0) {
+          alerts.push({ title: 'Assigned Work Tasks', desc: `You have ${myTasks.length} pending inspections assigned to you`, icon: 'fa-solid fa-bell text-amber-400' });
+        }
+        const overdueTeam = assets.filter(a => a.team && a.team.toUpperCase() === currentUser.team.toUpperCase() && computeStatus(a.lastDate, a.freqDays).status === 'Overdue');
+        if (overdueTeam.length > 0) {
+          alerts.push({ title: `${currentUser.team} Overdue Alert`, desc: `${overdueTeam.length} assets overdue in your zone`, icon: 'fa-solid fa-triangle-exclamation text-rose-400' });
+        }
+      }
+
+      if (alerts.length > 0) {
+        bellBadge.textContent = alerts.length;
+        bellBadge.classList.remove('hidden');
+        countEl.textContent = `${alerts.length} new`;
+        list.innerHTML = alerts.map(al => `
+          <div class="p-2 bg-slate-900 rounded-lg border border-slate-800 space-y-0.5">
+            <div class="flex items-center gap-1.5 font-semibold text-slate-200">
+              <i class="${al.icon} text-xs"></i>
+              <span>${al.title}</span>
+            </div>
+            <p class="text-[11px] text-slate-400">${al.desc}</p>
+          </div>
+        `).join('');
+      } else {
+        bellBadge.classList.add('hidden');
+        countEl.textContent = `0`;
+        list.innerHTML = `<div class="text-center py-4 text-slate-500">No active alerts</div>`;
+      }
+    }
+
+    function toggleNotificationDropdown() {
+      const dd = document.getElementById('notificationDropdown');
+      dd.classList.toggle('hidden');
+    }
+
+    // --- CHECKBOXES & BULK TECHNICIAN ASSIGNMENT ---
+    function toggleSelectAllAssets(checked) {
+      const checkboxes = document.querySelectorAll('.asset-row-checkbox');
+      checkboxes.forEach(cb => {
+        cb.checked = checked;
+        const id = cb.getAttribute('data-id');
+        if (checked) selectedAssetIds.add(id);
+        else selectedAssetIds.delete(id);
+      });
+      updateBulkActionBar();
+    }
+
+    function handleRowCheckboxChange(id, checked) {
+      if (checked) selectedAssetIds.add(id);
+      else selectedAssetIds.delete(id);
+      updateBulkActionBar();
+    }
+
+    function updateBulkActionBar() {
+      const bar = document.getElementById('bulkActionBar');
+      const countEl = document.getElementById('bulkSelectedCount');
+      if (selectedAssetIds.size > 0 && currentUser.role === 'admin') {
+        countEl.textContent = selectedAssetIds.size;
+        bar.classList.remove('hidden');
+      } else {
+        bar.classList.add('hidden');
+      }
+    }
+
+    function clearSelectedAssets() {
+      selectedAssetIds.clear();
+      document.querySelectorAll('.asset-row-checkbox').forEach(cb => cb.checked = false);
+      const selectAll = document.getElementById('selectAllCheckbox');
+      if (selectAll) selectAll.checked = false;
+      updateBulkActionBar();
+    }
+
+    function openBulkAssignModal() {
+      if (selectedAssetIds.size === 0) return;
+      document.getElementById('bulkAssignDesc').textContent = `${selectedAssetIds.size} Assets Selected`;
+      const select = document.getElementById('bulkAssignTechSelect');
+      select.innerHTML = '<option value="">-- Choose Field Technician --</option>';
+
+      Object.values(users).filter(u => u.role === 'tech').forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.name;
+        opt.textContent = `${t.name} (${t.team})`;
+        select.appendChild(opt);
+      });
+
+      openModal('bulkAssignModal');
+    }
+
+    function saveBulkAssignment() {
+      const tech = document.getElementById('bulkAssignTechSelect').value;
+      if (!tech) {
+        alert("Please select a technician!");
+        return;
+      }
+
+      assets.forEach(a => {
+        if (selectedAssetIds.has(a.id)) {
+          a.assignedTech = tech;
+        }
+      });
+
+      saveAssets();
+      closeModal('bulkAssignModal');
+      clearSelectedAssets();
+      renderDashboardKPI();
+      renderNotifications();
+      renderAssets();
+      showToast(`Assigned selected assets to ${tech}!`);
+    }
+
+    function clearBulkAssignment() {
+      assets.forEach(a => {
+        if (selectedAssetIds.has(a.id)) {
+          a.assignedTech = null;
+        }
+      });
+
+      saveAssets();
+      closeModal('bulkAssignModal');
+      clearSelectedAssets();
+      renderDashboardKPI();
+      renderNotifications();
+      renderAssets();
+      showToast("Cleared assignments for selected assets");
     }
 
     // --- DASHBOARD METRICS ---
@@ -1099,7 +1340,6 @@
         return true;
       });
 
-      // Proximity Distance Sorting
       if (userLocation) {
         filtered.forEach(a => {
           a._distKm = getDistance(userLocation.lat, userLocation.lng, a.lat, a.lng);
@@ -1115,7 +1355,7 @@
       if (filtered.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="9" class="p-6 text-center text-slate-500">
+            <td colspan="10" class="p-6 text-center text-slate-500">
               <i class="fa-solid fa-magnifying-glass text-xl mb-1.5 block opacity-40"></i>
               No assets found matching the selected filter.
             </td>
@@ -1137,16 +1377,10 @@
             `<span class="px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-800 text-cyan-300 font-mono text-[10px] font-semibold">${asset._distKm.toFixed(2)} km</span>`;
         }
 
-        // Map Pins
+        // Map Pins with Custom PNG / Category Icon
         if (asset.lat && asset.lng) {
-          const marker = L.circleMarker([asset.lat, asset.lng], {
-            radius: 8,
-            fillColor: info.color,
-            color: '#ffffff',
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.95
-          });
+          const customMarkerIcon = createCustomCategoryIcon(asset.type, info.color);
+          const marker = L.marker([asset.lat, asset.lng], { icon: customMarkerIcon });
 
           marker.bindPopup(`
             <div style="color: #0f172a; font-size: 12px; font-family: sans-serif; min-width: 170px;">
@@ -1169,10 +1403,15 @@
           mapBounds.push([asset.lat, asset.lng]);
         }
 
+        const isChecked = selectedAssetIds.has(asset.id);
+
         // Table Rows
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-800/40 transition border-b border-slate-800/50';
         tr.innerHTML = `
+          <td class="p-2.5 text-center w-8">
+            <input type="checkbox" data-id="${asset.id}" onchange="handleRowCheckboxChange('${asset.id}', this.checked)" ${isChecked ? 'checked' : ''} class="asset-row-checkbox rounded bg-slate-800 border-slate-700 text-teal-500">
+          </td>
           <td class="p-2.5 tap-copy" onclick="copyAssetDetails('${asset.id}', '${asset.location.replace(/'/g, "\\'")}')" title="Tap to copy ID & Location">
             <div class="font-mono font-bold text-teal-400 flex items-center gap-1.5">
               <span>${asset.id}</span>
@@ -1197,9 +1436,6 @@
                 <i class="fa-solid fa-clipboard-check"></i> <span class="hidden sm:inline">Close</span>
               </button>
               ${isAdmin ? `
-                <button onclick="openAssignModal('${asset.id}')" title="Assign Technician" class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700">
-                  <i class="fa-solid fa-user-tag"></i>
-                </button>
                 <button onclick="openAssetHistory('${asset.id}')" title="Maintenance History" class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-blue-300 border border-slate-700">
                   <i class="fa-solid fa-timeline"></i>
                 </button>
@@ -1249,7 +1485,7 @@
       renderAssets();
     }
 
-    // --- 6. MAINTENANCE SIGN-OFF & AUTO REMOVE ASSIGNMENT ---
+    // --- MAINTENANCE SIGN-OFF (AUTO CLEARS ASSIGNED TAG ON COMPLETION) ---
     let activeMaintenanceAssetId = null;
 
     function openMaintenanceModal(assetId) {
@@ -1306,7 +1542,7 @@
       maintenanceHistory.unshift(logRecord);
       asset.lastDate = dateConducted;
 
-      // RULE 6: AUTOMATICALLY CLEAR ASSIGNED TECHNICIAN TAG ON COMPLETION
+      // RULE: Automatically clear assignment tag for this completed cycle
       asset.assignedTech = null;
 
       saveAssets();
@@ -1315,11 +1551,12 @@
       closeModal('maintenanceModal');
       renderDashboardKPI();
       renderTechPendingTasks();
+      renderNotifications();
       renderAssets();
       showToast(`Maintenance logged & assigned tag cleared for ${asset.id}!`);
     }
 
-    // --- 7. COMPLETE ASSET MAINTENANCE AUDIT HISTORY (ADMIN) ---
+    // --- FULL AUDIT HISTORY FOR ADMIN ---
     function openAssetHistory(assetId) {
       document.getElementById('historyAssetHeader').textContent = `Asset ID: ${assetId}`;
       const container = document.getElementById('historyTimelineContainer');
@@ -1356,53 +1593,7 @@
       openModal('assetHistoryModal');
     }
 
-    // --- ASSIGN TECHNICIAN MODAL ---
-    let assigningAssetId = null;
-
-    function openAssignModal(assetId) {
-      assigningAssetId = assetId;
-      document.getElementById('assignAssetIdLabel').textContent = `Asset: ${assetId}`;
-      const select = document.getElementById('assignTechSelect');
-      select.innerHTML = '<option value="">-- Choose Technician --</option>';
-
-      Object.values(users).filter(u => u.role === 'tech').forEach(t => {
-        const opt = document.createElement('option');
-        opt.value = t.name;
-        opt.textContent = `${t.name} (${t.team})`;
-        select.appendChild(opt);
-      });
-
-      const asset = assets.find(a => a.id === assetId);
-      if (asset && asset.assignedTech) select.value = asset.assignedTech;
-
-      openModal('assignModal');
-    }
-
-    function saveAssignment() {
-      const asset = assets.find(a => a.id === assigningAssetId);
-      if (!asset) return;
-      const tech = document.getElementById('assignTechSelect').value;
-      asset.assignedTech = tech || null;
-      saveAssets();
-      closeModal('assignModal');
-      renderDashboardKPI();
-      renderAssets();
-      showToast(`Assigned to ${tech || 'None'}`);
-    }
-
-    function clearAssignment() {
-      const asset = assets.find(a => a.id === assigningAssetId);
-      if (asset) {
-        asset.assignedTech = null;
-        saveAssets();
-        closeModal('assignModal');
-        renderDashboardKPI();
-        renderAssets();
-        showToast("Assignment cleared");
-      }
-    }
-
-    // --- 9. TEAMS & TECHNICIANS CREATION ---
+    // --- USER MANAGEMENT & LOGIN FIX ---
     function renderTeamsUI() {
       const badgeContainer = document.getElementById('teamsBadgeList');
       badgeContainer.innerHTML = teams.map(t => `<span class="px-2 py-0.5 rounded bg-slate-800 text-teal-300 font-mono text-[10px] border border-slate-700">${t}</span>`).join('');
@@ -1458,29 +1649,131 @@
 
     function saveNewTeamMember(e) {
       e.preventDefault();
-      const uid = document.getElementById('newUserId').value.trim();
+      // Lowercase & trim user ID for guaranteed exact matching upon login
+      const uid = document.getElementById('newUserId').value.trim().toLowerCase();
       const pass = document.getElementById('newUserPass').value.trim();
       const name = document.getElementById('newUserName').value.trim();
       const team = document.getElementById('newUserTeamSelect').value;
 
-      if (users[uid]) {
-        showToast("User ID already exists");
+      if (!uid || !pass || !name) {
+        alert("Please fill all technician fields!");
         return;
       }
 
-      users[uid] = { pass, name, role: 'tech', team };
+      if (users[uid]) {
+        alert(`User ID "${uid}" already exists! Please choose another ID.`);
+        return;
+      }
+
+      // Save into state & immediately persist in localStorage
+      users[uid] = { pass: pass, name: name, role: 'tech', team: team };
       localStorage.setItem('bgl_team_users', JSON.stringify(users));
+
       renderTeamMembers();
       document.getElementById('addMemberForm').reset();
-      showToast(`Technician ${name} added!`);
+      showToast(`Technician ${name} (${uid}) created successfully!`);
     }
 
     function deleteTeamMember(uid) {
-      if (confirm(`Delete technician account ${uid}?`)) {
+      if (confirm(`Delete technician account "${uid}"?`)) {
         delete users[uid];
         localStorage.setItem('bgl_team_users', JSON.stringify(users));
         renderTeamMembers();
+        showToast(`User ${uid} deleted`);
       }
+    }
+
+    // --- CATEGORY ICONS & BATCH FREQUENCY UPDATER ---
+    function openCategoryFreqModal() {
+      const container = document.getElementById('categoryFreqContainer');
+      container.innerHTML = '';
+
+      Object.keys(categoryConfigs).forEach(cat => {
+        const item = categoryConfigs[cat];
+        const card = document.createElement('div');
+        card.className = "p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-2";
+        
+        const previewIconHtml = item.customIcon ? 
+          `<img src="${item.customIcon}" class="w-8 h-8 object-contain rounded-full border border-teal-500 bg-slate-950 p-0.5" id="preview-${cat}">` :
+          `<div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-teal-400" id="preview-${cat}"><i class="${item.emoji}"></i></div>`;
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-2.5">
+              ${previewIconHtml}
+              <div>
+                <h4 class="font-bold text-white text-xs">${cat}</h4>
+                <p class="text-[10px] text-slate-400">Map Marker Icon & Maintenance Cycle</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <label class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 rounded cursor-pointer text-[11px] font-medium flex items-center gap-1">
+                <i class="fa-solid fa-upload"></i> Upload PNG
+                <input type="file" accept="image/png,image/svg+xml,image/jpeg" onchange="handleCustomIconUpload('${cat}', event)" class="hidden">
+              </label>
+              ${item.customIcon ? `<button onclick="removeCustomIcon('${cat}')" class="px-2 py-1 bg-slate-800 hover:bg-rose-900 text-rose-400 rounded text-[11px]" title="Reset to Default"><i class="fa-solid fa-trash"></i></button>` : ''}
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-2 border-t border-slate-800/60 flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+              <span class="text-slate-400 text-[11px]">Frequency Days:</span>
+              <input type="number" id="freq-input-${cat}" value="${item.freqDays}" min="1" class="w-20 p-1 bg-slate-950 border border-slate-700 rounded text-white font-mono text-xs">
+            </div>
+            <button onclick="applyBatchFrequency('${cat}')" class="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white font-medium rounded text-[11px] flex items-center gap-1 shadow">
+              <i class="fa-solid fa-arrows-rotate"></i> Batch Update All ${cat} Assets
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      openModal('categoryFreqModal');
+    }
+
+    function handleCustomIconUpload(cat, event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        categoryConfigs[cat].customIcon = e.target.result;
+        localStorage.setItem('bgl_cat_configs', JSON.stringify(categoryConfigs));
+        openCategoryFreqModal();
+        renderAssets();
+        showToast(`Custom icon uploaded for ${cat}!`);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removeCustomIcon(cat) {
+      categoryConfigs[cat].customIcon = null;
+      localStorage.setItem('bgl_cat_configs', JSON.stringify(categoryConfigs));
+      openCategoryFreqModal();
+      renderAssets();
+      showToast(`Reset icon to default for ${cat}`);
+    }
+
+    function applyBatchFrequency(cat) {
+      const input = document.getElementById(`freq-input-${cat}`);
+      if (!input) return;
+      const newFreq = parseInt(input.value, 10) || 90;
+
+      categoryConfigs[cat].freqDays = newFreq;
+      localStorage.setItem('bgl_cat_configs', JSON.stringify(categoryConfigs));
+
+      let updatedCount = 0;
+      assets.forEach(a => {
+        if (a.type === cat) {
+          a.freqDays = newFreq;
+          updatedCount++;
+        }
+      });
+
+      saveAssets();
+      renderDashboardKPI();
+      renderAssets();
+      showToast(`Batch updated ${updatedCount} assets in ${cat} to ${newFreq} days!`);
     }
 
     // --- ASSET MANAGEMENT: CREATE, EDIT, DELETE ---
@@ -1562,60 +1855,12 @@
     function deleteSingleAsset(assetId) {
       if (confirm(`Are you sure you want to permanently delete asset ${assetId}?`)) {
         assets = assets.filter(a => a.id !== assetId);
+        selectedAssetIds.delete(assetId);
         saveAssets();
         renderDashboardKPI();
         renderAssets();
         showToast("Asset deleted");
       }
-    }
-
-    // --- CATEGORY FREQUENCY SETTINGS ---
-    function openCategoryFreqModal() {
-      const container = document.getElementById('categoryFreqContainer');
-      container.innerHTML = '';
-
-      Object.keys(categoryConfigs).forEach(cat => {
-        const item = categoryConfigs[cat];
-        const card = document.createElement('div');
-        card.className = "p-2.5 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between";
-        card.innerHTML = `
-          <div class="flex items-center gap-2">
-            <span>${item.emoji}</span>
-            <span class="font-bold text-white">${cat}</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <label class="text-[10px] text-slate-400">Frequency (Days):</label>
-            <input type="number" id="freq-input-${cat}" value="${item.freqDays}" min="1" class="w-20 p-1 bg-slate-950 border border-slate-700 rounded text-white font-mono text-xs">
-          </div>
-        `;
-        container.appendChild(card);
-      });
-
-      openModal('categoryFreqModal');
-    }
-
-    function saveCategorySettings() {
-      const applyToAll = document.getElementById('applyFreqToAllAssetsCheck').checked;
-
-      Object.keys(categoryConfigs).forEach(cat => {
-        const inp = document.getElementById(`freq-input-${cat}`);
-        if (inp) {
-          const val = parseInt(inp.value, 10) || 90;
-          categoryConfigs[cat].freqDays = val;
-          if (applyToAll) {
-            assets.forEach(a => {
-              if (a.type === cat) a.freqDays = val;
-            });
-          }
-        }
-      });
-
-      localStorage.setItem('bgl_cat_configs', JSON.stringify(categoryConfigs));
-      saveAssets();
-      closeModal('categoryFreqModal');
-      renderDashboardKPI();
-      renderAssets();
-      showToast("Frequencies updated!");
     }
 
     // --- CSV & KMZ IMPORT ---
