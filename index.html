@@ -24,14 +24,14 @@
         }
     </script>
 
-    <!-- Lucide Icons CDN -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- FontAwesome 6 CDN (Zero API Key, 100% Reliable Icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
-    <!-- Leaflet.js CSS & JS for Mapping -->
+    <!-- Leaflet.js CSS & JS for Interactive Mapping -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- JSZip for KMZ extraction -->
+    <!-- JSZip for KMZ decompression -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <style>
@@ -43,7 +43,7 @@
         .leaflet-popup-content-wrapper {
             background-color: #0f172a !important;
             color: #f8fafc !important;
-            border-radius: 12px !important;
+            border-radius: 14px !important;
             border: 1px solid #334155 !important;
             box-shadow: 0 20px 25px -5px rgba(0,0,0,0.6) !important;
             padding: 2px !important;
@@ -60,16 +60,17 @@
         ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
         .pulse-marker {
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
             background: #3b82f6;
+            border: 3px solid #ffffff;
             box-shadow: 0 0 0 rgba(59, 130, 246, 0.6);
             animation: pulseAnim 1.8s infinite;
         }
         @keyframes pulseAnim {
             0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
-            70% { box-shadow: 0 0 0 16px rgba(59, 130, 246, 0); }
+            70% { box-shadow: 0 0 0 18px rgba(59, 130, 246, 0); }
             100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
         }
 
@@ -77,12 +78,17 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.2s;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
         }
         .map-custom-pin:hover {
-            transform: scale(1.18);
+            transform: scale(1.22);
             z-index: 1000 !important;
         }
+
+        /* Hide horizontal scroll bar for pill tabs */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased select-none sm:select-auto">
@@ -93,12 +99,12 @@
     <div id="login-screen" class="fixed inset-0 z-[100] bg-slate-950 flex items-center justify-center p-4">
         <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
             <!-- Glow background decor -->
-            <div class="absolute -top-16 -right-16 w-36 h-36 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="absolute -bottom-16 -left-16 w-36 h-36 bg-emerald-600/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -top-16 -right-16 w-40 h-40 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-16 -left-16 w-40 h-40 bg-emerald-600/20 rounded-full blur-3xl pointer-events-none"></div>
 
             <div class="text-center mb-6 relative">
-                <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-xl shadow-blue-500/20 mb-3">
-                    <i data-lucide="flame" class="w-8 h-8"></i>
+                <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-xl shadow-blue-500/20 mb-3 text-2xl">
+                    <i class="fa-solid fa-fire-flame-curved"></i>
                 </div>
                 <h2 class="text-xl font-bold tracking-tight text-white">BGL City Gas Network</h2>
                 <p class="text-xs text-slate-400 mt-1">Asset Tracking & Preventive Maintenance Portal</p>
@@ -120,7 +126,7 @@
                 <div>
                     <label class="block font-semibold text-slate-300 mb-1">User ID / Username</label>
                     <div class="relative">
-                        <i data-lucide="user" class="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                        <i class="fa-solid fa-user text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
                         <input type="text" id="login-input-username" required placeholder="Enter username" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-slate-200 outline-none focus:border-blue-500 transition">
                     </div>
                 </div>
@@ -128,7 +134,7 @@
                 <div>
                     <label class="block font-semibold text-slate-300 mb-1">Password</label>
                     <div class="relative">
-                        <i data-lucide="lock" class="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                        <i class="fa-solid fa-lock text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
                         <input type="password" id="login-input-password" required placeholder="Enter password" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-slate-200 outline-none focus:border-blue-500 transition">
                     </div>
                 </div>
@@ -136,7 +142,7 @@
                 <div id="login-error-msg" class="hidden text-[11px] text-rose-400 bg-rose-950/40 border border-rose-800/60 p-2 rounded-lg text-center font-medium"></div>
 
                 <button type="submit" class="w-full py-2.5 mt-2 bg-blue-600 hover:bg-blue-500 font-bold text-white rounded-xl shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2">
-                    <i data-lucide="log-in" class="w-4 h-4"></i>
+                    <i class="fa-solid fa-right-to-bracket"></i>
                     <span>Sign In to Network</span>
                 </button>
             </form>
@@ -158,13 +164,13 @@
             
             <!-- Brand / Logo -->
             <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                    <i data-lucide="flame" class="w-5 h-5"></i>
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/20 text-base">
+                    <i class="fa-solid fa-fire-flame-curved"></i>
                 </div>
                 <div>
                     <div class="flex items-center gap-2">
                         <h1 class="font-bold text-sm sm:text-base tracking-tight text-white leading-tight">CGD Asset Portal</h1>
-                        <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">BGL Gas</span>
+                        <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono">BGL Gas</span>
                     </div>
                     <p class="text-[11px] text-slate-400 hidden sm:block">City Gas Distribution Network & Preventive Maintenance System</p>
                 </div>
@@ -175,49 +181,49 @@
                 
                 <!-- GPS Location Toggle -->
                 <button id="gps-btn" onclick="toggleGPS()" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold border flex items-center gap-1.5 transition bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700">
-                    <i data-lucide="crosshair" id="gps-icon" class="w-3.5 h-3.5"></i>
+                    <i class="fa-solid fa-crosshairs text-blue-400" id="gps-icon"></i>
                     <span id="gps-btn-label">My GPS</span>
                 </button>
 
                 <!-- Admin Action: Add Asset -->
                 <button id="admin-add-asset-btn" onclick="openAddAssetModal()" class="hidden px-2.5 sm:px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-semibold text-white shadow-md shadow-blue-600/30 items-center gap-1.5 transition">
-                    <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                    <i class="fa-solid fa-circle-plus"></i>
                     <span>Add Asset</span>
                 </button>
 
                 <!-- Admin Action: Category Frequency & PNG Icons Config -->
                 <button id="admin-category-cfg-btn" onclick="openCategoryConfigModal()" class="hidden px-2.5 sm:px-3 py-1.5 bg-amber-950/80 hover:bg-amber-900 border border-amber-700/50 rounded-lg text-xs font-semibold text-amber-300 items-center gap-1.5 transition">
-                    <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
+                    <i class="fa-solid fa-sliders"></i>
                     <span>Config & Icons</span>
                 </button>
 
                 <!-- Admin Action: Manage Tech Accounts -->
                 <button id="admin-users-btn" onclick="openAdminModal()" class="hidden px-2.5 sm:px-3 py-1.5 bg-purple-950/80 hover:bg-purple-900 border border-purple-700/50 rounded-lg text-xs font-semibold text-purple-300 items-center gap-1.5 transition">
-                    <i data-lucide="users" class="w-3.5 h-3.5"></i>
+                    <i class="fa-solid fa-users"></i>
                     <span>Techs</span>
                 </button>
 
                 <!-- Admin Action: Data Management Tools -->
-                <button id="admin-data-tools-btn" onclick="openDataManagementModal()" title="Data Tools" class="hidden px-2 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-medium text-rose-400 border border-slate-700 items-center gap-1 transition">
-                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                <button id="admin-data-tools-btn" onclick="openDataManagementModal()" title="Data Tools" class="hidden px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-medium text-rose-400 border border-slate-700 items-center gap-1 transition">
+                    <i class="fa-solid fa-trash-can"></i>
                 </button>
 
                 <!-- Import KMZ / CSV -->
                 <button onclick="openImportModal()" class="px-2.5 sm:px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-medium text-slate-300 border border-slate-700 flex items-center gap-1.5 transition">
-                    <i data-lucide="upload" class="w-3.5 h-3.5 text-blue-400"></i>
+                    <i class="fa-solid fa-file-arrow-up text-blue-400"></i>
                     <span class="hidden sm:inline">Import KMZ/CSV</span>
                     <span class="sm:hidden">Import</span>
                 </button>
 
                 <!-- Export CSV -->
                 <button onclick="exportToCSV()" class="px-2.5 sm:px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-medium text-slate-300 border border-slate-700 flex items-center gap-1.5 transition">
-                    <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i>
+                    <i class="fa-solid fa-file-arrow-down text-emerald-400"></i>
                     <span class="hidden sm:inline">Export</span>
                 </button>
 
                 <!-- Progress Audit Log -->
                 <button onclick="openProgressModal()" class="px-2.5 sm:px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-semibold text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 transition">
-                    <i data-lucide="activity" class="w-3.5 h-3.5"></i>
+                    <i class="fa-solid fa-chart-line"></i>
                     <span>Progress</span>
                 </button>
 
@@ -231,8 +237,8 @@
                         </div>
                     </div>
 
-                    <button onclick="logoutUser()" title="Logout" class="p-1.5 bg-rose-950/70 hover:bg-rose-900 border border-rose-800/60 rounded-lg text-rose-300 transition">
-                        <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                    <button onclick="logoutUser()" title="Logout" class="p-2 bg-rose-950/70 hover:bg-rose-900 border border-rose-800/60 rounded-lg text-rose-300 transition">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
                     </button>
                 </div>
 
@@ -272,8 +278,8 @@
                     <p class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Total Assets</p>
                     <h3 class="text-xl sm:text-2xl font-bold text-white mt-0.5" id="metric-total">0</h3>
                 </div>
-                <div class="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20">
-                    <i data-lucide="layers" class="w-5 h-5"></i>
+                <div class="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20 text-lg">
+                    <i class="fa-solid fa-layer-group"></i>
                 </div>
             </div>
 
@@ -282,8 +288,8 @@
                     <p class="text-[11px] font-medium text-emerald-400 uppercase tracking-wider">Healthy / Done</p>
                     <h3 class="text-xl sm:text-2xl font-bold text-emerald-400 mt-0.5" id="metric-healthy">0</h3>
                 </div>
-                <div class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
-                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                <div class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20 text-lg">
+                    <i class="fa-solid fa-circle-check"></i>
                 </div>
             </div>
 
@@ -292,8 +298,8 @@
                     <p class="text-[11px] font-medium text-amber-400 uppercase tracking-wider">Due Soon (15d)</p>
                     <h3 class="text-xl sm:text-2xl font-bold text-amber-400 mt-0.5" id="metric-due-soon">0</h3>
                 </div>
-                <div class="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20">
-                    <i data-lucide="clock" class="w-5 h-5"></i>
+                <div class="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20 text-lg">
+                    <i class="fa-solid fa-clock"></i>
                 </div>
             </div>
 
@@ -302,8 +308,8 @@
                     <p class="text-[11px] font-medium text-rose-400 uppercase tracking-wider">Overdue</p>
                     <h3 class="text-xl sm:text-2xl font-bold text-rose-400 mt-0.5" id="metric-overdue">0</h3>
                 </div>
-                <div class="w-10 h-10 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center border border-rose-500/20">
-                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                <div class="w-10 h-10 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center border border-rose-500/20 text-lg">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
             </div>
         </div>
@@ -312,7 +318,7 @@
         <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl relative">
             <div class="px-4 py-2.5 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between flex-wrap gap-2 text-xs">
                 <div class="flex items-center gap-2">
-                    <i data-lucide="map-pin" class="w-4 h-4 text-blue-400"></i>
+                    <i class="fa-solid fa-location-dot text-blue-400"></i>
                     <span class="font-bold text-slate-200">GIS Field Map</span>
                     <span class="text-slate-400 text-[11px]">(Markers show your custom PNG icons or category badges)</span>
                 </div>
@@ -342,7 +348,7 @@
 
             <!-- Search Field -->
             <div class="relative min-w-[220px]">
-                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                <i class="fa-solid fa-magnifying-glass text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
                 <input type="text" id="search-input" oninput="applyFiltersAndRender()" placeholder="Search ID, Location, Team..." class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500">
             </div>
 
@@ -352,7 +358,7 @@
         <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
             <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between text-xs">
                 <div class="font-bold text-slate-200 flex items-center gap-2">
-                    <i data-lucide="database" class="w-4 h-4 text-blue-400"></i>
+                    <i class="fa-solid fa-database text-blue-400"></i>
                     <span>Network Asset Registry</span>
                     <span class="text-slate-400 font-normal">(<span id="visible-count">0</span> items shown)</span>
                 </div>
@@ -397,12 +403,12 @@
     <div id="maint-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4">
         <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl p-5 shadow-2xl relative max-h-[92vh] overflow-y-auto">
             <button onclick="closeModal('maint-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
-                <i data-lucide="x" class="w-5 h-5"></i>
+                <i class="fa-solid fa-xmark text-lg"></i>
             </button>
             
             <div class="flex items-center gap-2.5 mb-4">
-                <div class="w-9 h-9 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center border border-blue-500/30">
-                    <i data-lucide="clipboard-check" class="w-5 h-5"></i>
+                <div class="w-9 h-9 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center border border-blue-500/30 text-base">
+                    <i class="fa-solid fa-clipboard-check"></i>
                 </div>
                 <div>
                     <h3 class="text-base font-bold text-white flex items-center gap-2">
@@ -441,7 +447,7 @@
                 <!-- Photos Section (Before & After) -->
                 <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
                     <p class="font-semibold text-slate-200 flex items-center gap-1.5">
-                        <i data-lucide="camera" class="w-4 h-4 text-blue-400"></i> Field Photos (Before & After)
+                        <i class="fa-solid fa-camera text-blue-400"></i> Field Photos (Before & After)
                     </p>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -478,7 +484,7 @@
                 <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
                     <button type="button" onclick="closeModal('maint-modal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 font-semibold">Cancel</button>
                     <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-600/30 flex items-center gap-1.5">
-                        <i data-lucide="check" class="w-4 h-4"></i> Complete & Close
+                        <i class="fa-solid fa-check"></i> Complete & Close
                     </button>
                 </div>
             </form>
@@ -489,12 +495,12 @@
     <div id="asset-form-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4">
         <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl p-5 shadow-2xl relative max-h-[92vh] overflow-y-auto">
             <button onclick="closeModal('asset-form-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
-                <i data-lucide="x" class="w-5 h-5"></i>
+                <i class="fa-solid fa-xmark text-lg"></i>
             </button>
             
             <div class="flex items-center gap-2.5 mb-4">
-                <div class="w-9 h-9 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center border border-blue-500/30">
-                    <i data-lucide="cpu" id="asset-form-icon" class="w-5 h-5"></i>
+                <div class="w-9 h-9 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center border border-blue-500/30 text-base">
+                    <i class="fa-solid fa-microchip" id="asset-form-icon"></i>
                 </div>
                 <div>
                     <h3 id="asset-form-title" class="text-base font-bold text-white">Add New Gas Asset</h3>
@@ -546,7 +552,7 @@
                     <div class="flex items-center justify-between">
                         <label class="block font-semibold text-slate-300">Geo Coordinates (GPS)</label>
                         <button type="button" onclick="fillAssetGPSWithUserPos()" class="text-[11px] text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1">
-                            <i data-lucide="crosshair" class="w-3.5 h-3.5"></i> Use My Current Location
+                            <i class="fa-solid fa-crosshairs"></i> Use My Current Location
                         </button>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
@@ -573,7 +579,7 @@
                 <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
                     <button type="button" onclick="closeModal('asset-form-modal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 font-semibold">Cancel</button>
                     <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold shadow-lg shadow-blue-600/30 flex items-center gap-1.5">
-                        <i data-lucide="check" class="w-4 h-4"></i> Save Asset
+                        <i class="fa-solid fa-check"></i> Save Asset
                     </button>
                 </div>
             </form>
@@ -584,12 +590,12 @@
     <div id="category-config-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4">
         <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl p-5 shadow-2xl relative max-h-[92vh] overflow-y-auto">
             <button onclick="closeModal('category-config-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
-                <i data-lucide="x" class="w-5 h-5"></i>
+                <i class="fa-solid fa-xmark text-lg"></i>
             </button>
             
             <div class="flex items-center gap-2.5 mb-4">
-                <div class="w-9 h-9 rounded-xl bg-amber-600/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
-                    <i data-lucide="sliders" class="w-5 h-5"></i>
+                <div class="w-9 h-9 rounded-xl bg-amber-600/20 text-amber-400 flex items-center justify-center border border-amber-500/30 text-base">
+                    <i class="fa-solid fa-sliders"></i>
                 </div>
                 <div>
                     <h3 class="text-base font-bold text-white">Category Frequency & Custom PNG Map Icons</h3>
@@ -609,18 +615,18 @@
                 <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
                     <button type="button" onclick="closeModal('category-config-modal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 font-semibold">Cancel</button>
                     <button type="button" onclick="saveCategoryConfigs()" class="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-bold shadow-lg shadow-amber-600/30 flex items-center gap-1.5">
-                        <i data-lucide="save" class="w-4 h-4"></i> Save Settings & Refresh Map
+                        <i class="fa-solid fa-floppy-disk"></i> Save Settings & Refresh Map
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal 4: Confirmation Dialog (Custom UI - No alerts) -->
+    <!-- Modal 4: Confirmation Dialog (Custom UI - No native alerts) -->
     <div id="confirm-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-2xl p-5 shadow-2xl relative text-center">
-            <div class="w-12 h-12 mx-auto rounded-full bg-rose-950/80 border border-rose-600/40 flex items-center justify-center text-rose-400 mb-3">
-                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+            <div class="w-12 h-12 mx-auto rounded-full bg-rose-950/80 border border-rose-600/40 flex items-center justify-center text-rose-400 mb-3 text-xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
             <h4 id="confirm-title" class="text-sm font-bold text-white mb-1.5">Are you sure?</h4>
             <p id="confirm-message" class="text-xs text-slate-300 mb-5 leading-relaxed">Action message here.</p>
@@ -636,12 +642,12 @@
     <div id="data-manage-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-5 shadow-2xl relative">
             <button onclick="closeModal('data-manage-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
-                <i data-lucide="x" class="w-5 h-5"></i>
+                <i class="fa-solid fa-xmark text-lg"></i>
             </button>
             
             <div class="flex items-center gap-2.5 mb-4">
-                <div class="w-9 h-9 rounded-xl bg-rose-600/20 text-rose-400 flex items-center justify-center border border-rose-500/30">
-                    <i data-lucide="database" class="w-5 h-5"></i>
+                <div class="w-9 h-9 rounded-xl bg-rose-600/20 text-rose-400 flex items-center justify-center border border-rose-500/30 text-base">
+                    <i class="fa-solid fa-database"></i>
                 </div>
                 <div>
                     <h3 class="text-base font-bold text-white">Data Management Tools</h3>
@@ -690,11 +696,11 @@
     <div id="admin-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <button onclick="closeModal('admin-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
-                <i data-lucide="x" class="w-5 h-5"></i>
+                <i class="fa-solid fa-xmark text-lg"></i>
             </button>
             <div class="flex items-center gap-2 mb-4">
-                <div class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center border border-purple-500/30">
-                    <i data-lucide="users" class="w-4 h-4"></i>
+                <div class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center border border-purple-500/30 text-base">
+                    <i class="fa-solid fa-users"></i>
                 </div>
                 <div>
                     <h3 class="text-base font-bold text-white">Technician Team Management</h3>
@@ -732,11 +738,11 @@
     <div id="import-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-5 shadow-2xl relative">
             <button onclick="closeModal('import-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
-                <i data-lucide="x" class="w-5 h-5"></i>
+                <i class="fa-solid fa-xmark text-lg"></i>
             </button>
             <div class="flex items-center gap-2.5 mb-3">
-                <div class="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center border border-blue-500/30">
-                    <i data-lucide="file-up" class="w-5 h-5"></i>
+                <div class="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center border border-blue-500/30 text-base">
+                    <i class="fa-solid fa-file-arrow-up"></i>
                 </div>
                 <div>
                     <h3 class="text-base font-bold text-white">Import KMZ or CSV</h3>
@@ -747,11 +753,12 @@
             <div class="space-y-4 text-xs">
                 <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 space-y-1 text-[11px]">
                     <p>• <strong>CSV Format:</strong> Columns can be: <code>id, type, team, location, lat, lng, lastDate, freqDays, tech</code>.</p>
+                    <p>• <strong>Date Auto-Correction:</strong> Supports <code>dd/mm/yyyy</code>, <code>dd-mm-yyyy</code>, <code>yyyy-mm-dd</code> and empty values without crashing.</p>
                     <p>• <strong>Category Detection:</strong> If 'type' is missing, it will auto-detect from ID (SR, DRS, MRS, Diaphragm meter, MDPE Valve, SV station) without defaulting to DRS!</p>
                 </div>
 
                 <div class="border-2 border-dashed border-slate-700 hover:border-blue-500 rounded-xl p-5 text-center cursor-pointer transition bg-slate-950" onclick="document.getElementById('file-upload-input').click()">
-                    <i data-lucide="cloud-upload" class="w-8 h-8 text-blue-400 mx-auto mb-2"></i>
+                    <i class="fa-solid fa-cloud-arrow-up text-3xl text-blue-400 mx-auto mb-2 block"></i>
                     <p class="font-semibold text-slate-200">Click to choose KMZ, KML or CSV file</p>
                     <p class="text-[10px] text-slate-500 mt-1">Supports Google Earth .kmz / .kml and .csv</p>
                     <input type="file" id="file-upload-input" accept=".kmz,.kml,.csv" onchange="handleFileUpload(event)" class="hidden">
@@ -766,11 +773,11 @@
     <div id="progress-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-5">
         <div class="bg-slate-900 border border-slate-800 w-full max-w-3xl rounded-2xl p-5 shadow-2xl relative max-h-[92vh] overflow-y-auto">
             <button onclick="closeModal('progress-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
-                <i data-lucide="x" class="w-5 h-5"></i>
+                <i class="fa-solid fa-xmark text-lg"></i>
             </button>
             <div class="flex items-center gap-2.5 mb-4">
-                <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
-                    <i data-lucide="activity" class="w-5 h-5"></i>
+                <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30 text-base">
+                    <i class="fa-solid fa-chart-line"></i>
                 </div>
                 <div>
                     <h3 class="text-base font-bold text-white">Maintenance Sign-off Audit & Progress Log</h3>
@@ -786,7 +793,7 @@
 
     <!-- Toast Notification Banner -->
     <div id="toast" class="fixed bottom-5 right-5 z-[80] bg-blue-600 text-white px-4 py-2.5 rounded-xl shadow-2xl font-medium text-xs hidden flex items-center gap-2 border border-blue-400/40 transition transform duration-300">
-        <i data-lucide="info" class="w-4 h-4"></i>
+        <i class="fa-solid fa-circle-info"></i>
         <span id="toast-msg">Notification</span>
     </div>
 
@@ -836,34 +843,86 @@
         let markersLayer = null;
         let userLocationMarker = null;
 
+        // ==========================================
+        // DATE SAFETY UTILITY (Fixes 'Invalid time value')
+        // ==========================================
+        function safeParseDate(val) {
+            if (!val || val === '' || val === 'N/A' || val === 'null' || val === 'undefined') {
+                return new Date().toISOString().split('T')[0];
+            }
+
+            const str = String(val).trim();
+
+            // Match YYYY-MM-DD
+            if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+                return str;
+            }
+
+            // Match DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY
+            const dmyMatch = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
+            if (dmyMatch) {
+                const day = dmyMatch[1].padStart(2, '0');
+                const month = dmyMatch[2].padStart(2, '0');
+                const year = dmyMatch[3];
+                return `${year}-${month}-${day}`;
+            }
+
+            // Match YYYY/MM/DD
+            const ymdMatch = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+            if (ymdMatch) {
+                const year = ymdMatch[1];
+                const month = ymdMatch[2].padStart(2, '0');
+                const day = ymdMatch[3].padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+
+            // General fallback parse
+            try {
+                const d = new Date(str);
+                if (!isNaN(d.getTime())) {
+                    return d.toISOString().split('T')[0];
+                }
+            } catch (e) {
+                // Return default on error
+            }
+
+            return new Date().toISOString().split('T')[0];
+        }
+
         window.onload = function() {
             loadStorage();
             initMap();
             checkAuthGate();
-            lucide.createIcons();
         };
 
         // Load storage
         function loadStorage() {
-            // Assets
-            const storedAssets = localStorage.getItem('cgd_assets_data');
-            assets = storedAssets ? JSON.parse(storedAssets) : [...initialMockAssets];
+            try {
+                // Assets
+                const storedAssets = localStorage.getItem('cgd_assets_data');
+                assets = storedAssets ? JSON.parse(storedAssets) : [...initialMockAssets];
 
-            // Users
-            const storedUsers = localStorage.getItem('cgd_users_data');
-            users = storedUsers ? JSON.parse(storedUsers) : [...defaultUsers];
+                // Users
+                const storedUsers = localStorage.getItem('cgd_users_data');
+                users = storedUsers ? JSON.parse(storedUsers) : [...defaultUsers];
 
-            // Maintenance History
-            const storedHist = localStorage.getItem('cgd_maint_history');
-            maintenanceHistory = storedHist ? JSON.parse(storedHist) : [];
+                // Maintenance History
+                const storedHist = localStorage.getItem('cgd_maint_history');
+                maintenanceHistory = storedHist ? JSON.parse(storedHist) : [];
 
-            // Category Configurations (Frequency & PNG Icons)
-            const storedConfigs = localStorage.getItem('cgd_category_configs');
-            categoryConfigs = storedConfigs ? JSON.parse(storedConfigs) : JSON.parse(JSON.stringify(initialCategoryConfigs));
+                // Category Configurations (Frequency & PNG Icons)
+                const storedConfigs = localStorage.getItem('cgd_category_configs');
+                categoryConfigs = storedConfigs ? JSON.parse(storedConfigs) : JSON.parse(JSON.stringify(initialCategoryConfigs));
 
-            // Current logged-in user
-            const storedUser = localStorage.getItem('cgd_current_user');
-            currentUser = storedUser ? JSON.parse(storedUser) : null;
+                // Current logged-in user
+                const storedUser = localStorage.getItem('cgd_current_user');
+                currentUser = storedUser ? JSON.parse(storedUser) : null;
+            } catch (e) {
+                console.error("Storage loading error:", e);
+                assets = [...initialMockAssets];
+                users = [...defaultUsers];
+                categoryConfigs = JSON.parse(JSON.stringify(initialCategoryConfigs));
+            }
         }
 
         function saveAssetsToStorage() {
@@ -1019,13 +1078,16 @@
         function getMaintenanceStatus(asset) {
             const defaultCycle = (categoryConfigs[asset.type] && categoryConfigs[asset.type].freqDays) || 180;
             const freq = parseInt(asset.freqDays, 10) || defaultCycle;
-            const lastDate = asset.lastDate ? new Date(asset.lastDate) : new Date(Date.now() - (freq * 86400000));
+            
+            // Safe Date Parsing
+            const safeLastDateStr = safeParseDate(asset.lastDate);
+            const lastDate = new Date(safeLastDateStr);
             
             const nextDueDate = new Date(lastDate);
             nextDueDate.setDate(nextDueDate.getDate() + freq);
 
             const now = new Date();
-            const diffTime = nextDueDate - now;
+            const diffTime = nextDueDate.getTime() - now.getTime();
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
             let status = 'HEALTHY';
@@ -1039,11 +1101,18 @@
                 color = '#f59e0b'; // Amber
             }
 
+            let nextDueStr = '';
+            try {
+                nextDueStr = nextDueDate.toISOString().split('T')[0];
+            } catch (err) {
+                nextDueStr = 'N/A';
+            }
+
             return {
                 status,
                 color,
                 daysRemaining: diffDays,
-                nextDueDateStr: nextDueDate.toISOString().split('T')[0]
+                nextDueDateStr: nextDueStr
             };
         }
 
@@ -1128,12 +1197,11 @@
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="9" class="py-8 text-center text-slate-500 font-medium">
-                            <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+                            <i class="fa-solid fa-inbox text-3xl mx-auto mb-2 opacity-50 block"></i>
                             No assets match the selected filters or team zone.
                         </td>
                     </tr>
                 `;
-                lucide.createIcons();
                 return;
             }
 
@@ -1168,10 +1236,10 @@
                 // Admin buttons (Edit & Delete)
                 const adminActions = isAdmin ? `
                     <button onclick="openEditAssetModal('${asset.id}')" title="Edit Asset" class="p-1.5 bg-amber-600/20 text-amber-300 hover:bg-amber-600 hover:text-white rounded-lg transition border border-amber-500/30">
-                        <i data-lucide="edit" class="w-3.5 h-3.5"></i>
+                        <i class="fa-solid fa-pen-to-square"></i>
                     </button>
                     <button onclick="promptDeleteSingleAsset('${asset.id}')" title="Delete Asset" class="p-1.5 bg-rose-600/20 text-rose-300 hover:bg-rose-600 hover:text-white rounded-lg transition border border-rose-500/30">
-                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        <i class="fa-solid fa-trash-can"></i>
                     </button>
                 ` : '';
 
@@ -1197,10 +1265,10 @@
                     <td class="py-3 px-3.5 text-center">
                         <div class="flex items-center justify-center gap-1.5">
                             <a href="https://www.google.com/maps/dir/?api=1&destination=${asset.lat},${asset.lng}" target="_blank" title="Navigate on Google Maps" class="p-1.5 bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white rounded-lg transition border border-emerald-500/30">
-                                <i data-lucide="navigation" class="w-3.5 h-3.5"></i>
+                                <i class="fa-solid fa-location-arrow"></i>
                             </a>
                             <button onclick="openMaintenanceModal('${asset.id}')" title="Complete Maintenance" class="px-2.5 py-1 bg-blue-600/20 text-blue-300 hover:bg-blue-600 hover:text-white rounded-lg text-[11px] font-semibold transition border border-blue-500/30 flex items-center gap-1">
-                                <i data-lucide="check-circle" class="w-3 h-3"></i> Close
+                                <i class="fa-solid fa-check"></i> Close
                             </button>
                             ${adminActions}
                         </div>
@@ -1208,8 +1276,6 @@
                 `;
                 tbody.appendChild(tr);
             });
-
-            lucide.createIcons();
         }
 
         // Render Map Markers with Custom PNG Images
@@ -1229,13 +1295,13 @@
                     let markerInner = '';
                     if (cfg.iconUrl) {
                         markerInner = `
-                            <div class="map-custom-pin" style="background-color: #0f172a; border: 2px solid ${info.color}; border-radius: 50%; width: 34px; height: 34px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); padding: 3px;">
+                            <div class="map-custom-pin" style="background-color: #0f172a; border: 2.5px solid ${info.color}; border-radius: 50%; width: 34px; height: 34px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); padding: 3px;">
                                 <img src="${cfg.iconUrl}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;" alt="${asset.type}">
                             </div>
                         `;
                     } else {
                         markerInner = `
-                            <div class="map-custom-pin font-bold text-xs" style="background-color: #0f172a; border: 2px solid ${info.color}; border-radius: 50%; width: 28px; height: 28px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;">
+                            <div class="map-custom-pin font-bold text-xs" style="background-color: #0f172a; border: 2.5px solid ${info.color}; border-radius: 50%; width: 28px; height: 28px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;">
                                 <span>${cfg.defaultEmoji || '📍'}</span>
                             </div>
                         `;
@@ -1328,8 +1394,8 @@
                     const userIcon = L.divIcon({
                         className: 'pulse-container',
                         html: `<span class="pulse-marker inline-block"></span>`,
-                        iconSize: [20, 20],
-                        iconAnchor: [10, 10]
+                        iconSize: [22, 22],
+                        iconAnchor: [11, 11]
                     });
 
                     userLocationMarker = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon }).addTo(map);
@@ -1429,7 +1495,6 @@
             });
 
             document.getElementById('category-config-modal').classList.remove('hidden');
-            lucide.createIcons();
         }
 
         // Upload custom PNG icon for category
@@ -1518,7 +1583,6 @@
             document.getElementById('asset-input-tech').value = '';
 
             document.getElementById('asset-form-modal').classList.remove('hidden');
-            lucide.createIcons();
         }
 
         function openEditAssetModal(assetId) {
@@ -1545,11 +1609,10 @@
             document.getElementById('asset-input-location').value = asset.location || '';
             document.getElementById('asset-input-lat').value = asset.lat !== undefined ? asset.lat : '';
             document.getElementById('asset-input-lng').value = asset.lng !== undefined ? asset.lng : '';
-            document.getElementById('asset-input-lastdate').value = asset.lastDate || '';
+            document.getElementById('asset-input-lastdate').value = safeParseDate(asset.lastDate);
             document.getElementById('asset-input-tech').value = asset.tech || '';
 
             document.getElementById('asset-form-modal').classList.remove('hidden');
-            lucide.createIcons();
         }
 
         function fillAssetGPSWithUserPos() {
@@ -1578,7 +1641,7 @@
             const location = document.getElementById('asset-input-location').value.trim();
             const lat = parseFloat(document.getElementById('asset-input-lat').value);
             const lng = parseFloat(document.getElementById('asset-input-lng').value);
-            const lastDate = document.getElementById('asset-input-lastdate').value;
+            const lastDate = safeParseDate(document.getElementById('asset-input-lastdate').value);
             const tech = document.getElementById('asset-input-tech').value.trim();
 
             if (!assetId || isNaN(lat) || isNaN(lng)) {
@@ -1600,7 +1663,7 @@
                     lat: lat,
                     lng: lng,
                     freqDays: freqDays,
-                    lastDate: lastDate || new Date().toISOString().split('T')[0],
+                    lastDate: lastDate,
                     tech: tech || 'Unassigned',
                     observations: '',
                     remarks: ''
@@ -1739,7 +1802,6 @@
             document.getElementById('after-photo-input').value = '';
 
             document.getElementById('maint-modal').classList.remove('hidden');
-            lucide.createIcons();
         }
 
         function previewPhoto(input, previewElementId) {
@@ -1788,7 +1850,7 @@
             const assetId = document.getElementById('maint-asset-id').value;
             const techName = document.getElementById('maint-tech-name').value;
             const teamName = document.getElementById('maint-team-name').value;
-            const finishDate = document.getElementById('maint-date').value;
+            const finishDate = safeParseDate(document.getElementById('maint-date').value);
             const freqDays = parseInt(document.getElementById('maint-freq').value, 10) || 180;
             const obs = document.getElementById('maint-observations').value.trim();
             const remarks = document.getElementById('maint-remarks').value.trim();
@@ -1832,12 +1894,11 @@
             if (maintenanceHistory.length === 0) {
                 container.innerHTML = `
                     <div class="p-8 text-center text-slate-500">
-                        <i data-lucide="clipboard" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+                        <i class="fa-solid fa-clipboard text-3xl mx-auto mb-2 opacity-50 block"></i>
                         No maintenance work completed yet. Sign off an asset to record history here.
                     </div>
                 `;
                 document.getElementById('progress-modal').classList.remove('hidden');
-                lucide.createIcons();
                 return;
             }
 
@@ -1884,11 +1945,10 @@
             });
 
             document.getElementById('progress-modal').classList.remove('hidden');
-            lucide.createIcons();
         }
 
         // ==========================================
-        // 10. ACCURATE CSV & KMZ IMPORT (NO AUTO-DRS BUG)
+        // 10. ACCURATE CSV & KMZ IMPORT (NO CRASHES)
         // ==========================================
         function detectAssetType(id, rawType) {
             if (rawType && rawType.trim() !== '') {
@@ -1910,7 +1970,7 @@
             if (upperId.startsWith('DM') || upperId.includes('METER') || upperId.includes('DIAPHRAGM')) return 'Diaphragm meter';
             if (upperId.startsWith('DRS') || upperId.includes('-DRS-')) return 'DRS';
 
-            return 'DRS'; // Fallback only if no match
+            return 'DRS'; // Fallback
         }
 
         function detectAssetTeam(id, rawTeam) {
@@ -1999,7 +2059,6 @@
                 console.error(err);
                 showImportError(err.message);
             } finally {
-                // Reset file input so re-selecting the same file triggers onchange
                 event.target.value = '';
             }
         }
@@ -2099,7 +2158,7 @@
             const idxLat = headers.findIndex(h => h === 'lat' || h === 'latitude');
             const idxLng = headers.findIndex(h => h === 'lng' || h === 'lon' || h === 'longitude');
             const idxFreq = headers.findIndex(h => h === 'freqdays' || h === 'frequency' || h === 'freq');
-            const idxLast = headers.findIndex(h => h === 'lastdate' || h === 'last maintenance' || h === 'last_date');
+            const idxLast = headers.findIndex(h => h === 'lastdate' || h === 'last maintenance' || h === 'last_date' || h === 'maintenance date');
             const idxTech = headers.findIndex(h => h === 'tech' || h === 'technician');
             const idxObs = headers.findIndex(h => h === 'observations' || h === 'checklist');
             const idxRem = headers.findIndex(h => h === 'remarks' || h === 'notes');
@@ -2120,6 +2179,10 @@
                         const defFreq = (categoryConfigs[type] && categoryConfigs[type].freqDays) || 180;
                         const freqDays = parseInt(idxFreq >= 0 ? cols[idxFreq] : defFreq, 10) || defFreq;
 
+                        // Safe date parsing to completely prevent 'Invalid time value'
+                        const rawDateVal = (idxLast >= 0 && cols[idxLast]) ? cols[idxLast] : '';
+                        const safeDate = safeParseDate(rawDateVal);
+
                         const newAsset = {
                             id: rawId.toUpperCase(),
                             type: type,
@@ -2128,7 +2191,7 @@
                             lat: lat,
                             lng: lng,
                             freqDays: freqDays,
-                            lastDate: (idxLast >= 0 && cols[idxLast]) ? cols[idxLast] : new Date().toISOString().split('T')[0],
+                            lastDate: safeDate,
                             tech: (idxTech >= 0 && cols[idxTech]) ? cols[idxTech] : 'Unassigned',
                             observations: (idxObs >= 0 && cols[idxObs]) ? cols[idxObs] : '',
                             remarks: (idxRem >= 0 && cols[idxRem]) ? cols[idxRem] : ''
@@ -2202,7 +2265,6 @@
         function openAdminModal() {
             renderTechList();
             document.getElementById('admin-modal').classList.remove('hidden');
-            lucide.createIcons();
         }
 
         function renderTechList() {
@@ -2224,7 +2286,6 @@
                 `;
                 adminList.appendChild(row);
             });
-            lucide.createIcons();
         }
 
         function handleCreateUser(e) {
@@ -2262,13 +2323,11 @@
 
         function openDataManagementModal() {
             document.getElementById('data-manage-modal').classList.remove('hidden');
-            lucide.createIcons();
         }
 
         function openImportModal() {
             document.getElementById('import-status').classList.add('hidden');
             document.getElementById('import-modal').classList.remove('hidden');
-            lucide.createIcons();
         }
 
         function showConfirmDialog(title, message, confirmBtnLabel, onConfirm) {
@@ -2283,7 +2342,6 @@
             };
 
             document.getElementById('confirm-modal').classList.remove('hidden');
-            lucide.createIcons();
         }
 
         function closeModal(modalId) {
