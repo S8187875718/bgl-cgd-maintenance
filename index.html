@@ -92,7 +92,7 @@
           <label class="block font-semibold text-slate-300 mb-1">User ID</label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-user"></i></span>
-            <input type="text" id="loginUsername" required placeholder="Enter User ID" class="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-teal-500 transition font-mono">
+            <input type="text" id="loginUsername" required placeholder="Enter User ID (e.g. hmt_tech)" autocomplete="username" class="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-teal-500 transition font-mono">
           </div>
         </div>
 
@@ -100,7 +100,7 @@
           <label class="block font-semibold text-slate-300 mb-1">Password</label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-lock"></i></span>
-            <input type="password" id="loginPassword" required placeholder="Enter Password" class="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-teal-500 transition">
+            <input type="password" id="loginPassword" required placeholder="Enter Password" autocomplete="current-password" class="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-teal-500 transition">
           </div>
         </div>
 
@@ -162,8 +162,8 @@
             <button onclick="openModal('addAssetModal')" class="px-2.5 py-1.5 rounded-lg font-medium bg-teal-600 hover:bg-teal-500 text-white flex items-center gap-1 shadow">
               <i class="fa-solid fa-plus"></i> <span class="hidden md:inline">Asset</span>
             </button>
-            <button onclick="openModal('teamManageModal')" class="px-2.5 py-1.5 rounded-lg font-medium bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 flex items-center gap-1">
-              <i class="fa-solid fa-users-gear"></i> <span class="hidden md:inline">Teams</span>
+            <button onclick="openTeamManageModal()" class="px-2.5 py-1.5 rounded-lg font-medium bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/60 flex items-center gap-1">
+              <i class="fa-solid fa-users-gear"></i> <span class="hidden md:inline">Manage Teams</span>
             </button>
             <!-- Custom Map Icons & Batch Freq -->
             <button onclick="openCategoryFreqModal()" class="px-2.5 py-1.5 rounded-lg font-medium bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-700/60 flex items-center gap-1">
@@ -318,9 +318,7 @@
                 <th class="p-2.5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody id="assetsTableBody" class="divide-y divide-slate-800/60 text-slate-300">
-              <!-- Dynamically populated -->
-            </tbody>
+            <tbody id="assetsTableBody" class="divide-y divide-slate-800/60 text-slate-300"></tbody>
           </table>
         </div>
       </div>
@@ -344,6 +342,84 @@
   </div>
 
   <!-- ==================== 3. MODALS ==================== -->
+
+  <!-- Manage Teams & Technicians Modal (FIXED & DEBUG ROSTER ADDED) -->
+  <div id="teamManageModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
+    <div class="glass-card w-full max-w-2xl p-5 rounded-2xl max-h-[92vh] overflow-y-auto border border-slate-700 text-xs">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3">
+        <div>
+          <h3 class="text-sm font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-users-gear text-indigo-400"></i> Manage Teams & Technician Logins</h3>
+          <p class="text-slate-400 text-[11px]">Accounts are saved permanently in <span class="text-teal-400 font-mono">localStorage(bgl_team_users_v3)</span></p>
+        </div>
+        <button onclick="closeModal('teamManageModal')" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- Add New Team Section -->
+      <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 mb-3 space-y-2">
+        <h4 class="font-bold text-white">Create New Operational Team</h4>
+        <div class="flex gap-2">
+          <input type="text" id="newTeamInput" placeholder="e.g. MEDCHAL, SUCHITRA" class="flex-1 p-2 bg-slate-950 border border-slate-700 rounded text-white uppercase font-mono">
+          <button onclick="addNewTeam()" class="px-3 py-2 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded whitespace-nowrap">
+            <i class="fa-solid fa-plus mr-1"></i> Add Team
+          </button>
+        </div>
+        <div id="teamsBadgeList" class="flex flex-wrap gap-1.5 pt-1"></div>
+      </div>
+
+      <!-- Add New Technician Form -->
+      <form id="addMemberForm" onsubmit="saveNewTeamMember(event)" class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800 space-y-2.5 mb-3">
+        <div class="flex items-center justify-between">
+          <h4 class="font-bold text-white text-[13px]">Create Technician Login</h4>
+          <span class="text-[10px] text-teal-400 font-mono"><i class="fa-solid fa-shield-halved mr-1"></i> Immediate Auth Active</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-slate-400 mb-1 text-[11px]">User ID (Username) *</label>
+            <input type="text" id="newUserId" required placeholder="e.g. hmt_ravi" class="w-full p-2 bg-slate-950 border border-slate-700 rounded text-white font-mono text-xs">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1 text-[11px]">Password *</label>
+            <input type="text" id="newUserPass" required placeholder="e.g. 1234" class="w-full p-2 bg-slate-950 border border-slate-700 rounded text-white text-xs">
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-slate-400 mb-1 text-[11px]">Technician Full Name *</label>
+            <input type="text" id="newUserName" required placeholder="e.g. Ravi Kumar" class="w-full p-2 bg-slate-950 border border-slate-700 rounded text-white text-xs">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1 text-[11px]">Assign Team / Zone *</label>
+            <select id="newUserTeamSelect" required class="w-full p-2 bg-slate-950 border border-slate-700 rounded text-white text-xs"></select>
+          </div>
+        </div>
+        <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded shadow transition flex items-center justify-center gap-1.5 text-xs">
+          <i class="fa-solid fa-user-plus"></i> Save & Activate Technician Login
+        </button>
+      </form>
+
+      <!-- Active Users Roster & Visual Password Debug -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <h4 class="font-bold text-slate-300">Registered Accounts & Credentials Debug</h4>
+          <span class="text-[10px] text-slate-400">Total: <span id="teamAccountCount" class="font-mono text-teal-400">0</span></span>
+        </div>
+        <div class="overflow-x-auto border border-slate-800 rounded-lg">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-900 text-slate-400 border-b border-slate-800 text-[10px] uppercase font-mono">
+              <tr>
+                <th class="p-2">User ID</th>
+                <th class="p-2">Password</th>
+                <th class="p-2">Name</th>
+                <th class="p-2">Team</th>
+                <th class="p-2 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="teamMembersTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Bulk Assign Modal -->
   <div id="bulkAssignModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
@@ -458,63 +534,6 @@
       </div>
 
       <div id="historyTimelineContainer" class="space-y-3"></div>
-    </div>
-  </div>
-
-  <!-- Manage Teams & Technicians Modal -->
-  <div id="teamManageModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
-    <div class="glass-card w-full max-w-xl p-5 rounded-2xl max-h-[92vh] overflow-y-auto border border-slate-700 text-xs">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3">
-        <div>
-          <h3 class="text-sm font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-users-gear text-indigo-400"></i> Manage Teams & Logins</h3>
-          <p class="text-slate-400">Create operational teams and field technician accounts</p>
-        </div>
-        <button onclick="closeModal('teamManageModal')" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-
-      <!-- Add New Team -->
-      <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 mb-3 space-y-2">
-        <h4 class="font-bold text-white">Create New Operational Team</h4>
-        <div class="flex gap-2">
-          <input type="text" id="newTeamInput" placeholder="e.g. MEDCHAL, SUCHITRA" class="flex-1 p-2 bg-slate-950 border border-slate-700 rounded text-white uppercase font-mono">
-          <button onclick="addNewTeam()" class="px-3 py-2 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded whitespace-nowrap">
-            <i class="fa-solid fa-plus mr-1"></i> Add Team
-          </button>
-        </div>
-        <div id="teamsBadgeList" class="flex flex-wrap gap-1.5 pt-1"></div>
-      </div>
-
-      <!-- Add New Technician -->
-      <form id="addMemberForm" onsubmit="saveNewTeamMember(event)" class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-2.5 mb-3">
-        <h4 class="font-bold text-white">Create Technician Login</h4>
-        <div class="grid grid-cols-2 gap-2">
-          <input type="text" id="newUserId" required placeholder="User ID (e.g. ravi_hmt)" class="p-2 bg-slate-950 border border-slate-700 rounded text-white font-mono">
-          <input type="text" id="newUserPass" required placeholder="Password" class="p-2 bg-slate-950 border border-slate-700 rounded text-white">
-        </div>
-        <div class="grid grid-cols-2 gap-2">
-          <input type="text" id="newUserName" required placeholder="Full Name" class="p-2 bg-slate-950 border border-slate-700 rounded text-white">
-          <select id="newUserTeamSelect" required class="p-2 bg-slate-950 border border-slate-700 rounded text-white"></select>
-        </div>
-        <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded shadow">
-          <i class="fa-solid fa-user-plus mr-1"></i> Save Technician Login
-        </button>
-      </form>
-
-      <!-- Active Users Table -->
-      <h4 class="font-bold text-slate-300 mb-1">Active Accounts</h4>
-      <div class="overflow-x-auto border border-slate-800 rounded-lg">
-        <table class="w-full text-left">
-          <thead class="bg-slate-900 text-slate-400 border-b border-slate-800">
-            <tr>
-              <th class="p-2">User ID</th>
-              <th class="p-2">Name</th>
-              <th class="p-2">Team</th>
-              <th class="p-2 text-right">Action</th>
-            </tr>
-          </thead>
-          <tbody id="teamMembersTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
-        </table>
-      </div>
     </div>
   </div>
 
@@ -666,7 +685,7 @@
     </div>
   </div>
 
-  <!-- Reports Modal (From to To Date Filter) -->
+  <!-- Reports Modal -->
   <div id="reportsModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
     <div class="glass-card w-full max-w-3xl p-5 rounded-2xl max-h-[92vh] overflow-y-auto border border-slate-700 text-xs">
       <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
@@ -781,7 +800,8 @@
   <script>
     const DEFAULT_TEAMS = ['HMT', 'KPHB', 'MEDCHAL', 'SUCHITRA'];
 
-    const DEFAULT_USERS = {
+    // Default Seed Accounts
+    const INITIAL_USERS = {
       'admin': { pass: 'admin123', name: 'Satish M (Admin)', role: 'admin', team: 'ALL' },
       'hmt_tech': { pass: '1234', name: 'HMT Field Tech', role: 'tech', team: 'HMT' },
       'kphb_tech': { pass: '1234', name: 'KPHB Field Tech', role: 'tech', team: 'KPHB' }
@@ -795,6 +815,8 @@
       'MDPE Valve': { freqDays: 180, emoji: 'fa-solid fa-faucet', customIcon: null },
       'SV station': { freqDays: 90, emoji: 'fa-solid fa-gear', customIcon: null }
     };
+
+    const USERS_STORAGE_KEY = 'bgl_team_users_v3';
 
     let teams = [];
     let users = {};
@@ -817,23 +839,44 @@
       checkSession();
     });
 
+    // Helper: Safely reads and migrates users from persistent storage
+    function getStoredUsersMap() {
+      let loaded = null;
+      try {
+        const raw = localStorage.getItem(USERS_STORAGE_KEY) || 
+                    localStorage.getItem('bgl_team_users') || 
+                    localStorage.getItem('bgl_users_v2');
+        if (raw) loaded = JSON.parse(raw);
+      } catch(e) {
+        console.error("Error reading users storage:", e);
+      }
+
+      // Merge defaults with loaded accounts
+      const merged = { ...INITIAL_USERS };
+      if (loaded && typeof loaded === 'object') {
+        Object.keys(loaded).forEach(k => {
+          const normKey = String(k).trim().toLowerCase();
+          merged[normKey] = {
+            pass: String(loaded[k].pass || '1234').trim(),
+            name: String(loaded[k].name || normKey).trim(),
+            role: loaded[k].role === 'admin' ? 'admin' : 'tech',
+            team: String(loaded[k].team || 'HMT').trim().toUpperCase()
+          };
+        });
+      }
+
+      // Always save back to unified v3 key
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(merged));
+      return merged;
+    }
+
     function loadStoredAppData() {
       // 1. Teams
       const storedTeams = localStorage.getItem('bgl_teams_list');
       teams = storedTeams ? JSON.parse(storedTeams) : [...DEFAULT_TEAMS];
 
       // 2. Users (Normalized persistence fix)
-      const storedUsers = localStorage.getItem('bgl_team_users');
-      if (storedUsers) {
-        try {
-          users = JSON.parse(storedUsers);
-        } catch(e) {
-          users = { ...DEFAULT_USERS };
-        }
-      } else {
-        users = { ...DEFAULT_USERS };
-        localStorage.setItem('bgl_team_users', JSON.stringify(users));
-      }
+      users = getStoredUsersMap();
 
       // 3. Category Configs & Custom PNG Icons
       const storedCat = localStorage.getItem('bgl_cat_configs');
@@ -847,7 +890,6 @@
         categoryConfigs = JSON.parse(JSON.stringify(DEFAULT_CATEGORY_CONFIG));
       }
 
-      // Ensure all 6 categories exist
       Object.keys(DEFAULT_CATEGORY_CONFIG).forEach(k => {
         if (!categoryConfigs[k]) categoryConfigs[k] = { ...DEFAULT_CATEGORY_CONFIG[k] };
       });
@@ -883,7 +925,7 @@
       localStorage.setItem('bgl_assets_v2', JSON.stringify(assets));
     }
 
-    // --- AUTHENTICATION & SESSION (BUG FIX FOR CREATED USERS) ---
+    // --- AUTHENTICATION & SESSION FIX ---
     function checkSession() {
       const sess = sessionStorage.getItem('bgl_current_user');
       if (sess) {
@@ -897,20 +939,33 @@
 
     function handleLogin(e) {
       e.preventDefault();
-      const u = document.getElementById('loginUsername').value.trim().toLowerCase();
-      const p = document.getElementById('loginPassword').value.trim();
+      const uInput = document.getElementById('loginUsername').value.trim();
+      const pInput = document.getElementById('loginPassword').value.trim();
       const err = document.getElementById('loginError');
 
-      // Reload fresh users from localStorage to capture newly created accounts without desync
-      loadStoredAppData();
+      // CRITICAL FIX: Reload fresh users map directly from localStorage so any created accounts authenticate instantly
+      users = getStoredUsersMap();
 
-      if (users[u] && users[u].pass === p) {
-        currentUser = { id: u, ...users[u] };
+      const lookupKey = uInput.toLowerCase();
+      const account = users[lookupKey];
+
+      if (account && account.pass === pInput) {
+        currentUser = { id: lookupKey, ...account };
         sessionStorage.setItem('bgl_current_user', JSON.stringify(currentUser));
         err.classList.add('hidden');
         initAppView();
       } else {
-        err.textContent = "Invalid User ID or Password. Check credentials.";
+        // Fallback check if user entered case-sensitive mismatch
+        const matchedKey = Object.keys(users).find(k => k.toLowerCase() === lookupKey);
+        if (matchedKey && users[matchedKey].pass === pInput) {
+          currentUser = { id: matchedKey, ...users[matchedKey] };
+          sessionStorage.setItem('bgl_current_user', JSON.stringify(currentUser));
+          err.classList.add('hidden');
+          initAppView();
+          return;
+        }
+
+        err.innerHTML = `<i class="fa-solid fa-circle-exclamation mr-1"></i> Invalid User ID or Password.<br/><span class="text-[10px] text-slate-400">Note: User ID is case-insensitive. Verify credentials with Admin.</span>`;
         err.classList.remove('hidden');
       }
     }
@@ -918,6 +973,19 @@
     function handleLogout() {
       sessionStorage.removeItem('bgl_current_user');
       location.reload();
+    }
+
+    // Direct Impersonate / Test Switch for Admin to verify technician views
+    function testSwitchToUser(uid) {
+      users = getStoredUsersMap();
+      const account = users[uid];
+      if (account) {
+        currentUser = { id: uid, ...account };
+        sessionStorage.setItem('bgl_current_user', JSON.stringify(currentUser));
+        closeModal('teamManageModal');
+        initAppView();
+        showToast(`Logged in as ${account.name} (${account.team})`);
+      }
     }
 
     function initAppView() {
@@ -1013,7 +1081,7 @@
       return { status: 'Healthy', color: '#10b981', border: '#059669', badge: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40', dueDateFormatted: formattedDue };
     }
 
-    // --- LEAFLET MAP & CUSTOM PNG/SVG CATEGORY MARKERS ---
+    // --- LEAFLET MAP & CUSTOM CATEGORY MARKERS ---
     function initMap() {
       if (map) return;
       map = L.map('map').setView([17.5132, 78.4345], 12);
@@ -1249,6 +1317,7 @@
       const select = document.getElementById('bulkAssignTechSelect');
       select.innerHTML = '<option value="">-- Choose Field Technician --</option>';
 
+      users = getStoredUsersMap();
       Object.values(users).filter(u => u.role === 'tech').forEach(t => {
         const opt = document.createElement('option');
         opt.value = t.name;
@@ -1485,7 +1554,7 @@
       renderAssets();
     }
 
-    // --- MAINTENANCE SIGN-OFF (AUTO CLEARS ASSIGNED TAG ON COMPLETION) ---
+    // --- MAINTENANCE SIGN-OFF ---
     let activeMaintenanceAssetId = null;
 
     function openMaintenanceModal(assetId) {
@@ -1542,7 +1611,7 @@
       maintenanceHistory.unshift(logRecord);
       asset.lastDate = dateConducted;
 
-      // RULE: Automatically clear assignment tag for this completed cycle
+      // Automatically clear assignment tag for this completed cycle
       asset.assignedTech = null;
 
       saveAssets();
@@ -1593,7 +1662,14 @@
       openModal('assetHistoryModal');
     }
 
-    // --- USER MANAGEMENT & LOGIN FIX ---
+    // --- USER MANAGEMENT & LOGIN BUG FIX ENGINE ---
+    function openTeamManageModal() {
+      users = getStoredUsersMap();
+      renderTeamsUI();
+      renderTeamMembers();
+      openModal('teamManageModal');
+    }
+
     function renderTeamsUI() {
       const badgeContainer = document.getElementById('teamsBadgeList');
       badgeContainer.innerHTML = teams.map(t => `<span class="px-2 py-0.5 rounded bg-slate-800 text-teal-300 font-mono text-[10px] border border-slate-700">${t}</span>`).join('');
@@ -1624,23 +1700,35 @@
 
     function renderTeamMembers() {
       const tbody = document.getElementById('teamMembersTableBody');
+      const countEl = document.getElementById('teamAccountCount');
       if (!tbody) return;
       tbody.innerHTML = '';
 
-      Object.keys(users).forEach(uid => {
+      users = getStoredUsersMap();
+      const userKeys = Object.keys(users);
+      if (countEl) countEl.textContent = userKeys.length;
+
+      userKeys.forEach(uid => {
         const u = users[uid];
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-800/40';
         tr.innerHTML = `
-          <td class="p-2 font-mono text-white">${uid}</td>
-          <td class="p-2">${u.name}</td>
-          <td class="p-2"><span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px]">${u.team}</span></td>
-          <td class="p-2 text-right">
+          <td class="p-2 font-mono text-teal-400 font-semibold">${uid}</td>
+          <td class="p-2">
+            <span class="font-mono bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800 text-slate-300" id="pwd-${uid}">${u.pass}</span>
+            <button onclick="promptResetPassword('${uid}')" title="Reset Password" class="ml-1 text-[10px] text-amber-400 hover:underline">Edit</button>
+          </td>
+          <td class="p-2 font-medium text-slate-200">${u.name}</td>
+          <td class="p-2"><span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] font-mono text-teal-300">${u.team}</span></td>
+          <td class="p-2 text-right whitespace-nowrap">
+            <button onclick="testSwitchToUser('${uid}')" class="px-2 py-1 rounded bg-teal-600/30 hover:bg-teal-600 text-teal-300 hover:text-white border border-teal-500/40 text-[10px] font-medium mr-1" title="Test Login as this user">
+              <i class="fa-solid fa-arrow-right-to-bracket mr-0.5"></i> Test Login
+            </button>
             ${uid !== 'admin' ? `
-              <button onclick="deleteTeamMember('${uid}')" class="text-rose-400 hover:text-rose-300">
+              <button onclick="deleteTeamMember('${uid}')" class="p-1 px-1.5 rounded bg-rose-950/40 hover:bg-rose-900 text-rose-400 hover:text-white border border-rose-800/40 text-[10px]" title="Delete Account">
                 <i class="fa-solid fa-trash"></i>
               </button>
-            ` : '<span class="text-slate-500 font-mono text-[10px]">Super Admin</span>'}
+            ` : '<span class="text-slate-500 font-mono text-[10px] px-1">Admin</span>'}
           </td>
         `;
         tbody.appendChild(tr);
@@ -1649,34 +1737,57 @@
 
     function saveNewTeamMember(e) {
       e.preventDefault();
-      // Lowercase & trim user ID for guaranteed exact matching upon login
-      const uid = document.getElementById('newUserId').value.trim().toLowerCase();
+      const rawUid = document.getElementById('newUserId').value.trim();
+      const uid = rawUid.toLowerCase();
       const pass = document.getElementById('newUserPass').value.trim();
       const name = document.getElementById('newUserName').value.trim();
       const team = document.getElementById('newUserTeamSelect').value;
 
       if (!uid || !pass || !name) {
-        alert("Please fill all technician fields!");
+        alert("Please fill all required fields!");
         return;
       }
+
+      // Read fresh map
+      users = getStoredUsersMap();
 
       if (users[uid]) {
-        alert(`User ID "${uid}" already exists! Please choose another ID.`);
+        alert(`User ID "${uid}" already exists! Please pick another username.`);
         return;
       }
 
-      // Save into state & immediately persist in localStorage
-      users[uid] = { pass: pass, name: name, role: 'tech', team: team };
+      // Add to users roster
+      users[uid] = { pass, name, role: 'tech', team };
+      
+      // Save permanently to primary key and backup keys
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
       localStorage.setItem('bgl_team_users', JSON.stringify(users));
 
       renderTeamMembers();
       document.getElementById('addMemberForm').reset();
-      showToast(`Technician ${name} (${uid}) created successfully!`);
+      showToast(`Technician ${name} (${uid}) created! You can test login immediately.`);
+    }
+
+    function promptResetPassword(uid) {
+      users = getStoredUsersMap();
+      const current = users[uid];
+      if (!current) return;
+      const newPass = prompt(`Enter new password for ${uid} (${current.name}):`, current.pass);
+      if (newPass !== null && newPass.trim() !== '') {
+        current.pass = newPass.trim();
+        users[uid] = current;
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+        localStorage.setItem('bgl_team_users', JSON.stringify(users));
+        renderTeamMembers();
+        showToast(`Password updated for ${uid}!`);
+      }
     }
 
     function deleteTeamMember(uid) {
-      if (confirm(`Delete technician account "${uid}"?`)) {
+      if (confirm(`Are you sure you want to delete technician account "${uid}"?`)) {
+        users = getStoredUsersMap();
         delete users[uid];
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
         localStorage.setItem('bgl_team_users', JSON.stringify(users));
         renderTeamMembers();
         showToast(`User ${uid} deleted`);
