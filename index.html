@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="te" class="dark">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>BGL - Asset & Maintenance Management System</title>
+  <title>Bhagyanagar Gas Limited - Asset & Maintenance Portal</title>
   
-  <!-- Tailwind CSS CDN -->
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Leaflet GIS Map -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <!-- JSZip for KMZ decompression -->
+  <!-- JSZip for KMZ extraction -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <!-- FontAwesome 6 Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
@@ -21,8 +21,9 @@
       theme: {
         extend: {
           colors: {
-            gas: { 50: '#f0fdf4', 500: '#15803d', 600: '#166534', 700: '#14532d' },
-            brand: '#0f766e'
+            brand: '#0f766e',
+            bglgreen: '#15803d',
+            bgldark: '#070d18'
           }
         }
       }
@@ -31,70 +32,52 @@
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
-    body { background-color: #080e1a; color: #e2e8f0; font-family: 'Inter', sans-serif; }
+    body { background-color: #060b14; color: #e2e8f0; font-family: 'Inter', sans-serif; }
     .font-mono { font-family: 'JetBrains Mono', monospace; }
-    .glass-card { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
-    #map { height: 380px; width: 100%; border-radius: 0.75rem; z-index: 10; }
-    
-    .map-custom-marker {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      background: #0f172a;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.6);
-      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-      cursor: pointer;
-    }
-    .map-custom-marker:hover { transform: scale(1.25); z-index: 1000 !important; }
-    
-    .leaflet-popup-content-wrapper {
-      background-color: #0f172a !important;
-      color: #f8fafc !important;
-      border-radius: 12px !important;
-      border: 1px solid #334155 !important;
-    }
-    .leaflet-popup-tip { background-color: #0f172a !important; }
-    
-    .pulse-loc {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: #06b6d4;
-      border: 3px solid #ffffff;
-      box-shadow: 0 0 0 rgba(6, 182, 212, 0.6);
-      animation: pulseAnim 1.8s infinite;
-    }
-    @keyframes pulseAnim {
-      0% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.8); }
-      70% { box-shadow: 0 0 0 16px rgba(6, 182, 212, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }
-    }
+    .glass-card { background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
+    #map { height: 320px; width: 100%; border-radius: 0.75rem; z-index: 10; }
+    @media (min-width: 640px) { #map { height: 390px; } }
+    .tap-copy { transition: background-color 0.15s ease, transform 0.1s ease; cursor: pointer; }
+    .tap-copy:active { transform: scale(0.985); background-color: rgba(20, 184, 166, 0.18) !important; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .pulse-loc {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #0284c7; border: 3px solid #ffffff;
+      box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7);
+      animation: pulseLoc 1.8s infinite;
+    }
+    @keyframes pulseLoc {
+      0% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.8); }
+      70% { box-shadow: 0 0 0 16px rgba(2, 132, 199, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
+    }
   </style>
 </head>
-<body class="min-h-screen flex flex-col antialiased">
+<body class="min-h-screen flex flex-col antialiased selection:bg-teal-500 selection:text-white pb-14 sm:pb-6">
 
-  <!-- ==================== 1. LOGIN SCREEN (NO VISIBLE PASSWORDS) ==================== -->
-  <div id="loginSection" class="fixed inset-0 z-50 flex items-center justify-center bg-[#050b14] px-4">
-    <div class="glass-card w-full max-w-md p-8 rounded-2xl shadow-2xl border border-slate-800 text-center relative overflow-hidden">
-      <!-- Glow ambient light -->
-      <div class="absolute -top-16 -right-16 w-36 h-36 bg-teal-500/10 rounded-full blur-2xl pointer-events-none"></div>
-      
+  <!-- Toast Notification Notification Bar -->
+  <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-[100] hidden px-4 py-2.5 rounded-xl shadow-2xl bg-teal-600 text-white font-medium text-xs sm:text-sm flex items-center gap-2 transition-all border border-teal-400/40">
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="toastMsg">Action Successful</span>
+  </div>
+
+  <!-- ==================== 1. LOGIN SCREEN ==================== -->
+  <div id="loginSection" class="fixed inset-0 z-50 flex items-center justify-center bg-[#040810] px-4">
+    <div class="glass-card w-full max-w-sm p-6 sm:p-8 rounded-2xl shadow-2xl border border-slate-800 text-center relative overflow-hidden">
       <div class="flex justify-center mb-4">
-        <img src="https://events.eletsonline.com/mobility/assets/partners/BGL.png" alt="BGL Logo" class="h-16 object-contain bg-white/95 px-4 py-2 rounded-xl shadow-lg border border-slate-200">
+        <img src="https://events.eletsonline.com/mobility/assets/partners/BGL.png" alt="BGL Logo" class="h-14 object-contain bg-white px-3 py-1.5 rounded-xl shadow">
       </div>
       
-      <h2 class="text-xl font-bold text-white tracking-wide">Bhagyanagar Gas Limited</h2>
-      <p class="text-xs text-slate-400 mt-1 mb-6">Asset Tracking & Maintenance System</p>
+      <h2 class="text-base sm:text-lg font-bold text-white tracking-wide">Bhagyanagar Gas Limited</h2>
+      <p class="text-xs text-slate-400 mb-6">Asset & Maintenance Operations</p>
 
       <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4 text-left text-xs">
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">User ID / Username</label>
+          <label class="block font-semibold text-slate-300 mb-1">User ID</label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-user"></i></span>
-            <input type="text" id="loginUsername" required placeholder="Enter User ID" class="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-teal-500 transition">
+            <input type="text" id="loginUsername" required placeholder="Enter User ID" class="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-teal-500 transition">
           </div>
         </div>
 
@@ -102,7 +85,7 @@
           <label class="block font-semibold text-slate-300 mb-1">Password</label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-lock"></i></span>
-            <input type="password" id="loginPassword" required placeholder="Enter Password" class="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-teal-500 transition">
+            <input type="password" id="loginPassword" required placeholder="Enter Password" class="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-teal-500 transition">
           </div>
         </div>
 
@@ -119,59 +102,59 @@
   <!-- ==================== 2. MAIN APPLICATION ==================== -->
   <div id="appContainer" class="hidden flex-1 flex flex-col">
     
-    <!-- Navigation Header -->
+    <!-- Top Navigation Header -->
     <header class="glass-card sticky top-0 z-40 border-b border-slate-800 px-3 sm:px-6 py-2.5">
-      <div class="max-w-7xl mx-auto flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+      <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
         
-        <!-- Logo & Active User -->
-        <div class="flex items-center gap-3">
-          <img src="https://events.eletsonline.com/mobility/assets/partners/BGL.png" alt="BGL" class="h-9 bg-white px-2 py-1 rounded shadow">
+        <!-- Logo & User Details -->
+        <div class="flex items-center gap-2.5">
+          <img src="https://events.eletsonline.com/mobility/assets/partners/BGL.png" alt="BGL" class="h-8 bg-white px-2 py-0.5 rounded shadow">
           <div>
-            <div class="flex items-center gap-2">
-              <h1 class="text-sm font-bold text-white tracking-tight">BGL Gas Portal</h1>
-              <span id="userBadge" class="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-teal-500/20 text-teal-300 border border-teal-500/40"></span>
+            <div class="flex items-center gap-1.5">
+              <h1 class="text-xs sm:text-sm font-bold text-white tracking-tight">BGL Portal</h1>
+              <span id="userBadge" class="text-[9px] px-1.5 py-0.2 rounded font-semibold bg-teal-500/20 text-teal-300 border border-teal-500/40"></span>
             </div>
-            <p id="userZoneLabel" class="text-[11px] text-slate-400"></p>
+            <p id="userZoneLabel" class="text-[10px] text-slate-400 truncate max-w-[150px] sm:max-w-none"></p>
           </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="flex items-center gap-2 flex-wrap text-xs">
-          <!-- GPS Location Toggle -->
+        <!-- Header Actions -->
+        <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap text-xs">
+          <!-- Live GPS Button -->
           <button onclick="toggleGeolocation()" id="gpsBtn" class="px-2.5 py-1.5 rounded-lg font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 transition">
             <i class="fa-solid fa-location-crosshairs text-teal-400" id="gpsIcon"></i>
-            <span id="gpsBtnLabel">My Location</span>
+            <span id="gpsBtnLabel" class="hidden sm:inline">My Location</span>
           </button>
 
           <!-- Admin Exclusive Toolbar -->
-          <div id="adminHeaderBtns" class="hidden flex items-center gap-2">
-            <button onclick="openAddAssetModal()" class="px-2.5 py-1.5 rounded-lg font-medium bg-teal-600 hover:bg-teal-500 text-white flex items-center gap-1.5 shadow">
-              <i class="fa-solid fa-circle-plus"></i> <span class="hidden md:inline">Add Asset</span>
+          <div id="adminHeaderBtns" class="hidden flex items-center gap-1.5">
+            <button onclick="openModal('addAssetModal')" class="px-2.5 py-1.5 rounded-lg font-medium bg-teal-600 hover:bg-teal-500 text-white flex items-center gap-1 shadow">
+              <i class="fa-solid fa-plus"></i> <span class="hidden md:inline">Add Asset</span>
             </button>
-            <button onclick="openCategoryFreqModal()" class="px-2.5 py-1.5 rounded-lg font-medium bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-700/60 flex items-center gap-1.5">
-              <i class="fa-solid fa-sliders"></i> <span class="hidden md:inline">Freq & Icons</span>
+            <button onclick="openModal('teamManageModal')" class="px-2.5 py-1.5 rounded-lg font-medium bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 flex items-center gap-1">
+              <i class="fa-solid fa-users-gear"></i> <span class="hidden md:inline">Teams</span>
             </button>
-            <button onclick="openNoticeModal()" class="px-2.5 py-1.5 rounded-lg font-medium bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/60 flex items-center gap-1.5">
-              <i class="fa-solid fa-bullhorn"></i> <span class="hidden md:inline">Notice Board</span>
+            <button onclick="openCategoryFreqModal()" class="px-2.5 py-1.5 rounded-lg font-medium bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-700/60 flex items-center gap-1">
+              <i class="fa-solid fa-sliders"></i> <span class="hidden md:inline">Frequencies</span>
             </button>
-            <button onclick="openModal('reportsModal')" class="px-2.5 py-1.5 rounded-lg font-medium bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 flex items-center gap-1.5">
+            <button onclick="openModal('reportsModal')" class="px-2.5 py-1.5 rounded-lg font-medium bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 flex items-center gap-1">
               <i class="fa-solid fa-file-invoice"></i> <span class="hidden md:inline">Reports</span>
             </button>
-            <button onclick="openModal('importModal')" class="px-2.5 py-1.5 rounded-lg font-medium bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 flex items-center gap-1.5">
-              <i class="fa-solid fa-file-import"></i> <span class="hidden md:inline">Import</span>
+            <button onclick="openModal('importModal')" class="px-2 py-1.5 rounded-lg font-medium bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 flex items-center gap-1" title="Import CSV/KMZ">
+              <i class="fa-solid fa-file-import"></i>
             </button>
-            <button onclick="openModal('exportModal')" class="px-2.5 py-1.5 rounded-lg font-medium bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 flex items-center gap-1.5">
-              <i class="fa-solid fa-download"></i> <span class="hidden md:inline">Backup DB</span>
+            <button onclick="openModal('exportModal')" class="px-2 py-1.5 rounded-lg font-medium bg-slate-800 hover:bg-slate-700 text-purple-300 border border-slate-700 flex items-center gap-1" title="Backup DB">
+              <i class="fa-solid fa-download"></i>
             </button>
           </div>
 
-          <!-- Progress Log -->
-          <button onclick="openProgressModal()" class="px-2.5 py-1.5 rounded-lg font-medium bg-slate-800 hover:bg-slate-700 text-blue-400 border border-slate-700 flex items-center gap-1.5">
+          <!-- Progress Log Button -->
+          <button onclick="openProgressModal()" class="px-2.5 py-1.5 rounded-lg font-medium bg-slate-800 hover:bg-slate-700 text-blue-400 border border-slate-700 flex items-center gap-1">
             <i class="fa-solid fa-chart-line"></i> <span class="hidden sm:inline">Progress</span>
           </button>
 
           <!-- Logout -->
-          <button onclick="handleLogout()" title="Logout" class="p-2 rounded-lg bg-slate-800 hover:bg-rose-900/50 text-slate-400 hover:text-rose-300 border border-slate-700 transition">
+          <button onclick="handleLogout()" title="Logout" class="p-1.5 sm:p-2 rounded-lg bg-slate-800 hover:bg-rose-900/50 text-slate-400 hover:text-rose-300 border border-slate-700 transition">
             <i class="fa-solid fa-power-off"></i>
           </button>
         </div>
@@ -179,182 +162,125 @@
     </header>
 
     <!-- Main Container -->
-    <main class="max-w-7xl w-full mx-auto p-3 sm:p-5 space-y-4 flex-1">
+    <main class="max-w-7xl w-full mx-auto p-2.5 sm:p-4 space-y-3 flex-1">
 
-      <!-- ==================== BULLETIN NOTICE BOARD BANNER ==================== -->
-      <div id="noticeBoardBanner" class="hidden glass-card border border-amber-600/40 p-3 rounded-xl flex items-start gap-3 bg-amber-950/20 text-xs">
-        <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 text-base">
-          <i class="fa-solid fa-bullhorn"></i>
+      <!-- ==================== TECHNICIAN ASSIGNED TASKS BANNER ==================== -->
+      <div id="techPendingBanner" class="hidden glass-card p-3 rounded-xl border border-amber-500/50 bg-amber-950/20 text-xs">
+        <div class="flex items-center justify-between mb-2">
+          <span class="font-bold text-amber-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-bell animate-bounce"></i> My Assigned Pending Tasks (This Cycle)
+          </span>
+          <span id="techPendingCount" class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-300 font-bold">0</span>
         </div>
-        <div class="flex-1">
-          <div class="flex items-center justify-between">
-            <h4 class="font-bold text-amber-300" id="noticeTitle">Admin Field Notice</h4>
-            <span class="text-[10px] text-slate-400 font-mono" id="noticeDate"></span>
-          </div>
-          <p class="text-slate-200 mt-0.5 leading-relaxed" id="noticeBody"></p>
-        </div>
+        <div id="techPendingList" class="flex gap-2 overflow-x-auto pb-1 no-scrollbar"></div>
       </div>
-
-      <!-- ==================== 6. EXECUTIVE DASHBOARD (KPI, BREAKDOWN, ALERTS) ==================== -->
-      <section class="space-y-3">
-        <!-- Metric Cards -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-          <!-- Total Assets -->
-          <div class="glass-card p-3.5 rounded-xl flex items-center justify-between border border-slate-800">
-            <div>
-              <p class="text-[10px] uppercase font-semibold text-slate-400">Total Assets</p>
-              <h3 class="text-2xl font-bold text-white mt-0.5" id="dashTotalCount">0</h3>
-              <p class="text-[10px] text-teal-400 mt-0.5" id="dashAssignedCount">0 Assigned</p>
-            </div>
-            <div class="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20 text-base">
-              <i class="fa-solid fa-layer-group"></i>
-            </div>
-          </div>
-
-          <!-- Completed / Healthy -->
-          <div class="glass-card p-3.5 rounded-xl flex items-center justify-between border border-slate-800">
-            <div>
-              <p class="text-[10px] uppercase font-semibold text-emerald-400">Healthy / Normal</p>
-              <h3 class="text-2xl font-bold text-emerald-400 mt-0.5" id="dashHealthyCount">0</h3>
-              <p class="text-[10px] text-slate-400 mt-0.5">Next cycle safe</p>
-            </div>
-            <div class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20 text-base">
-              <i class="fa-solid fa-circle-check"></i>
-            </div>
-          </div>
-
-          <!-- Due Soon (Within 15 days) -->
-          <div class="glass-card p-3.5 rounded-xl flex items-center justify-between border border-slate-800">
-            <div>
-              <p class="text-[10px] uppercase font-semibold text-amber-400">Due Soon (&lt;15d)</p>
-              <h3 class="text-2xl font-bold text-amber-400 mt-0.5" id="dashDueSoonCount">0</h3>
-              <p class="text-[10px] text-slate-400 mt-0.5">Requires schedule</p>
-            </div>
-            <div class="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20 text-base">
-              <i class="fa-solid fa-clock"></i>
-            </div>
-          </div>
-
-          <!-- Overdue / High Alert -->
-          <div class="glass-card p-3.5 rounded-xl flex items-center justify-between border border-rose-900/60 bg-rose-950/10">
-            <div>
-              <p class="text-[10px] uppercase font-semibold text-rose-400 flex items-center gap-1">
-                <i class="fa-solid fa-triangle-exclamation animate-pulse"></i> High Alert (Overdue)
-              </p>
-              <h3 class="text-2xl font-bold text-rose-400 mt-0.5" id="dashOverdueCount">0</h3>
-              <p class="text-[10px] text-rose-300/80 mt-0.5">Immediate inspection needed</p>
-            </div>
-            <div class="w-10 h-10 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center border border-rose-500/20 text-base">
-              <i class="fa-solid fa-fire"></i>
-            </div>
-          </div>
-        </div>
-
-        <!-- Breakdown: Category Distribution & Team Quantities -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-          <!-- Category Quantities -->
-          <div class="glass-card p-3.5 rounded-xl border border-slate-800">
-            <h4 class="font-bold text-slate-200 mb-2 flex items-center justify-between">
-              <span><i class="fa-solid fa-chart-pie text-teal-400 mr-1.5"></i> Asset Category Quantities</span>
-              <span class="text-[10px] text-slate-400 font-normal">Active network</span>
-            </h4>
-            <div class="grid grid-cols-3 gap-2" id="categoryStatsGrid">
-              <!-- Dynamically populated -->
-            </div>
-          </div>
-
-          <!-- Team Zone Quantities -->
-          <div class="glass-card p-3.5 rounded-xl border border-slate-800">
-            <h4 class="font-bold text-slate-200 mb-2 flex items-center justify-between">
-              <span><i class="fa-solid fa-users text-indigo-400 mr-1.5"></i> Team Zone Distribution</span>
-              <span class="text-[10px] text-slate-400 font-normal">Work allocation</span>
-            </h4>
-            <div class="grid grid-cols-3 gap-2" id="teamStatsGrid">
-              <!-- Dynamically populated -->
-            </div>
-          </div>
-        </div>
-      </section>
 
       <!-- Scope Filter Toggle for Technicians -->
       <div id="teamFilterBanner" class="glass-card p-2.5 rounded-xl flex items-center justify-between text-xs border border-slate-800">
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5 text-slate-300 truncate">
           <i class="fa-solid fa-filter text-teal-400"></i>
-          <span id="activeFilterDesc" class="text-slate-300">Filtered for your assigned zone</span>
+          <span id="activeFilterDesc">Filtered for your assigned zone</span>
         </div>
-        <label class="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white select-none">
+        <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-white select-none whitespace-nowrap ml-2">
           <input type="checkbox" id="showAllTeamsToggle" onchange="handleTeamToggle(this.checked)" class="rounded bg-slate-800 border-slate-700 text-teal-500 focus:ring-0">
-          <span>Show entire network data</span>
+          <span>Show entire network</span>
         </label>
+      </div>
+
+      <!-- ==================== EXECUTIVE DASHBOARD (KPIs) ==================== -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+        <div class="glass-card p-3 rounded-xl border border-slate-800">
+          <p class="text-[10px] uppercase font-semibold text-slate-400">Total Assets</p>
+          <h3 class="text-xl font-bold text-white mt-0.5" id="dashTotalCount">0</h3>
+          <p class="text-[10px] text-teal-400 mt-0.5" id="dashAssignedCount">0 Assigned</p>
+        </div>
+        <div class="glass-card p-3 rounded-xl border border-slate-800">
+          <p class="text-[10px] uppercase font-semibold text-emerald-400">Healthy</p>
+          <h3 class="text-xl font-bold text-emerald-400 mt-0.5" id="dashHealthyCount">0</h3>
+          <p class="text-[10px] text-slate-400 mt-0.5">Compliant</p>
+        </div>
+        <div class="glass-card p-3 rounded-xl border border-slate-800">
+          <p class="text-[10px] uppercase font-semibold text-amber-400">Due Soon (&lt;15d)</p>
+          <h3 class="text-xl font-bold text-amber-400 mt-0.5" id="dashDueSoonCount">0</h3>
+          <p class="text-[10px] text-slate-400 mt-0.5">Schedule inspection</p>
+        </div>
+        <div class="glass-card p-3 rounded-xl border border-rose-900/60 bg-rose-950/10">
+          <p class="text-[10px] uppercase font-semibold text-rose-400 flex items-center gap-1">
+            <i class="fa-solid fa-triangle-exclamation"></i> High Alert
+          </p>
+          <h3 class="text-xl font-bold text-rose-400 mt-0.5" id="dashOverdueCount">0</h3>
+          <p class="text-[10px] text-rose-300 mt-0.5">Overdue action</p>
+        </div>
       </div>
 
       <!-- ==================== GIS MAP SECTION ==================== -->
       <div class="glass-card p-2 rounded-xl relative border border-slate-800">
-        <div class="px-2 py-1.5 flex items-center justify-between text-[11px] text-slate-400">
+        <div class="px-2 py-1 flex items-center justify-between text-[11px] text-slate-400">
           <span class="flex items-center gap-1.5 text-slate-300 font-semibold">
-            <i class="fa-solid fa-map-location-dot text-teal-400"></i> GIS Map (Icons show custom uploaded PNGs)
+            <i class="fa-solid fa-map-location-dot text-teal-400"></i> Field GIS Map
           </span>
           <div class="flex items-center gap-3">
-            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Healthy</span>
-            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Due Soon</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Safe</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Due</span>
             <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span> Overdue</span>
           </div>
         </div>
         <div id="map"></div>
       </div>
 
-      <!-- ==================== 8. SEARCH & CATEGORY FILTER TABS ==================== -->
-      <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 text-xs">
+      <!-- Search & Category Filters -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 text-xs">
         <!-- Category Tabs -->
-        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 no-scrollbar" id="categoryTabContainer">
-          <button onclick="filterCategory('All')" class="cat-pill active px-3.5 py-1.5 rounded-lg bg-teal-600 text-white font-medium whitespace-nowrap" data-cat="All">All</button>
-          <button onclick="filterCategory('SR')" class="cat-pill px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium whitespace-nowrap" data-cat="SR">SR</button>
-          <button onclick="filterCategory('DRS')" class="cat-pill px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium whitespace-nowrap" data-cat="DRS">DRS</button>
-          <button onclick="filterCategory('MRS')" class="cat-pill px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium whitespace-nowrap" data-cat="MRS">MRS</button>
-          <button onclick="filterCategory('Diaphragm meter')" class="cat-pill px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium whitespace-nowrap" data-cat="Diaphragm meter">Diaphragm Meter</button>
-          <button onclick="filterCategory('MDPE Valve')" class="cat-pill px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium whitespace-nowrap" data-cat="MDPE Valve">MDPE Valve</button>
-          <button onclick="filterCategory('SV station')" class="cat-pill px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium whitespace-nowrap" data-cat="SV station">SV Station</button>
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
+          <button onclick="filterCategory('All')" class="cat-pill active px-3 py-1.5 rounded-lg bg-teal-600 text-white font-medium whitespace-nowrap" data-cat="All">All</button>
+          <button onclick="filterCategory('SR')" class="cat-pill px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium whitespace-nowrap" data-cat="SR">SR</button>
+          <button onclick="filterCategory('DRS')" class="cat-pill px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium whitespace-nowrap" data-cat="DRS">DRS</button>
+          <button onclick="filterCategory('MRS')" class="cat-pill px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium whitespace-nowrap" data-cat="MRS">MRS</button>
+          <button onclick="filterCategory('Diaphragm meter')" class="cat-pill px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium whitespace-nowrap" data-cat="Diaphragm meter">Diaphragm Meter</button>
+          <button onclick="filterCategory('MDPE Valve')" class="cat-pill px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium whitespace-nowrap" data-cat="MDPE Valve">MDPE Valve</button>
+          <button onclick="filterCategory('SV station')" class="cat-pill px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium whitespace-nowrap" data-cat="SV station">SV Station</button>
         </div>
 
-        <!-- 8. Real-time Multi-attribute Search Input -->
-        <div class="relative min-w-[260px]">
-          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-magnifying-glass"></i></span>
-          <input type="text" id="assetSearchInput" oninput="applyFiltersAndRender()" placeholder="Search ID, Location, Team, Tech..." class="w-full pl-9 pr-8 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-teal-500">
+        <!-- Search Input -->
+        <div class="relative min-w-[230px]">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
+          <input type="text" id="searchInput" oninput="handleSearch(this.value)" placeholder="Search ID, Location, Team, Tech..." class="w-full pl-8 pr-7 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white outline-none focus:border-teal-500">
           <button onclick="clearSearch()" class="absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-500 hover:text-slate-300">
-            <i class="fa-solid fa-circle-xmark"></i>
+            <i class="fa-solid fa-xmark text-xs"></i>
           </button>
         </div>
       </div>
 
       <!-- ==================== ASSETS REGISTRY TABLE ==================== -->
       <div class="glass-card rounded-xl overflow-hidden shadow-xl border border-slate-800">
-        <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between text-xs flex-wrap gap-2">
+        <div class="px-3.5 py-2.5 border-b border-slate-800 flex items-center justify-between text-xs flex-wrap gap-2">
           <div class="font-bold text-white flex items-center gap-2">
-            <span>Asset List</span>
+            <span>Asset Registry</span>
             <span id="assetCountBadge" class="bg-slate-800 px-2 py-0.5 rounded-full text-teal-400 font-mono">0</span>
           </div>
-          <div class="flex items-center gap-3 text-[11px] text-slate-400">
-            <span id="sortIndicator"><i class="fa-solid fa-arrow-down-short-wide text-teal-400 mr-1"></i> Sorted: Default</span>
+          <div class="flex items-center gap-2 text-[11px] text-slate-400">
+            <span class="text-teal-400"><i class="fa-solid fa-copy mr-1"></i> Tap row to copy ID-Location</span>
+            <span id="sortIndicator" class="hidden sm:inline border-l border-slate-700 pl-2 font-mono text-[10px]">Sorted: Default</span>
           </div>
         </div>
 
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse text-xs">
             <thead>
-              <tr class="bg-slate-900/90 text-slate-400 border-b border-slate-800 uppercase tracking-wider text-[10px]">
-                <th class="p-3">Asset ID / Team</th>
-                <th class="p-3">Type & Icon</th>
-                <th class="p-3">Location</th>
-                <th class="p-3">Distance</th>
-                <th class="p-3">Assigned Tech</th>
-                <th class="p-3">Last Maint.</th>
-                <th class="p-3">Next Due Date</th>
-                <th class="p-3">Status</th>
-                <th class="p-3 text-right">Actions</th>
+              <tr class="bg-slate-900/90 text-slate-400 border-b border-slate-800 text-[10px] uppercase font-mono tracking-wider">
+                <th class="p-2.5">Asset ID / Team</th>
+                <th class="p-2.5 hidden sm:table-cell">Type</th>
+                <th class="p-2.5">Location</th>
+                <th class="p-2.5">Distance</th>
+                <th class="p-2.5 hidden md:table-cell">Assigned Tech</th>
+                <th class="p-2.5 hidden sm:table-cell">Last Maint.</th>
+                <th class="p-2.5">Next Due</th>
+                <th class="p-2.5">Status</th>
+                <th class="p-2.5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody id="assetsTableBody" class="divide-y divide-slate-800/60 text-slate-300">
-              <!-- Populated dynamically -->
+              <!-- Dynamically populated -->
             </tbody>
           </table>
         </div>
@@ -363,99 +289,179 @@
     </main>
   </div>
 
-  <!-- ==================== 3. MODALS & POPUPS ==================== -->
+  <!-- ==================== 3. MODALS ==================== -->
 
-  <!-- Modal: Admin Edit Asset -->
-  <div id="editAssetModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-    <div class="glass-card w-full max-w-lg p-6 rounded-2xl max-h-[90vh] overflow-y-auto border border-slate-700 text-xs">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-        <h3 class="text-sm font-bold text-white flex items-center gap-2">
-          <i class="fa-solid fa-pen-to-square text-amber-400"></i> Edit Gas Asset
-        </h3>
-        <button onclick="closeModal('editAssetModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+  <!-- Maintenance Sign-off Modal (Before/After Photos) -->
+  <div id="maintenanceModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
+    <div class="glass-card w-full max-w-lg p-5 rounded-2xl max-h-[92vh] overflow-y-auto border border-slate-700 text-xs">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3">
+        <div>
+          <h3 class="text-sm font-bold text-white">Maintenance Sign-Off</h3>
+          <p id="maintAssetInfo" class="text-teal-400 font-mono mt-0.5 font-bold"></p>
+        </div>
+        <button onclick="closeModal('maintenanceModal')" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark fa-lg"></i></button>
       </div>
 
-      <form id="editAssetForm" onsubmit="handleSaveEditAsset(event)" class="space-y-3">
-        <input type="hidden" id="editAssetOriginalId">
-
-        <div class="grid grid-cols-2 gap-3">
+      <form id="maintenanceForm" onsubmit="submitMaintenance(event)" class="space-y-3">
+        <div class="grid grid-cols-2 gap-2.5">
           <div>
-            <label class="block text-slate-400 mb-1">Asset ID *</label>
-            <input type="text" id="editAssetId" readonly class="w-full p-2 bg-slate-950 border border-slate-800 rounded text-slate-400 font-mono cursor-not-allowed">
+            <label class="block text-slate-400 mb-1">Technician (Auto)</label>
+            <input type="text" id="maintTechName" readonly class="w-full p-2 bg-slate-950 border border-slate-800 rounded text-slate-300 font-semibold cursor-not-allowed">
           </div>
           <div>
-            <label class="block text-slate-400 mb-1">Asset Type *</label>
-            <select id="editAssetType" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
-              <option value="SR">SR</option>
-              <option value="DRS">DRS</option>
-              <option value="MRS">MRS</option>
-              <option value="Diaphragm meter">Diaphragm meter</option>
-              <option value="MDPE Valve">MDPE Valve</option>
-              <option value="SV station">SV station</option>
-            </select>
+            <label class="block text-slate-400 mb-1">Date Conducted *</label>
+            <input type="date" id="maintDate" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white outline-none focus:border-teal-500">
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <!-- Before & After Photos -->
+        <div class="grid grid-cols-2 gap-2.5 p-2.5 bg-slate-900/60 rounded-xl border border-slate-800">
           <div>
-            <label class="block text-slate-400 mb-1">Team / Zone *</label>
-            <input type="text" id="editAssetTeam" required placeholder="e.g. HMT or KPHB" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white uppercase font-mono">
+            <label class="block text-slate-300 font-medium mb-1"><i class="fa-solid fa-camera mr-1 text-teal-400"></i> Before Photo</label>
+            <input type="file" id="beforePhotoInput" accept="image/*" capture="environment" onchange="previewImage(this, 'beforePreview')" class="text-[10px] text-slate-400 w-full">
+            <div id="beforePreview" class="mt-1.5 h-20 rounded border border-slate-800 bg-black/40 flex items-center justify-center text-slate-600 overflow-hidden text-[11px]">
+              <span>No image</span>
+            </div>
           </div>
           <div>
-            <label class="block text-slate-400 mb-1">Assigned Technician</label>
-            <input type="text" id="editAssetTech" placeholder="e.g. Ramesh V" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
+            <label class="block text-slate-300 font-medium mb-1"><i class="fa-solid fa-camera mr-1 text-teal-400"></i> After Photo</label>
+            <input type="file" id="afterPhotoInput" accept="image/*" capture="environment" onchange="previewImage(this, 'afterPreview')" class="text-[10px] text-slate-400 w-full">
+            <div id="afterPreview" class="mt-1.5 h-20 rounded border border-slate-800 bg-black/40 flex items-center justify-center text-slate-600 overflow-hidden text-[11px]">
+              <span>No image</span>
+            </div>
           </div>
         </div>
 
         <div>
-          <label class="block text-slate-400 mb-1">Location / Landmark *</label>
-          <input type="text" id="editAssetLocation" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
+          <label class="block text-slate-400 mb-1">Observations / Checklist (Pressure test, greasing, leak-check)</label>
+          <textarea id="maintObservations" rows="2" placeholder="Gas inlet pressure tested, soap bubble test clear, no leaks detected..." class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white outline-none focus:border-teal-500"></textarea>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-slate-400 mb-1">Latitude</label>
-            <input type="number" step="any" id="editAssetLat" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white font-mono">
-          </div>
-          <div>
-            <label class="block text-slate-400 mb-1">Longitude</label>
-            <input type="number" step="any" id="editAssetLng" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white font-mono">
-          </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Remarks</label>
+          <input type="text" id="maintRemarks" placeholder="Satisfactory / Filter replaced" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white outline-none focus:border-teal-500">
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-slate-400 mb-1">Last Maintenance Date *</label>
-            <input type="date" id="editAssetLastDate" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
-          </div>
-          <div>
-            <label class="block text-slate-400 mb-1">Frequency Cycle (Days) *</label>
-            <input type="number" id="editAssetFreq" required min="1" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white font-mono">
-          </div>
-        </div>
-
-        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
-          <button type="button" onclick="closeModal('editAssetModal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded">Cancel</button>
-          <button type="submit" class="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded shadow flex items-center gap-1.5">
-            <i class="fa-solid fa-floppy-disk"></i> Update Asset
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+          <button type="button" onclick="closeModal('maintenanceModal')" class="px-3.5 py-1.5 bg-slate-800 text-slate-300 rounded hover:bg-slate-700">Cancel</button>
+          <button type="submit" class="px-4 py-1.5 bg-teal-600 text-white font-medium rounded hover:bg-teal-500 flex items-center gap-1.5 shadow">
+            <i class="fa-solid fa-check"></i> Sign-Off & Close
           </button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal: Admin Add Asset -->
-  <div id="addAssetModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-    <div class="glass-card w-full max-w-lg p-6 rounded-2xl max-h-[90vh] overflow-y-auto border border-slate-700 text-xs">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-        <h3 class="text-sm font-bold text-white flex items-center gap-2">
-          <i class="fa-solid fa-circle-plus text-teal-400"></i> Add New Gas Asset
-        </h3>
+  <!-- Asset Maintenance History Modal (Full Audit for Admin) -->
+  <div id="assetHistoryModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
+    <div class="glass-card w-full max-w-xl p-5 rounded-2xl max-h-[92vh] overflow-y-auto border border-slate-700 text-xs">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3">
+        <div>
+          <h3 class="text-sm font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-timeline text-teal-400"></i> Asset Maintenance History
+          </h3>
+          <p id="historyAssetHeader" class="text-xs text-slate-400 font-mono"></p>
+        </div>
+        <button onclick="closeModal('assetHistoryModal')" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark fa-lg"></i></button>
+      </div>
+
+      <div id="historyTimelineContainer" class="space-y-3">
+        <!-- Rendered history logs -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Assign Technician Modal (One Cycle Only) -->
+  <div id="assignModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
+    <div class="glass-card w-full max-w-sm p-5 rounded-2xl border border-slate-700 text-xs">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+        <h3 class="text-sm font-bold text-white">Assign Technician (This Cycle)</h3>
+        <button onclick="closeModal('assignModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p id="assignAssetIdLabel" class="text-teal-400 font-mono font-bold mb-3"></p>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-slate-400 mb-1">Select Technician</label>
+          <select id="assignTechSelect" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white"></select>
+        </div>
+        <p class="text-[11px] text-amber-300/80 bg-amber-950/30 p-2 rounded border border-amber-800/40">
+          <i class="fa-solid fa-circle-info mr-1"></i> Once maintenance is completed by this technician, the assignment tag will automatically be cleared!
+        </p>
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+          <button onclick="clearAssignment()" class="px-3 py-1.5 bg-slate-800 text-rose-300 rounded">Clear Tag</button>
+          <button onclick="saveAssignment()" class="px-4 py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-medium rounded">Assign Tag</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage Teams & Technicians Modal -->
+  <div id="teamManageModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
+    <div class="glass-card w-full max-w-xl p-5 rounded-2xl max-h-[92vh] overflow-y-auto border border-slate-700 text-xs">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3">
+        <div>
+          <h3 class="text-sm font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-users-gear text-indigo-400"></i> Manage Teams & Logins</h3>
+          <p class="text-slate-400">Create operational teams and field technician accounts</p>
+        </div>
+        <button onclick="closeModal('teamManageModal')" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- Add New Team -->
+      <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 mb-3 space-y-2">
+        <h4 class="font-bold text-white">Create New Operational Team</h4>
+        <div class="flex gap-2">
+          <input type="text" id="newTeamInput" placeholder="e.g. MEDCHAL, SUCHITRA" class="flex-1 p-2 bg-slate-950 border border-slate-700 rounded text-white uppercase font-mono">
+          <button onclick="addNewTeam()" class="px-3 py-2 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded whitespace-nowrap">
+            <i class="fa-solid fa-plus mr-1"></i> Add Team
+          </button>
+        </div>
+        <div id="teamsBadgeList" class="flex flex-wrap gap-1.5 pt-1"></div>
+      </div>
+
+      <!-- Add New Technician -->
+      <form id="addMemberForm" onsubmit="saveNewTeamMember(event)" class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-2.5 mb-3">
+        <h4 class="font-bold text-white">Create Technician Login</h4>
+        <div class="grid grid-cols-2 gap-2">
+          <input type="text" id="newUserId" required placeholder="User ID (e.g. ravi_hmt)" class="p-2 bg-slate-950 border border-slate-700 rounded text-white font-mono">
+          <input type="text" id="newUserPass" required placeholder="Password" class="p-2 bg-slate-950 border border-slate-700 rounded text-white">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <input type="text" id="newUserName" required placeholder="Full Name" class="p-2 bg-slate-950 border border-slate-700 rounded text-white">
+          <select id="newUserTeamSelect" required class="p-2 bg-slate-950 border border-slate-700 rounded text-white"></select>
+        </div>
+        <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded shadow">
+          <i class="fa-solid fa-user-plus mr-1"></i> Save Technician Login
+        </button>
+      </form>
+
+      <!-- Active Users Table -->
+      <h4 class="font-bold text-slate-300 mb-1">Active Accounts</h4>
+      <div class="overflow-x-auto border border-slate-800 rounded-lg">
+        <table class="w-full text-left">
+          <thead class="bg-slate-900 text-slate-400 border-b border-slate-800">
+            <tr>
+              <th class="p-2">User ID</th>
+              <th class="p-2">Name</th>
+              <th class="p-2">Team</th>
+              <th class="p-2 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody id="teamMembersTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Add Asset Modal -->
+  <div id="addAssetModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
+    <div class="glass-card w-full max-w-lg p-5 rounded-2xl max-h-[92vh] overflow-y-auto border border-slate-700 text-xs">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+        <h3 class="text-sm font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-plus text-teal-400"></i> Add New Gas Asset</h3>
         <button onclick="closeModal('addAssetModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
-      <form id="addAssetForm" onsubmit="handleCreateAsset(event)" class="space-y-3">
-        <div class="grid grid-cols-2 gap-3">
+      <form id="addAssetForm" onsubmit="handleCreateAsset(event)" class="space-y-2.5">
+        <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="block text-slate-400 mb-1">Asset ID *</label>
             <input type="text" id="newAssetId" required placeholder="e.g. S07-D04-SR105" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white font-mono uppercase">
@@ -473,13 +479,13 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="block text-slate-400 mb-1">Team / Zone *</label>
-            <input type="text" id="newAssetTeam" required placeholder="e.g. HMT" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white uppercase font-mono">
+            <select id="newAssetTeamSelect" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white"></select>
           </div>
           <div>
-            <label class="block text-slate-400 mb-1">Assigned Technician</label>
+            <label class="block text-slate-400 mb-1">Initial Technician</label>
             <input type="text" id="newAssetTech" placeholder="e.g. Ramesh V" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
           </div>
         </div>
@@ -489,7 +495,7 @@
           <input type="text" id="newAssetLoc" required placeholder="e.g. Gundlapochampalli Near Pipeline" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="block text-slate-400 mb-1">Latitude</label>
             <input type="number" step="any" id="newAssetLat" required placeholder="17.5684" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white font-mono">
@@ -500,202 +506,134 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block text-slate-400 mb-1">Last Maintenance Date *</label>
+            <label class="block text-slate-400 mb-1">Last Maintenance Date</label>
             <input type="date" id="newAssetLastDate" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
           </div>
           <div>
-            <label class="block text-slate-400 mb-1">Frequency Cycle (Days) *</label>
-            <input type="number" id="newAssetFreq" required min="1" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white font-mono">
+            <label class="block text-slate-400 mb-1">Frequency (Days)</label>
+            <input type="number" id="newAssetFreq" required min="1" value="90" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white font-mono">
           </div>
         </div>
 
-        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
-          <button type="button" onclick="closeModal('addAssetModal')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded">Cancel</button>
-          <button type="submit" class="px-5 py-2 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded shadow flex items-center gap-1.5">
-            <i class="fa-solid fa-check"></i> Create Asset
-          </button>
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+          <button type="button" onclick="closeModal('addAssetModal')" class="px-3.5 py-1.5 bg-slate-800 text-slate-300 rounded">Cancel</button>
+          <button type="submit" class="px-4 py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-medium rounded shadow">Create Asset</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal: 4 & 5. Category Frequency & Custom PNG Icon Settings -->
-  <div id="categoryFreqModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-    <div class="glass-card w-full max-w-2xl p-6 rounded-2xl max-h-[90vh] overflow-y-auto border border-slate-700 text-xs">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-        <div>
-          <h3 class="text-sm font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-sliders text-amber-400"></i> Category Maintenance Frequency & PNG Icons
-          </h3>
-          <p class="text-[11px] text-slate-400">Set default frequency cycles and upload custom PNG map icons for each asset type.</p>
+  <!-- Admin Edit Asset Modal -->
+  <div id="editAssetModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
+    <div class="glass-card w-full max-w-lg p-5 rounded-2xl max-h-[92vh] overflow-y-auto border border-slate-700 text-xs">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+        <h3 class="text-sm font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-pen-to-square text-amber-400"></i> Edit Asset</h3>
+        <button onclick="closeModal('editAssetModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <form id="editAssetForm" onsubmit="handleSaveEditAsset(event)" class="space-y-2.5">
+        <input type="hidden" id="editAssetOriginalId">
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-slate-400 mb-1">Asset ID</label>
+            <input type="text" id="editAssetId" readonly class="w-full p-2 bg-slate-950 border border-slate-800 rounded text-slate-400 font-mono cursor-not-allowed">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Type</label>
+            <select id="editAssetType" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
+              <option value="SR">SR</option>
+              <option value="DRS">DRS</option>
+              <option value="MRS">MRS</option>
+              <option value="Diaphragm meter">Diaphragm meter</option>
+              <option value="MDPE Valve">MDPE Valve</option>
+              <option value="SV station">SV station</option>
+            </select>
+          </div>
         </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-slate-400 mb-1">Team</label>
+            <select id="editAssetTeamSelect" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white"></select>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Assigned Tech</label>
+            <input type="text" id="editAssetTech" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-400 mb-1">Location / Landmark</label>
+          <input type="text" id="editAssetLocation" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-slate-400 mb-1">Latitude</label>
+            <input type="number" step="any" id="editAssetLat" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white font-mono">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Longitude</label>
+            <input type="number" step="any" id="editAssetLng" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white font-mono">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-slate-400 mb-1">Last Maintenance Date</label>
+            <input type="date" id="editAssetLastDate" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Frequency Cycle (Days)</label>
+            <input type="number" id="editAssetFreq" required min="1" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white font-mono">
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+          <button type="button" onclick="closeModal('editAssetModal')" class="px-3.5 py-1.5 bg-slate-800 text-slate-300 rounded">Cancel</button>
+          <button type="submit" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-medium rounded shadow">Update Asset</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Category Frequencies Settings Modal -->
+  <div id="categoryFreqModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
+    <div class="glass-card w-full max-w-lg p-5 rounded-2xl max-h-[92vh] overflow-y-auto border border-slate-700 text-xs">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+        <h3 class="text-sm font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-sliders text-amber-400"></i> Category Maintenance Cycles</h3>
         <button onclick="closeModal('categoryFreqModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
-      <div class="space-y-3" id="categoryFreqContainer">
-        <!-- Dynamically generated for each category -->
-      </div>
+      <div class="space-y-2.5" id="categoryFreqContainer"></div>
 
-      <div class="flex items-center justify-between pt-4 border-t border-slate-800">
-        <label class="flex items-center gap-2 text-slate-300 select-none">
+      <div class="pt-3 border-t border-slate-800 flex items-center justify-between flex-wrap gap-2">
+        <label class="flex items-center gap-1.5 text-slate-300 select-none">
           <input type="checkbox" id="applyFreqToAllAssetsCheck" class="rounded bg-slate-800 border-slate-700 text-amber-500">
-          <span>Apply new frequency to all existing assets in category</span>
+          <span>Apply to all existing assets in category</span>
         </label>
-        <button onclick="saveCategorySettings()" class="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded shadow flex items-center gap-1.5">
-          <i class="fa-solid fa-floppy-disk"></i> Save & Refresh
+        <button onclick="saveCategorySettings()" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded shadow">
+          Save Settings
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Modal: 7. Notice Board Publisher (Admin) -->
-  <div id="noticeModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-    <div class="glass-card w-full max-w-md p-6 rounded-2xl border border-slate-700 text-xs">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-        <h3 class="text-sm font-bold text-white flex items-center gap-2">
-          <i class="fa-solid fa-bullhorn text-indigo-400"></i> Broadcast Technician Notice
-        </h3>
-        <button onclick="closeModal('noticeModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-
-      <form onsubmit="handlePublishNotice(event)" class="space-y-3">
-        <div>
-          <label class="block text-slate-400 mb-1">Notice Headline *</label>
-          <input type="text" id="noticeTitleInput" required placeholder="e.g. Critical Safety Alert - Pressure Regulators" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
-        </div>
-        <div>
-          <label class="block text-slate-400 mb-1">Notice Instructions / Message *</label>
-          <textarea id="noticeBodyInput" required rows="4" placeholder="Enter instructions for field technicians across zones..." class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white"></textarea>
-        </div>
-
-        <div class="flex items-center justify-between pt-2">
-          <button type="button" onclick="clearNotice()" class="text-rose-400 hover:underline">Remove Current Notice</button>
-          <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded shadow flex items-center gap-1.5">
-            <i class="fa-solid fa-paper-plane"></i> Publish Notice
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modal: Maintenance Sign-Off (Photos & Observations) -->
-  <div id="maintenanceModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-    <div class="glass-card w-full max-w-lg p-6 rounded-2xl max-h-[90vh] overflow-y-auto border border-slate-700 text-xs">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-        <div>
-          <h3 class="text-sm font-bold text-white">Complete Maintenance Sign-Off</h3>
-          <p id="maintAssetInfo" class="text-teal-400 font-mono mt-0.5 font-bold"></p>
-        </div>
-        <button onclick="closeModal('maintenanceModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-
-      <form id="maintenanceForm" onsubmit="submitMaintenance(event)" class="space-y-3">
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-slate-400 mb-1">Technician (Auto)</label>
-            <input type="text" id="maintTechName" readonly class="w-full p-2 bg-slate-950 border border-slate-800 rounded text-slate-300 font-semibold cursor-not-allowed">
-          </div>
-          <div>
-            <label class="block text-slate-400 mb-1">Date Conducted *</label>
-            <input type="date" id="maintDate" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
-          </div>
-        </div>
-
-        <!-- Before & After Photos -->
-        <div class="grid grid-cols-2 gap-3 p-3 bg-slate-900/60 rounded-xl border border-slate-800">
-          <div>
-            <label class="block text-slate-300 font-medium mb-1"><i class="fa-solid fa-camera mr-1 text-teal-400"></i> Before Photo</label>
-            <input type="file" id="beforePhotoInput" accept="image/*" capture="environment" onchange="previewImage(this, 'beforePreview')" class="text-[11px] text-slate-400">
-            <div id="beforePreview" class="mt-2 h-24 rounded border border-slate-800 bg-black/40 flex items-center justify-center text-slate-600 overflow-hidden">
-              <span>No image</span>
-            </div>
-          </div>
-          <div>
-            <label class="block text-slate-300 font-medium mb-1"><i class="fa-solid fa-camera mr-1 text-teal-400"></i> After Photo</label>
-            <input type="file" id="afterPhotoInput" accept="image/*" capture="environment" onchange="previewImage(this, 'afterPreview')" class="text-[11px] text-slate-400">
-            <div id="afterPreview" class="mt-2 h-24 rounded border border-slate-800 bg-black/40 flex items-center justify-center text-slate-600 overflow-hidden">
-              <span>No image</span>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-slate-400 mb-1">Observations / Checklist (Pressure test, greasing, leak-check)</label>
-          <textarea id="maintObservations" rows="2" placeholder="e.g. Gas inlet pressure 4.2 bar, soap bubble leak test passed, filter mesh cleaned..." class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white"></textarea>
-        </div>
-
-        <div>
-          <label class="block text-slate-400 mb-1">Remarks</label>
-          <input type="text" id="maintRemarks" placeholder="Satisfactory / Work complete" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
-        </div>
-
-        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
-          <button type="button" onclick="closeModal('maintenanceModal')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded">Cancel</button>
-          <button type="submit" class="px-5 py-2 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded shadow flex items-center gap-1.5">
-            <i class="fa-solid fa-clipboard-check"></i> Sign-Off & Close
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modal: Import KMZ / CSV -->
-  <div id="importModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-    <div class="glass-card w-full max-w-lg p-6 rounded-2xl border border-slate-700 text-xs">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-        <h3 class="text-sm font-bold text-white flex items-center gap-2"><i class="fa-solid fa-file-import text-teal-400"></i> Import KMZ or CSV</h3>
-        <button onclick="closeModal('importModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      
-      <p class="text-slate-400 mb-3">Upload your Google Sheets exported CSV or Google Earth KMZ / KML file:</p>
-
-      <div class="border-2 border-dashed border-slate-700 hover:border-teal-500 rounded-xl p-6 text-center cursor-pointer transition mb-3" onclick="document.getElementById('fileUploadInput').click()">
-        <i class="fa-solid fa-cloud-arrow-up text-3xl text-teal-400 mb-2"></i>
-        <p class="text-slate-200 font-medium">Click to choose KMZ, KML or CSV file</p>
-        <p class="text-[11px] text-slate-500 mt-1">Automatic fix for invalid dates (e.g. 0179) and coordinates</p>
-        <input type="file" id="fileUploadInput" accept=".kmz,.kml,.csv" onchange="handleFileImport(event)" class="hidden">
-      </div>
-
-      <div id="importStatus" class="hidden text-center py-2 text-xs font-semibold"></div>
-    </div>
-  </div>
-
-  <!-- Modal: Backup & Export Database -->
-  <div id="exportModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-    <div class="glass-card w-full max-w-md p-6 rounded-2xl border border-slate-700 text-xs">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-        <h3 class="text-sm font-bold text-white flex items-center gap-2"><i class="fa-solid fa-download text-amber-400"></i> Database Backup & Export</h3>
-        <button onclick="closeModal('exportModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-
-      <p class="text-slate-300 mb-4">Download your complete database and current records:</p>
-
-      <div class="space-y-3">
-        <button onclick="exportAssetsCSV()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 rounded-xl font-semibold flex items-center justify-center gap-2">
-          <i class="fa-solid fa-file-csv"></i> Export Asset Registry (CSV)
-        </button>
-
-        <button onclick="exportFullJSONBackup()" class="w-full py-2.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2 shadow-lg shadow-teal-600/30">
-          <i class="fa-solid fa-database"></i> Download Full Database (JSON)
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Reports (From To Date) -->
-  <div id="reportsModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-    <div class="glass-card w-full max-w-3xl p-6 rounded-2xl max-h-[90vh] overflow-y-auto border border-slate-700 text-xs">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+  <!-- Reports Modal (From to To Date Filter) -->
+  <div id="reportsModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
+    <div class="glass-card w-full max-w-3xl p-5 rounded-2xl max-h-[92vh] overflow-y-auto border border-slate-700 text-xs">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
         <div>
           <h3 class="text-sm font-bold text-white">Maintenance Audit Reports</h3>
-          <p class="text-[11px] text-slate-400">Filter completed maintenance records by date range</p>
+          <p class="text-[11px] text-slate-400">Filter completed maintenance records by date range (DD-MM-YYYY)</p>
         </div>
-        <button onclick="closeModal('reportsModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        <button onclick="closeModal('reportsModal')" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-3">
         <div>
           <label class="block text-slate-400 mb-1">From Date</label>
           <input type="date" id="reportFromDate" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
@@ -722,76 +660,106 @@
         <table class="w-full text-left">
           <thead class="bg-slate-900 text-slate-400 border-b border-slate-800">
             <tr>
-              <th class="p-2.5">Date</th>
-              <th class="p-2.5">Asset ID</th>
-              <th class="p-2.5">Tech</th>
-              <th class="p-2.5">Remarks</th>
-              <th class="p-2.5 text-center">Photos</th>
+              <th class="p-2">Date (DD-MM-YYYY)</th>
+              <th class="p-2">Asset ID</th>
+              <th class="p-2">Technician</th>
+              <th class="p-2">Remarks</th>
+              <th class="p-2 text-center">Photos</th>
             </tr>
           </thead>
-          <tbody id="reportTableBody" class="divide-y divide-slate-800 text-slate-300">
-            <!-- Dynamically populated -->
-          </tbody>
+          <tbody id="reportTableBody" class="divide-y divide-slate-800 text-slate-300"></tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- Modal: Progress Log -->
-  <div id="progressModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-    <div class="glass-card w-full max-w-xl p-6 rounded-2xl max-h-[90vh] overflow-y-auto border border-slate-700 text-xs">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+  <!-- Progress Log Modal -->
+  <div id="progressModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
+    <div class="glass-card w-full max-w-lg p-5 rounded-2xl max-h-[92vh] overflow-y-auto border border-slate-700">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
         <div>
-          <h3 class="text-sm font-bold text-white">Maintenance Work Progress</h3>
-          <p id="progressSubTitle" class="text-slate-400"></p>
+          <h3 class="text-sm font-bold text-white">Completed Work Progress</h3>
+          <p id="progressSubTitle" class="text-xs text-slate-400"></p>
         </div>
-        <button onclick="closeModal('progressModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        <button onclick="closeModal('progressModal')" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark"></i></button>
       </div>
-
-      <div class="space-y-3" id="progressItemsContainer">
-        <!-- Dynamically populated -->
-      </div>
+      <div class="space-y-2.5 text-xs" id="progressItemsContainer"></div>
     </div>
   </div>
 
-  <!-- Modal: Photo Viewer -->
-  <div id="photoViewerModal" class="hidden fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
-    <div class="max-w-xl w-full p-4 text-center">
-      <div class="flex justify-between items-center mb-3">
-        <h4 id="photoViewerTitle" class="text-sm font-semibold text-white">Maintenance Photo</h4>
+  <!-- Photo Viewer Modal -->
+  <div id="photoViewerModal" class="hidden fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-3">
+    <div class="max-w-md w-full p-3 text-center">
+      <div class="flex justify-between items-center mb-2">
+        <h4 id="photoViewerTitle" class="text-xs font-semibold text-white">Inspection Photo</h4>
         <button onclick="closeModal('photoViewerModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark fa-lg"></i></button>
       </div>
-      <img id="largePhotoPreview" src="" alt="Photo" class="w-full max-h-[75vh] object-contain rounded-xl border border-slate-800 bg-slate-950">
+      <img id="largePhotoPreview" src="" alt="Photo" class="w-full max-h-[72vh] object-contain rounded-xl border border-slate-800 bg-slate-950">
     </div>
   </div>
 
-  <!-- ==================== 4. APPLICATION SCRIPT ==================== -->
+  <!-- Import Modal -->
+  <div id="importModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
+    <div class="glass-card w-full max-w-md p-5 rounded-2xl border border-slate-700 text-xs">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+        <h3 class="text-sm font-bold text-white"><i class="fa-solid fa-file-import text-teal-400 mr-1.5"></i> Import KMZ or CSV</h3>
+        <button onclick="closeModal('importModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="border-2 border-dashed border-slate-700 hover:border-teal-500 rounded-xl p-5 text-center cursor-pointer transition mb-2" onclick="document.getElementById('fileUploadInput').click()">
+        <i class="fa-solid fa-cloud-arrow-up text-2xl text-teal-400 mb-1.5"></i>
+        <p class="text-slate-200 font-medium">Choose KMZ, KML or CSV File</p>
+        <p class="text-[10px] text-slate-500 mt-1">Automatic fix for invalid dates and format conversion</p>
+        <input type="file" id="fileUploadInput" accept=".kmz,.kml,.csv" onchange="handleFileImport(event)" class="hidden">
+      </div>
+      <div id="importStatus" class="hidden text-center py-1.5 font-semibold"></div>
+    </div>
+  </div>
+
+  <!-- Backup DB Modal -->
+  <div id="exportModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
+    <div class="glass-card w-full max-w-sm p-5 rounded-2xl border border-slate-700 text-xs">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+        <h3 class="text-sm font-bold text-white"><i class="fa-solid fa-download text-purple-400 mr-1.5"></i> Database Backup</h3>
+        <button onclick="closeModal('exportModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="space-y-2.5">
+        <button onclick="exportAssetsCSV()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 rounded-xl font-semibold flex items-center justify-center gap-2">
+          <i class="fa-solid fa-file-csv"></i> Export Asset Registry (CSV)
+        </button>
+        <button onclick="exportFullJSONBackup()" class="w-full py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2 shadow">
+          <i class="fa-solid fa-database"></i> Download Full Backup (JSON)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 4. APPLICATION JAVASCRIPT ==================== -->
   <script>
-    // System Users
+    const DEFAULT_TEAMS = ['HMT', 'KPHB', 'MEDCHAL', 'SUCHITRA'];
+
     const DEFAULT_USERS = {
-      'admin': { pass: 'admin123', name: 'Satish M (Lead Admin)', role: 'admin', team: 'ALL' },
-      'hmt_tech': { pass: '1234', name: 'Ramesh V', role: 'tech', team: 'HMT' },
-      'kphb_tech': { pass: '1234', name: 'Suresh K', role: 'tech', team: 'KPHB' }
+      'admin': { pass: 'admin123', name: 'Satish M (Admin)', role: 'admin', team: 'ALL' },
+      'hmt_tech': { pass: '1234', name: 'HMT Field Tech', role: 'tech', team: 'HMT' },
+      'kphb_tech': { pass: '1234', name: 'KPHB Field Tech', role: 'tech', team: 'KPHB' }
     };
 
-    // Default Category Frequencies & Icons
     const DEFAULT_CATEGORY_CONFIG = {
-      'SR': { name: 'SR', freqDays: 90, iconUrl: '', emoji: '🔄' },
-      'DRS': { name: 'DRS', freqDays: 180, iconUrl: '', emoji: '🏢' },
-      'MRS': { name: 'MRS', freqDays: 30, iconUrl: '', emoji: '🏭' },
-      'Diaphragm meter': { name: 'Diaphragm meter', freqDays: 180, iconUrl: '', emoji: '⏱️' },
-      'MDPE Valve': { name: 'MDPE Valve', freqDays: 180, iconUrl: '', emoji: '🚰' },
-      'SV station': { name: 'SV station', freqDays: 90, iconUrl: '', emoji: '⚙️' }
+      'SR': { freqDays: 90, emoji: '🔄' },
+      'DRS': { freqDays: 180, emoji: '🏢' },
+      'MRS': { freqDays: 30, emoji: '🏭' },
+      'Diaphragm meter': { freqDays: 180, emoji: '⏱️' },
+      'MDPE Valve': { freqDays: 180, emoji: '🚰' },
+      'SV station': { freqDays: 90, emoji: '⚙️' }
     };
 
-    // State Variables
+    let teams = [];
     let users = {};
+    let categoryConfigs = {};
     let currentUser = null;
     let assets = [];
     let maintenanceHistory = [];
-    let categoryConfigs = {};
-    let activeNotice = null;
     let activeCategory = 'All';
+    let searchQuery = '';
     let showAllTeams = false;
     let userLocation = null;
     let map = null;
@@ -800,57 +768,48 @@
 
     // --- INITIALIZATION ---
     window.addEventListener('DOMContentLoaded', () => {
-      loadStorageData();
+      loadStoredAppData();
       checkSession();
     });
 
-    function loadStorageData() {
-      // 1. Users
+    function loadStoredAppData() {
+      const storedTeams = localStorage.getItem('bgl_teams_list');
+      teams = storedTeams ? JSON.parse(storedTeams) : [...DEFAULT_TEAMS];
+
       const storedUsers = localStorage.getItem('bgl_team_users');
       users = storedUsers ? JSON.parse(storedUsers) : { ...DEFAULT_USERS };
 
-      // 2. Category Settings & PNG Icons
       const storedCat = localStorage.getItem('bgl_cat_configs');
       categoryConfigs = storedCat ? JSON.parse(storedCat) : JSON.parse(JSON.stringify(DEFAULT_CATEGORY_CONFIG));
 
-      // 3. Notice Bulletin
-      const storedNotice = localStorage.getItem('bgl_active_notice');
-      activeNotice = storedNotice ? JSON.parse(storedNotice) : {
-        title: "Standard Operational Notice",
-        body: "All technicians are requested to complete soap bubble leak inspection on regulators before logging completion.",
-        date: new Date().toISOString().split('T')[0]
-      };
-
-      // 4. Assets & History
       const storedAssets = localStorage.getItem('bgl_assets_v2') || localStorage.getItem('bgl_assets_v1');
       if (storedAssets) {
         try { assets = JSON.parse(storedAssets); } catch(e) { assets = []; }
       }
 
-      // If no assets exist, preload sample from user screenshot
+      // Preload realistic sample data if empty
       if (!assets || assets.length === 0) {
         assets = [
-          { id: "S07-D04-SR102", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5684817, lng: 78.4718986, lastDate: "2024-05-10", freqDays: 90, tech: "Ramesh V" },
-          { id: "S07-D04-SR103", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5684774, lng: 78.4718246, lastDate: "2024-06-15", freqDays: 90, tech: "Ramesh V" },
-          { id: "S07-D04-SR101", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5863404, lng: 78.4748154, lastDate: "2024-04-20", freqDays: 90, tech: "Ramesh V" },
-          { id: "S07-D04-SR100", type: "SR", team: "HMT", location: "Suchitra", lat: 17.5111404, lng: 78.4808035, lastDate: "2024-07-01", freqDays: 90, tech: "Ramesh V" },
-          { id: "S10-D06-SR04", type: "SR", team: "KPHB", location: "Erragadda", lat: 17.4585855, lng: 78.4306944, lastDate: "2024-03-12", freqDays: 90, tech: "Suresh K" }
+          { id: "S07-D04-SR102", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5684817, lng: 78.4718986, lastDate: "2024-05-10", freqDays: 90, assignedTech: "HMT Field Tech" },
+          { id: "S07-D04-SR103", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5684774, lng: 78.4718246, lastDate: "2024-06-15", freqDays: 90, assignedTech: null },
+          { id: "S07-D04-SR101", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5863404, lng: 78.4748154, lastDate: "2024-04-20", freqDays: 90, assignedTech: null },
+          { id: "S07-D04-SR100", type: "SR", team: "HMT", location: "Suchitra Junction", lat: 17.5111404, lng: 78.4808035, lastDate: "2024-07-01", freqDays: 90, assignedTech: null },
+          { id: "S10-D06-SR04", type: "SR", team: "KPHB", location: "Erragadda Main Road", lat: 17.4585855, lng: 78.4306944, lastDate: "2024-03-12", freqDays: 90, assignedTech: "KPHB Field Tech" },
+          { id: "DRS-HMT-01", type: "DRS", team: "HMT", location: "HMT Industrial Area", lat: 17.5255, lng: 78.4112, lastDate: "2024-02-10", freqDays: 180, assignedTech: null },
+          { id: "MRS-KPHB-01", type: "MRS", team: "KPHB", location: "KPHB Colony Phase 3", lat: 17.4938, lng: 78.3995, lastDate: "2024-08-01", freqDays: 30, assignedTech: "KPHB Field Tech" },
+          { id: "VALVE-MDPE-22", type: "MDPE Valve", team: "HMT", location: "Balanagar Cross Roads", lat: 17.4699, lng: 78.4410, lastDate: "2024-04-05", freqDays: 180, assignedTech: null }
         ];
         saveAssets();
       }
 
-      const storedHist = localStorage.getItem('bgl_maint_history_v2');
-      if (storedHist) {
-        try { maintenanceHistory = JSON.parse(storedHist); } catch(e) { maintenanceHistory = []; }
+      const historyStored = localStorage.getItem('bgl_maint_history_v2');
+      if (historyStored) {
+        try { maintenanceHistory = JSON.parse(historyStored); } catch(e) { maintenanceHistory = []; }
       }
     }
 
     function saveAssets() {
       localStorage.setItem('bgl_assets_v2', JSON.stringify(assets));
-    }
-
-    function saveCategoryConfigs() {
-      localStorage.setItem('bgl_cat_configs', JSON.stringify(categoryConfigs));
     }
 
     function checkSession() {
@@ -864,7 +823,6 @@
       }
     }
 
-    // --- AUTHENTICATION ---
     function handleLogin(e) {
       e.preventDefault();
       const u = document.getElementById('loginUsername').value.trim();
@@ -884,7 +842,6 @@
 
     function handleLogout() {
       sessionStorage.removeItem('bgl_current_user');
-      currentUser = null;
       location.reload();
     }
 
@@ -892,86 +849,44 @@
       document.getElementById('loginSection').classList.add('hidden');
       document.getElementById('appContainer').classList.remove('hidden');
 
-      // User details
       document.getElementById('userBadge').textContent = currentUser.role.toUpperCase();
-      document.getElementById('userZoneLabel').textContent = `${currentUser.name} ${currentUser.team !== 'ALL' ? '(' + currentUser.team + ')' : ''}`;
+      document.getElementById('userZoneLabel').textContent = `${currentUser.name} (${currentUser.team})`;
 
-      // Admin vs Tech view controls
       if (currentUser.role === 'admin') {
         document.getElementById('adminHeaderBtns').classList.remove('hidden');
         document.getElementById('teamFilterBanner').classList.add('hidden');
+        document.getElementById('techPendingBanner').classList.add('hidden');
         showAllTeams = true;
+        renderTeamsUI();
+        renderTeamMembers();
       } else {
         document.getElementById('adminHeaderBtns').classList.add('hidden');
         document.getElementById('teamFilterBanner').classList.remove('hidden');
-        document.getElementById('activeFilterDesc').textContent = `Filtered exclusively for ${currentUser.team} Team`;
+        document.getElementById('activeFilterDesc').textContent = `Zone: ${currentUser.team} Team Assets`;
         showAllTeams = false;
+        renderTechPendingTasks();
       }
 
-      renderNoticeBanner();
       initMap();
       renderDashboardKPI();
-      applyFiltersAndRender();
+      renderAssets();
     }
 
-    // --- 7. NOTICE BOARD ---
-    function renderNoticeBanner() {
-      const banner = document.getElementById('noticeBoardBanner');
-      if (activeNotice && activeNotice.body) {
-        banner.classList.remove('hidden');
-        document.getElementById('noticeTitle').textContent = activeNotice.title;
-        document.getElementById('noticeDate').textContent = activeNotice.date;
-        document.getElementById('noticeBody').textContent = activeNotice.body;
-      } else {
-        banner.classList.add('hidden');
-      }
-    }
-
-    function openNoticeModal() {
-      if (activeNotice) {
-        document.getElementById('noticeTitleInput').value = activeNotice.title;
-        document.getElementById('noticeBodyInput').value = activeNotice.body;
-      }
-      openModal('noticeModal');
-    }
-
-    function handlePublishNotice(e) {
-      e.preventDefault();
-      activeNotice = {
-        title: document.getElementById('noticeTitleInput').value.trim(),
-        body: document.getElementById('noticeBodyInput').value.trim(),
-        date: new Date().toISOString().split('T')[0]
-      };
-      localStorage.setItem('bgl_active_notice', JSON.stringify(activeNotice));
-      closeModal('noticeModal');
-      renderNoticeBanner();
-    }
-
-    function clearNotice() {
-      activeNotice = null;
-      localStorage.removeItem('bgl_active_notice');
-      closeModal('noticeModal');
-      renderNoticeBanner();
-    }
-
-    // --- 1. ROBUST DATE PARSER (FIXES '0179-12-31' & '0180-03-30') ---
+    // --- DATE FORMATTERS (Strict DD-MM-YYYY & Corrupted Date Recovery) ---
     function safeParseDate(val) {
       if (!val || val === '' || val === 'null' || val === 'undefined') {
         return new Date().toISOString().split('T')[0];
       }
       const s = String(val).trim();
 
-      // Detect bogus years like 0179, 1899, 1900 from Excel empty dates
+      // Fix years < 2000 (like 0179, 1899 from Excel empty serial date bug)
       const yrMatch = s.match(/^(\d{4})/);
       if (yrMatch && parseInt(yrMatch[1], 10) < 2000) {
-        // Return realistic date: default to today or Jan 1 of recent year
         return new Date().toISOString().split('T')[0];
       }
 
       // Format: YYYY-MM-DD
-      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
-        return s;
-      }
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
 
       // Format: DD/MM/YYYY or DD-MM-YYYY
       const dmy = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
@@ -988,6 +903,16 @@
       return new Date().toISOString().split('T')[0];
     }
 
+    function formatToDDMMYYYY(isoDateStr) {
+      if (!isoDateStr) return '--';
+      const clean = safeParseDate(isoDateStr);
+      const parts = clean.split('-');
+      if (parts.length === 3) {
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+      return isoDateStr;
+    }
+
     function computeStatus(lastDateStr, freqDays = 90) {
       const parsedLast = safeParseDate(lastDateStr);
       const last = new Date(parsedLast);
@@ -997,43 +922,33 @@
       due.setDate(due.getDate() + freq);
 
       const today = new Date();
-      // Remove hours for pure date comparison
       today.setHours(0, 0, 0, 0);
       due.setHours(0, 0, 0, 0);
 
       const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      const formattedDue = due.toISOString().split('T')[0];
+      const formattedDue = formatToDDMMYYYY(due.toISOString().split('T')[0]);
 
       if (diffDays < 0) {
-        return {
-          status: 'Overdue',
-          color: '#f43f5e',
-          badge: 'bg-rose-500/20 text-rose-300 border border-rose-500/40',
-          dueDate: formattedDue,
-          diffDays
-        };
+        return { status: 'Overdue', color: '#f43f5e', badge: 'bg-rose-500/20 text-rose-300 border border-rose-500/40', dueDateFormatted: formattedDue };
       } else if (diffDays <= 15) {
-        return {
-          status: 'Due Soon',
-          color: '#f59e0b',
-          badge: 'bg-amber-500/20 text-amber-300 border border-amber-500/40',
-          dueDate: formattedDue,
-          diffDays
-        };
+        return { status: 'Due Soon', color: '#f59e0b', badge: 'bg-amber-500/20 text-amber-300 border border-amber-500/40', dueDateFormatted: formattedDue };
       }
-      return {
-        status: 'Healthy',
-        color: '#10b981',
-        badge: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40',
-        dueDate: formattedDue,
-        diffDays
-      };
+      return { status: 'Healthy', color: '#10b981', badge: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40', dueDateFormatted: formattedDue };
     }
 
-    // --- 2. HAVERSINE DISTANCE & PROXIMITY ---
+    // --- LEAFLET MAP & HAVERSINE DISTANCE ---
+    function initMap() {
+      if (map) return;
+      map = L.map('map').setView([17.5132, 78.4345], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+      }).addTo(map);
+      markersLayer = L.layerGroup().addTo(map);
+    }
+
     function getDistance(lat1, lon1, lat2, lon2) {
       if (!lat1 || !lon1 || !lat2 || !lon2) return null;
-      const R = 6371; // km
+      const R = 6371;
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLon = (lon2 - lon1) * Math.PI / 180;
       const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -1052,12 +967,12 @@
         if (userMarker) { map.removeLayer(userMarker); userMarker = null; }
         btn.className = "px-2.5 py-1.5 rounded-lg font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 transition";
         label.textContent = "My Location";
-        applyFiltersAndRender();
+        renderAssets();
         return;
       }
 
       if (!navigator.geolocation) {
-        alert("Geolocation is not supported by your browser");
+        showToast("Geolocation not supported by browser");
         return;
       }
 
@@ -1073,53 +988,84 @@
         const locIcon = L.divIcon({
           className: 'pulse-container',
           html: `<div class="pulse-loc"></div>`,
-          iconSize: [20, 20],
-          iconAnchor: [10, 10]
+          iconSize: [18, 18],
+          iconAnchor: [9, 9]
         });
 
         userMarker = L.marker([userLocation.lat, userLocation.lng], { icon: locIcon })
           .addTo(map)
-          .bindPopup("<b class='text-cyan-400'>Your Current Location</b>");
+          .bindPopup("<b class='text-cyan-400'>Your Current Position</b>");
 
-        map.setView([userLocation.lat, userLocation.lng], 14);
-        applyFiltersAndRender();
+        map.setView([userLocation.lat, userLocation.lng], 13);
+        renderAssets();
+        showToast("GPS Active: Sorted nearest first");
       }, err => {
         label.textContent = "My Location";
-        alert("Unable to fetch location: " + err.message);
+        showToast("GPS: " + err.message);
       }, { enableHighAccuracy: true });
     }
 
-    // --- LEAFLET MAP ---
-    function initMap() {
-      if (map) return;
-      map = L.map('map').setView([17.5132, 78.4345], 12);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-      }).addTo(map);
-
-      markersLayer = L.layerGroup().addTo(map);
+    // --- 4. TAP TO COPY (ASSET ID & LOCATION) ---
+    function copyAssetDetails(assetId, location) {
+      const copyText = `${assetId} - ${location}`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(copyText).then(() => showToast(`Copied: ${copyText}`));
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = copyText;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast(`Copied: ${copyText}`);
+      }
     }
 
-    // --- 6. EXECUTIVE DASHBOARD COMPUTATION ---
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      t.classList.remove('hidden');
+      setTimeout(() => t.classList.add('hidden'), 2300);
+    }
+
+    // --- TECHNICIAN PENDING TASKS BANNER ---
+    function renderTechPendingTasks() {
+      const banner = document.getElementById('techPendingBanner');
+      const list = document.getElementById('techPendingList');
+      if (currentUser.role === 'admin') {
+        banner.classList.add('hidden');
+        return;
+      }
+
+      const assignedToMe = assets.filter(a => a.assignedTech && a.assignedTech.toLowerCase() === currentUser.name.toLowerCase());
+      document.getElementById('techPendingCount').textContent = assignedToMe.length;
+
+      if (assignedToMe.length > 0) {
+        banner.classList.remove('hidden');
+        list.innerHTML = assignedToMe.map(a => `
+          <div class="px-2.5 py-1.5 rounded-lg bg-slate-900 border border-amber-500/50 flex items-center gap-2 whitespace-nowrap shrink-0">
+            <span class="font-mono font-bold text-white">${a.id}</span>
+            <span class="text-[10px] text-slate-400 truncate max-w-[110px]">${a.location}</span>
+            <button onclick="openMaintenanceModal('${a.id}')" class="px-2 py-0.5 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded text-[10px]">
+              Inspect
+            </button>
+          </div>
+        `).join('');
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    // --- DASHBOARD METRICS ---
     function renderDashboardKPI() {
       let total = 0, assigned = 0, healthy = 0, dueSoon = 0, overdue = 0;
-      const categoryCounts = { 'SR': 0, 'DRS': 0, 'MRS': 0, 'Diaphragm meter': 0, 'MDPE Valve': 0, 'SV station': 0 };
-      const teamCounts = {};
-
       assets.forEach(a => {
         total++;
-        if (a.tech && a.tech.trim() !== '' && a.tech !== 'Unassigned') assigned++;
-
+        if (a.assignedTech) assigned++;
         const info = computeStatus(a.lastDate, a.freqDays);
         if (info.status === 'Healthy') healthy++;
         else if (info.status === 'Due Soon') dueSoon++;
         else if (info.status === 'Overdue') overdue++;
-
-        if (categoryCounts[a.type] !== undefined) categoryCounts[a.type]++;
-        else categoryCounts[a.type] = (categoryCounts[a.type] || 0) + 1;
-
-        const team = a.team ? a.team.toUpperCase() : 'OTHER';
-        teamCounts[team] = (teamCounts[team] || 0) + 1;
       });
 
       document.getElementById('dashTotalCount').textContent = total;
@@ -1127,299 +1073,417 @@
       document.getElementById('dashHealthyCount').textContent = healthy;
       document.getElementById('dashDueSoonCount').textContent = dueSoon;
       document.getElementById('dashOverdueCount').textContent = overdue;
-
-      // Category Grid
-      const catGrid = document.getElementById('categoryStatsGrid');
-      catGrid.innerHTML = '';
-      Object.keys(categoryCounts).forEach(cat => {
-        const item = categoryConfigs[cat] || { emoji: '📍' };
-        const div = document.createElement('div');
-        div.className = 'p-2 bg-slate-900/90 rounded-lg border border-slate-800 flex items-center justify-between cursor-pointer hover:border-teal-500 transition';
-        div.onclick = () => filterCategory(cat);
-        div.innerHTML = `
-          <div class="flex items-center gap-1.5 truncate">
-            <span>${item.emoji}</span>
-            <span class="text-slate-300 font-medium truncate">${cat}</span>
-          </div>
-          <span class="font-bold text-teal-400 font-mono text-[11px]">${categoryCounts[cat]}</span>
-        `;
-        catGrid.appendChild(div);
-      });
-
-      // Team Grid
-      const teamGrid = document.getElementById('teamStatsGrid');
-      teamGrid.innerHTML = '';
-      Object.keys(teamCounts).forEach(team => {
-        const div = document.createElement('div');
-        div.className = 'p-2 bg-slate-900/90 rounded-lg border border-slate-800 flex items-center justify-between';
-        div.innerHTML = `
-          <span class="text-slate-300 font-semibold uppercase font-mono">${team}</span>
-          <span class="font-bold text-indigo-400 font-mono text-[11px]">${teamCounts[team]} Assets</span>
-        `;
-        teamGrid.appendChild(div);
-      });
     }
 
-    // --- 8. REAL-TIME SEARCH & FILTER & SORT ---
-    function applyFiltersAndRender() {
-      const search = (document.getElementById('assetSearchInput').value || '').trim().toLowerCase();
+    // --- RENDER ASSET TABLE & MAP PINS ---
+    function renderAssets() {
+      const tbody = document.getElementById('assetsTableBody');
+      tbody.innerHTML = '';
+      markersLayer.clearLayers();
+
       const isAdmin = currentUser && currentUser.role === 'admin';
 
       let filtered = assets.filter(a => {
-        // 1. Category Filter
         if (activeCategory !== 'All' && a.type !== activeCategory) return false;
-
-        // 2. Team Scope Filter for Technicians
         if (!isAdmin && !showAllTeams && currentUser) {
           if (a.team && a.team.toUpperCase() !== currentUser.team.toUpperCase()) return false;
         }
-
-        // 3. Search text (ID, Location, Team, Assigned Tech)
-        if (search) {
-          const mId = (a.id || '').toLowerCase().includes(search);
-          const mLoc = (a.location || '').toLowerCase().includes(search);
-          const mTeam = (a.team || '').toLowerCase().includes(search);
-          const mTech = (a.tech || '').toLowerCase().includes(search);
-          if (!mId && !mLoc && !mTeam && !mTech) return false;
+        if (searchQuery) {
+          const q = searchQuery.toLowerCase();
+          const matchId = (a.id || '').toLowerCase().includes(q);
+          const matchLoc = (a.location || '').toLowerCase().includes(q);
+          const matchTeam = (a.team || '').toLowerCase().includes(q);
+          const matchTech = (a.assignedTech || '').toLowerCase().includes(q);
+          if (!matchId && !matchLoc && !matchTeam && !matchTech) return false;
         }
-
         return true;
       });
 
-      // 2. Location-Based Sorting (Ascending Haversine distance)
+      // Proximity Distance Sorting
       if (userLocation) {
         filtered.forEach(a => {
           a._distKm = getDistance(userLocation.lat, userLocation.lng, a.lat, a.lng);
         });
-        filtered.sort((a, b) => (a._distKm || 9999) - (b._distKm || 9999));
-        document.getElementById('sortIndicator').innerHTML = `<i class="fa-solid fa-arrow-down-short-wide text-cyan-400 mr-1"></i> Sorted: Nearest First (GPS Distance)`;
+        filtered.sort((a, b) => (a._distKm || 99999) - (b._distKm || 99999));
+        document.getElementById('sortIndicator').textContent = "Sorted: Nearest First (GPS)";
       } else {
-        document.getElementById('sortIndicator').innerHTML = `<i class="fa-solid fa-arrow-down-short-wide text-teal-400 mr-1"></i> Sorted: Default`;
+        document.getElementById('sortIndicator').textContent = "Sorted: Default";
       }
 
-      renderTable(filtered);
-      renderMapPins(filtered);
       document.getElementById('assetCountBadge').textContent = filtered.length;
-    }
 
-    function clearSearch() {
-      document.getElementById('assetSearchInput').value = '';
-      applyFiltersAndRender();
-    }
-
-    function filterCategory(cat) {
-      activeCategory = cat;
-      document.querySelectorAll('.cat-pill').forEach(btn => {
-        if (btn.getAttribute('data-cat') === cat) {
-          btn.className = "cat-pill active px-3.5 py-1.5 rounded-lg bg-teal-600 text-white font-medium whitespace-nowrap";
-        } else {
-          btn.className = "cat-pill px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium whitespace-nowrap";
-        }
-      });
-      applyFiltersAndRender();
-    }
-
-    function handleTeamToggle(checked) {
-      showAllTeams = checked;
-      applyFiltersAndRender();
-    }
-
-    // --- RENDER TABLE ---
-    function renderTable(list) {
-      const tbody = document.getElementById('assetsTableBody');
-      tbody.innerHTML = '';
-
-      if (list.length === 0) {
+      if (filtered.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="9" class="p-8 text-center text-slate-500">
-              <i class="fa-solid fa-magnifying-glass text-2xl mb-2 block opacity-40"></i>
-              No assets match the selected filters or search query.
+            <td colspan="9" class="p-6 text-center text-slate-500">
+              <i class="fa-solid fa-magnifying-glass text-xl mb-1.5 block opacity-40"></i>
+              No assets found matching the selected filter.
             </td>
           </tr>
         `;
         return;
       }
 
-      const isAdmin = currentUser && currentUser.role === 'admin';
+      const mapBounds = [];
 
-      list.forEach(a => {
-        const info = computeStatus(a.lastDate, a.freqDays);
-        const cfg = categoryConfigs[a.type] || { emoji: '📍', iconUrl: '' };
-
-        // Distance formatting
+      filtered.forEach(asset => {
+        const info = computeStatus(asset.lastDate, asset.freqDays);
+        const lastFormatted = formatToDDMMYYYY(asset.lastDate);
+        
         let distHtml = '<span class="text-slate-600">--</span>';
-        if (a._distKm !== undefined && a._distKm !== null) {
-          if (a._distKm < 1) {
-            distHtml = `<span class="px-2 py-0.5 rounded bg-cyan-950/70 border border-cyan-800/80 text-cyan-300 font-mono font-semibold">${Math.round(a._distKm * 1000)} m</span>`;
-          } else {
-            distHtml = `<span class="px-2 py-0.5 rounded bg-cyan-950/70 border border-cyan-800/80 text-cyan-300 font-mono font-semibold">${a._distKm.toFixed(2)} km</span>`;
-          }
+        if (asset._distKm !== undefined && asset._distKm !== null) {
+          distHtml = asset._distKm < 1 ?
+            `<span class="px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-800 text-cyan-300 font-mono text-[10px] font-semibold">${Math.round(asset._distKm * 1000)} m</span>` :
+            `<span class="px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-800 text-cyan-300 font-mono text-[10px] font-semibold">${asset._distKm.toFixed(2)} km</span>`;
         }
 
-        // Icon representation
-        const iconPreview = cfg.iconUrl ?
-          `<img src="${cfg.iconUrl}" class="w-5 h-5 object-contain rounded" alt="${a.type}">` :
-          `<span class="text-sm">${cfg.emoji}</span>`;
+        // Map Pins
+        if (asset.lat && asset.lng) {
+          const marker = L.circleMarker([asset.lat, asset.lng], {
+            radius: 8,
+            fillColor: info.color,
+            color: '#ffffff',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.95
+          });
 
-        // Admin Buttons (3. Edit & Delete)
-        const adminActionBtns = isAdmin ? `
-          <button onclick="openEditAssetModal('${a.id}')" title="Edit Asset" class="p-1.5 bg-amber-600/20 text-amber-300 hover:bg-amber-600 hover:text-white rounded border border-amber-500/40 transition">
-            <i class="fa-solid fa-pen-to-square"></i>
-          </button>
-          <button onclick="deleteSingleAsset('${a.id}')" title="Delete Asset" class="p-1.5 bg-rose-600/20 text-rose-300 hover:bg-rose-600 hover:text-white rounded border border-rose-500/40 transition">
-            <i class="fa-solid fa-trash"></i>
-          </button>
-        ` : '';
-
-        const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-800/40 transition border-b border-slate-800/60';
-        tr.innerHTML = `
-          <td class="p-3 font-mono font-semibold text-white">
-            <span class="text-blue-400 font-bold block">${a.id}</span>
-            <span class="text-[10px] text-indigo-300 font-mono">${a.team || 'N/A'}</span>
-          </td>
-          <td class="p-3">
-            <div class="flex items-center gap-1.5">
-              ${iconPreview}
-              <span>${a.type}</span>
+          marker.bindPopup(`
+            <div style="color: #0f172a; font-size: 12px; font-family: sans-serif; min-width: 170px;">
+              <b>${asset.id}</b> (${asset.type})<br/>
+              <b>Loc:</b> ${asset.location}<br/>
+              <b>Team:</b> ${asset.team || 'N/A'}<br/>
+              <b>Due:</b> ${info.dueDateFormatted} (${info.status})<br/>
+              ${asset.assignedTech ? `<span style="color:#0f766e; font-weight:bold;">Assigned: ${asset.assignedTech}</span><br/>` : ''}
+              <div style="margin-top: 6px; display:flex; gap: 4px;">
+                <button onclick="openMaintenanceModal('${asset.id}')" style="background: #0f766e; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">
+                  Inspect & Close
+                </button>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=${asset.lat},${asset.lng}" target="_blank" style="background: #334155; color: white; text-decoration: none; padding: 4px 8px; border-radius: 4px; font-size: 11px;">
+                  Directions
+                </a>
+              </div>
             </div>
+          `);
+          markersLayer.addLayer(marker);
+          mapBounds.push([asset.lat, asset.lng]);
+        }
+
+        // Table Rows
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-800/40 transition border-b border-slate-800/50';
+        tr.innerHTML = `
+          <td class="p-2.5 tap-copy" onclick="copyAssetDetails('${asset.id}', '${asset.location.replace(/'/g, "\\'")}')" title="Tap to copy ID & Location">
+            <div class="font-mono font-bold text-teal-400 flex items-center gap-1.5">
+              <span>${asset.id}</span>
+              <i class="fa-regular fa-copy text-[10px] text-slate-500"></i>
+            </div>
+            <div class="text-[10px] text-slate-400 font-mono mt-0.5 sm:hidden">${asset.type} &bull; ${asset.team || 'N/A'}</div>
+            ${asset.assignedTech ? `<div class="text-[10px] text-amber-400 font-semibold mt-0.5"><i class="fa-solid fa-user-tag mr-1"></i>${asset.assignedTech}</div>` : ''}
           </td>
-          <td class="p-3 text-slate-300 max-w-xs truncate" title="${a.location}">${a.location}</td>
-          <td class="p-3">${distHtml}</td>
-          <td class="p-3 text-slate-300 font-medium">${a.tech || '<span class="text-slate-500">Unassigned</span>'}</td>
-          <td class="p-3 font-mono text-slate-400">${safeParseDate(a.lastDate)}</td>
-          <td class="p-3 font-mono font-bold text-slate-200">${info.dueDate}</td>
-          <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${info.badge}">${info.status}</span></td>
-          <td class="p-3 text-right">
-            <div class="flex items-center justify-end gap-1.5">
-              <a href="https://www.google.com/maps/dir/?api=1&destination=${a.lat},${a.lng}" target="_blank" title="Navigate" class="p-1.5 bg-slate-800 hover:bg-teal-600 text-teal-300 hover:text-white rounded border border-slate-700 transition">
+          <td class="p-2.5 hidden sm:table-cell">${asset.type}</td>
+          <td class="p-2.5 text-slate-300 max-w-xs truncate tap-copy" onclick="copyAssetDetails('${asset.id}', '${asset.location.replace(/'/g, "\\'")}')">${asset.location}</td>
+          <td class="p-2.5 font-mono">${distHtml}</td>
+          <td class="p-2.5 hidden md:table-cell text-slate-300">${asset.assignedTech ? `<span class="px-2 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-800/60 font-medium">${asset.assignedTech}</span>` : '<span class="text-slate-500">--</span>'}</td>
+          <td class="p-2.5 hidden sm:table-cell font-mono text-slate-400">${lastFormatted}</td>
+          <td class="p-2.5 font-mono font-bold text-slate-200">${info.dueDateFormatted}</td>
+          <td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${info.badge}">${info.status}</span></td>
+          <td class="p-2.5 text-right whitespace-nowrap">
+            <div class="flex items-center justify-end gap-1">
+              <a href="https://www.google.com/maps/dir/?api=1&destination=${asset.lat},${asset.lng}" target="_blank" title="Navigate" class="p-1.5 rounded bg-slate-800 hover:bg-teal-600 text-teal-300 hover:text-white border border-slate-700 transition">
                 <i class="fa-solid fa-location-arrow"></i>
               </a>
-              <button onclick="openMaintenanceModal('${a.id}')" class="px-2.5 py-1 bg-teal-600 hover:bg-teal-500 text-white font-medium rounded text-[11px] shadow flex items-center gap-1">
-                <i class="fa-solid fa-clipboard-check"></i> Close
+              <button onclick="openMaintenanceModal('${asset.id}')" title="Inspect & Sign-off" class="px-2.5 py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-medium rounded text-xs shadow flex items-center gap-1">
+                <i class="fa-solid fa-clipboard-check"></i> <span class="hidden sm:inline">Close</span>
               </button>
-              ${adminActionBtns}
+              ${isAdmin ? `
+                <button onclick="openAssignModal('${asset.id}')" title="Assign Technician" class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700">
+                  <i class="fa-solid fa-user-tag"></i>
+                </button>
+                <button onclick="openAssetHistory('${asset.id}')" title="Maintenance History" class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-blue-300 border border-slate-700">
+                  <i class="fa-solid fa-timeline"></i>
+                </button>
+                <button onclick="openEditAssetModal('${asset.id}')" title="Edit Asset" class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button onclick="deleteSingleAsset('${asset.id}')" title="Delete Asset" class="p-1.5 rounded bg-slate-800 hover:bg-rose-900 text-rose-400 border border-slate-700">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              ` : ''}
             </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      if (mapBounds.length > 0 && !userLocation) {
+        map.fitBounds(mapBounds, { padding: [25, 25], maxZoom: 13 });
+      }
+    }
+
+    function handleSearch(val) {
+      searchQuery = val;
+      renderAssets();
+    }
+
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      searchQuery = '';
+      renderAssets();
+    }
+
+    function filterCategory(cat) {
+      activeCategory = cat;
+      document.querySelectorAll('.cat-pill').forEach(btn => {
+        if (btn.getAttribute('data-cat') === cat) {
+          btn.className = "cat-pill active px-3 py-1.5 rounded-lg bg-teal-600 text-white font-medium whitespace-nowrap";
+        } else {
+          btn.className = "cat-pill px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium whitespace-nowrap";
+        }
+      });
+      renderAssets();
+    }
+
+    function handleTeamToggle(checked) {
+      showAllTeams = checked;
+      renderAssets();
+    }
+
+    // --- 6. MAINTENANCE SIGN-OFF & AUTO REMOVE ASSIGNMENT ---
+    let activeMaintenanceAssetId = null;
+
+    function openMaintenanceModal(assetId) {
+      activeMaintenanceAssetId = assetId;
+      const a = assets.find(x => x.id === assetId);
+      if (!a) return;
+
+      document.getElementById('maintAssetInfo').textContent = `${assetId} (${a.type} - ${a.team})`;
+      document.getElementById('maintTechName').value = currentUser.name;
+      document.getElementById('maintDate').value = new Date().toISOString().split('T')[0];
+      document.getElementById('maintObservations').value = '';
+      document.getElementById('maintRemarks').value = '';
+      document.getElementById('beforePreview').innerHTML = '<span>No image</span>';
+      document.getElementById('afterPreview').innerHTML = '<span>No image</span>';
+      document.getElementById('beforePhotoInput').value = '';
+      document.getElementById('afterPhotoInput').value = '';
+
+      openModal('maintenanceModal');
+    }
+
+    function previewImage(input, targetId) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById(targetId).innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    function submitMaintenance(e) {
+      e.preventDefault();
+      const asset = assets.find(a => a.id === activeMaintenanceAssetId);
+      if (!asset) return;
+
+      const dateConducted = safeParseDate(document.getElementById('maintDate').value);
+      const obs = document.getElementById('maintObservations').value;
+      const rem = document.getElementById('maintRemarks').value;
+      const beforeImg = document.querySelector('#beforePreview img')?.src || '';
+      const afterImg = document.querySelector('#afterPreview img')?.src || '';
+
+      const logRecord = {
+        id: 'LOG-' + Date.now(),
+        assetId: asset.id,
+        tech: currentUser.name,
+        date: dateConducted,
+        observations: obs,
+        remarks: rem,
+        beforePhoto: beforeImg,
+        afterPhoto: afterImg,
+        createdAt: new Date().toISOString()
+      };
+
+      maintenanceHistory.unshift(logRecord);
+      asset.lastDate = dateConducted;
+
+      // RULE 6: AUTOMATICALLY CLEAR ASSIGNED TECHNICIAN TAG ON COMPLETION
+      asset.assignedTech = null;
+
+      saveAssets();
+      localStorage.setItem('bgl_maint_history_v2', JSON.stringify(maintenanceHistory));
+
+      closeModal('maintenanceModal');
+      renderDashboardKPI();
+      renderTechPendingTasks();
+      renderAssets();
+      showToast(`Maintenance logged & assigned tag cleared for ${asset.id}!`);
+    }
+
+    // --- 7. COMPLETE ASSET MAINTENANCE AUDIT HISTORY (ADMIN) ---
+    function openAssetHistory(assetId) {
+      document.getElementById('historyAssetHeader').textContent = `Asset ID: ${assetId}`;
+      const container = document.getElementById('historyTimelineContainer');
+      container.innerHTML = '';
+
+      const records = maintenanceHistory.filter(h => h.assetId === assetId);
+
+      if (!records.length) {
+        container.innerHTML = `
+          <div class="p-8 text-center text-slate-500">
+            <i class="fa-solid fa-clock-rotate-left text-2xl mb-2 block opacity-40"></i>
+            No previous maintenance inspection logs recorded for this asset yet.
+          </div>
+        `;
+      } else {
+        records.forEach(rec => {
+          const card = document.createElement('div');
+          card.className = "p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2";
+          card.innerHTML = `
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-teal-400 font-mono">${formatToDDMMYYYY(rec.date)}</span>
+              <span class="text-slate-300 font-medium text-[11px]"><i class="fa-solid fa-user-check mr-1 text-teal-500"></i>${rec.tech}</span>
+            </div>
+            <p class="text-slate-300 text-[11px]"><b>Observations:</b> ${rec.observations || '--'}</p>
+            <p class="text-slate-400 text-[11px]"><b>Remarks:</b> ${rec.remarks || '--'}</p>
+            <div class="flex items-center gap-3 pt-1">
+              ${rec.beforePhoto ? `<button onclick="viewPhoto('${rec.beforePhoto}', 'Before - ${rec.assetId}')" class="text-xs text-teal-400 underline flex items-center gap-1"><i class="fa-solid fa-image"></i> Before Photo</button>` : ''}
+              ${rec.afterPhoto ? `<button onclick="viewPhoto('${rec.afterPhoto}', 'After - ${rec.assetId}')" class="text-xs text-teal-400 underline flex items-center gap-1"><i class="fa-solid fa-image"></i> After Photo</button>` : ''}
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      }
+      openModal('assetHistoryModal');
+    }
+
+    // --- ASSIGN TECHNICIAN MODAL ---
+    let assigningAssetId = null;
+
+    function openAssignModal(assetId) {
+      assigningAssetId = assetId;
+      document.getElementById('assignAssetIdLabel').textContent = `Asset: ${assetId}`;
+      const select = document.getElementById('assignTechSelect');
+      select.innerHTML = '<option value="">-- Choose Technician --</option>';
+
+      Object.values(users).filter(u => u.role === 'tech').forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.name;
+        opt.textContent = `${t.name} (${t.team})`;
+        select.appendChild(opt);
+      });
+
+      const asset = assets.find(a => a.id === assetId);
+      if (asset && asset.assignedTech) select.value = asset.assignedTech;
+
+      openModal('assignModal');
+    }
+
+    function saveAssignment() {
+      const asset = assets.find(a => a.id === assigningAssetId);
+      if (!asset) return;
+      const tech = document.getElementById('assignTechSelect').value;
+      asset.assignedTech = tech || null;
+      saveAssets();
+      closeModal('assignModal');
+      renderDashboardKPI();
+      renderAssets();
+      showToast(`Assigned to ${tech || 'None'}`);
+    }
+
+    function clearAssignment() {
+      const asset = assets.find(a => a.id === assigningAssetId);
+      if (asset) {
+        asset.assignedTech = null;
+        saveAssets();
+        closeModal('assignModal');
+        renderDashboardKPI();
+        renderAssets();
+        showToast("Assignment cleared");
+      }
+    }
+
+    // --- 9. TEAMS & TECHNICIANS CREATION ---
+    function renderTeamsUI() {
+      const badgeContainer = document.getElementById('teamsBadgeList');
+      badgeContainer.innerHTML = teams.map(t => `<span class="px-2 py-0.5 rounded bg-slate-800 text-teal-300 font-mono text-[10px] border border-slate-700">${t}</span>`).join('');
+
+      const userTeamSelect = document.getElementById('newUserTeamSelect');
+      const assetTeamSelect = document.getElementById('newAssetTeamSelect');
+      const editTeamSelect = document.getElementById('editAssetTeamSelect');
+      const opts = teams.map(t => `<option value="${t}">${t}</option>`).join('');
+      if (userTeamSelect) userTeamSelect.innerHTML = opts;
+      if (assetTeamSelect) assetTeamSelect.innerHTML = opts;
+      if (editTeamSelect) editTeamSelect.innerHTML = opts;
+    }
+
+    function addNewTeam() {
+      const input = document.getElementById('newTeamInput');
+      const val = input.value.trim().toUpperCase();
+      if (!val) return;
+      if (teams.includes(val)) {
+        showToast("Team already exists");
+        return;
+      }
+      teams.push(val);
+      localStorage.setItem('bgl_teams_list', JSON.stringify(teams));
+      input.value = '';
+      renderTeamsUI();
+      showToast(`Team ${val} created`);
+    }
+
+    function renderTeamMembers() {
+      const tbody = document.getElementById('teamMembersTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      Object.keys(users).forEach(uid => {
+        const u = users[uid];
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-800/40';
+        tr.innerHTML = `
+          <td class="p-2 font-mono text-white">${uid}</td>
+          <td class="p-2">${u.name}</td>
+          <td class="p-2"><span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px]">${u.team}</span></td>
+          <td class="p-2 text-right">
+            ${uid !== 'admin' ? `
+              <button onclick="deleteTeamMember('${uid}')" class="text-rose-400 hover:text-rose-300">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            ` : '<span class="text-slate-500 font-mono text-[10px]">Super Admin</span>'}
           </td>
         `;
         tbody.appendChild(tr);
       });
     }
 
-    // --- 5. RENDER MAP PINS (CUSTOM PNG ICONS) ---
-    function renderMapPins(list) {
-      if (!markersLayer) return;
-      markersLayer.clearLayers();
-
-      const bounds = [];
-      list.forEach(a => {
-        if (a.lat && a.lng) {
-          const info = computeStatus(a.lastDate, a.freqDays);
-          const cfg = categoryConfigs[a.type] || { emoji: '📍', iconUrl: '' };
-
-          let pinInner = '';
-          if (cfg.iconUrl) {
-            pinInner = `<img src="${cfg.iconUrl}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;" alt="${a.type}">`;
-          } else {
-            pinInner = `<span style="font-size: 14px;">${cfg.emoji}</span>`;
-          }
-
-          const iconHtml = `
-            <div class="map-custom-marker" style="width: 32px; height: 32px; border: 2.5px solid ${info.color};">
-              ${pinInner}
-            </div>
-          `;
-
-          const pinIcon = L.divIcon({
-            className: 'custom-png-icon',
-            html: iconHtml,
-            iconSize: [32, 32],
-            iconAnchor: [16, 16]
-          });
-
-          const m = L.marker([a.lat, a.lng], { icon: pinIcon });
-          m.bindPopup(`
-            <div style="color: #f8fafc; font-size: 12px; min-width: 180px;">
-              <div style="font-weight: bold; color: #38bdf8; font-family: monospace; font-size: 13px;">${a.id}</div>
-              <div style="color: #94a3b8; margin-top: 2px;"><b>Type:</b> ${a.type} | <b>Team:</b> ${a.team}</div>
-              <div style="color: #cbd5e1; margin-top: 2px;">${a.location}</div>
-              <div style="margin-top: 4px; font-weight: bold; color: ${info.color};">Due: ${info.dueDate} (${info.status})</div>
-              <div style="margin-top: 3px; color: #94a3b8;"><b>Tech:</b> ${a.tech || 'Unassigned'}</div>
-              <div style="margin-top: 8px; display: flex; gap: 6px;">
-                <button onclick="openMaintenanceModal('${a.id}')" style="background: #0f766e; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">Inspect & Close</button>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=${a.lat},${a.lng}" target="_blank" style="background: #334155; color: white; text-decoration: none; padding: 4px 8px; border-radius: 4px; font-size: 11px;">Navigate</a>
-              </div>
-            </div>
-          `);
-
-          markersLayer.addLayer(m);
-          bounds.push([a.lat, a.lng]);
-        }
-      });
-
-      if (bounds.length > 0 && !userLocation) {
-        map.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
-      }
-    }
-
-    // --- 3. DATA EDIT & DELETE OPTION ---
-    function openEditAssetModal(assetId) {
-      const a = assets.find(x => x.id === assetId);
-      if (!a) return;
-
-      document.getElementById('editAssetOriginalId').value = a.id;
-      document.getElementById('editAssetId').value = a.id;
-      document.getElementById('editAssetType').value = a.type || 'SR';
-      document.getElementById('editAssetTeam').value = a.team || 'HMT';
-      document.getElementById('editAssetTech').value = a.tech || '';
-      document.getElementById('editAssetLocation').value = a.location || '';
-      document.getElementById('editAssetLat').value = a.lat || '';
-      document.getElementById('editAssetLng').value = a.lng || '';
-      document.getElementById('editAssetLastDate').value = safeParseDate(a.lastDate);
-      document.getElementById('editAssetFreq').value = a.freqDays || 90;
-
-      openModal('editAssetModal');
-    }
-
-    function handleSaveEditAsset(e) {
+    function saveNewTeamMember(e) {
       e.preventDefault();
-      const origId = document.getElementById('editAssetOriginalId').value;
-      const idx = assets.findIndex(x => x.id === origId);
-      if (idx === -1) return;
+      const uid = document.getElementById('newUserId').value.trim();
+      const pass = document.getElementById('newUserPass').value.trim();
+      const name = document.getElementById('newUserName').value.trim();
+      const team = document.getElementById('newUserTeamSelect').value;
 
-      assets[idx].type = document.getElementById('editAssetType').value;
-      assets[idx].team = document.getElementById('editAssetTeam').value.trim().toUpperCase();
-      assets[idx].tech = document.getElementById('editAssetTech').value.trim();
-      assets[idx].location = document.getElementById('editAssetLocation').value.trim();
-      assets[idx].lat = parseFloat(document.getElementById('editAssetLat').value);
-      assets[idx].lng = parseFloat(document.getElementById('editAssetLng').value);
-      assets[idx].lastDate = safeParseDate(document.getElementById('editAssetLastDate').value);
-      assets[idx].freqDays = parseInt(document.getElementById('editAssetFreq').value, 10) || 90;
+      if (users[uid]) {
+        showToast("User ID already exists");
+        return;
+      }
 
-      saveAssets();
-      closeModal('editAssetModal');
-      renderDashboardKPI();
-      applyFiltersAndRender();
-      alert(`Asset ${origId} updated successfully!`);
+      users[uid] = { pass, name, role: 'tech', team };
+      localStorage.setItem('bgl_team_users', JSON.stringify(users));
+      renderTeamMembers();
+      document.getElementById('addMemberForm').reset();
+      showToast(`Technician ${name} added!`);
     }
 
-    function deleteSingleAsset(assetId) {
-      if (confirm(`Are you sure you want to permanently delete asset ${assetId}?`)) {
-        assets = assets.filter(a => a.id !== assetId);
-        saveAssets();
-        renderDashboardKPI();
-        applyFiltersAndRender();
+    function deleteTeamMember(uid) {
+      if (confirm(`Delete technician account ${uid}?`)) {
+        delete users[uid];
+        localStorage.setItem('bgl_team_users', JSON.stringify(users));
+        renderTeamMembers();
       }
     }
 
-    function openAddAssetModal() {
-      document.getElementById('addAssetForm').reset();
-      document.getElementById('newAssetLastDate').value = new Date().toISOString().split('T')[0];
-      syncNewAssetFreq();
-      openModal('addAssetModal');
-    }
-
+    // --- ASSET MANAGEMENT: CREATE, EDIT, DELETE ---
     function syncNewAssetFreq() {
       const type = document.getElementById('newAssetType').value;
       const def = (categoryConfigs[type] && categoryConfigs[type].freqDays) || 90;
@@ -1437,8 +1501,8 @@
       const newAsset = {
         id: id,
         type: document.getElementById('newAssetType').value,
-        team: document.getElementById('newAssetTeam').value.trim().toUpperCase(),
-        tech: document.getElementById('newAssetTech').value.trim() || 'Unassigned',
+        team: document.getElementById('newAssetTeamSelect').value,
+        assignedTech: document.getElementById('newAssetTech').value.trim() || null,
         location: document.getElementById('newAssetLoc').value.trim(),
         lat: parseFloat(document.getElementById('newAssetLat').value),
         lng: parseFloat(document.getElementById('newAssetLng').value),
@@ -1449,12 +1513,63 @@
       assets.unshift(newAsset);
       saveAssets();
       closeModal('addAssetModal');
+      document.getElementById('addAssetForm').reset();
       renderDashboardKPI();
-      applyFiltersAndRender();
-      alert(`Asset ${id} created successfully!`);
+      renderAssets();
+      showToast(`Asset ${id} created!`);
     }
 
-    // --- 4 & 5. CATEGORY FREQUENCY SETTINGS & CUSTOM PNG ICONS ---
+    function openEditAssetModal(assetId) {
+      const a = assets.find(x => x.id === assetId);
+      if (!a) return;
+
+      document.getElementById('editAssetOriginalId').value = a.id;
+      document.getElementById('editAssetId').value = a.id;
+      document.getElementById('editAssetType').value = a.type || 'SR';
+      document.getElementById('editAssetTeamSelect').value = a.team || 'HMT';
+      document.getElementById('editAssetTech').value = a.assignedTech || '';
+      document.getElementById('editAssetLocation').value = a.location || '';
+      document.getElementById('editAssetLat').value = a.lat || '';
+      document.getElementById('editAssetLng').value = a.lng || '';
+      document.getElementById('editAssetLastDate').value = safeParseDate(a.lastDate);
+      document.getElementById('editAssetFreq').value = a.freqDays || 90;
+
+      openModal('editAssetModal');
+    }
+
+    function handleSaveEditAsset(e) {
+      e.preventDefault();
+      const origId = document.getElementById('editAssetOriginalId').value;
+      const idx = assets.findIndex(x => x.id === origId);
+      if (idx === -1) return;
+
+      assets[idx].type = document.getElementById('editAssetType').value;
+      assets[idx].team = document.getElementById('editAssetTeamSelect').value;
+      assets[idx].assignedTech = document.getElementById('editAssetTech').value.trim() || null;
+      assets[idx].location = document.getElementById('editAssetLocation').value.trim();
+      assets[idx].lat = parseFloat(document.getElementById('editAssetLat').value);
+      assets[idx].lng = parseFloat(document.getElementById('editAssetLng').value);
+      assets[idx].lastDate = safeParseDate(document.getElementById('editAssetLastDate').value);
+      assets[idx].freqDays = parseInt(document.getElementById('editAssetFreq').value, 10) || 90;
+
+      saveAssets();
+      closeModal('editAssetModal');
+      renderDashboardKPI();
+      renderAssets();
+      showToast(`Asset ${origId} updated!`);
+    }
+
+    function deleteSingleAsset(assetId) {
+      if (confirm(`Are you sure you want to permanently delete asset ${assetId}?`)) {
+        assets = assets.filter(a => a.id !== assetId);
+        saveAssets();
+        renderDashboardKPI();
+        renderAssets();
+        showToast("Asset deleted");
+      }
+    }
+
+    // --- CATEGORY FREQUENCY SETTINGS ---
     function openCategoryFreqModal() {
       const container = document.getElementById('categoryFreqContainer');
       container.innerHTML = '';
@@ -1462,74 +1577,21 @@
       Object.keys(categoryConfigs).forEach(cat => {
         const item = categoryConfigs[cat];
         const card = document.createElement('div');
-        card.className = "p-3 bg-slate-900 border border-slate-800 rounded-xl flex flex-wrap items-center justify-between gap-3";
-
-        const iconPreview = item.iconUrl ?
-          `<img id="cfg-prev-${cat}" src="${item.iconUrl}" class="w-9 h-9 object-contain rounded-lg border border-slate-700 p-1 bg-slate-950">` :
-          `<div id="cfg-prev-${cat}" class="w-9 h-9 rounded-lg border border-slate-700 bg-slate-950 flex items-center justify-center text-base">${item.emoji}</div>`;
-
+        card.className = "p-2.5 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between";
         card.innerHTML = `
-          <div class="flex items-center gap-2.5">
-            ${iconPreview}
-            <div>
-              <span class="font-bold text-white text-xs block">${cat}</span>
-              <span class="text-[10px] text-slate-400">Map Marker Icon</span>
-            </div>
+          <div class="flex items-center gap-2">
+            <span>${item.emoji}</span>
+            <span class="font-bold text-white">${cat}</span>
           </div>
-
-          <div class="flex items-center gap-3 flex-wrap">
-            <div>
-              <label class="block text-[10px] text-slate-400 mb-0.5">Frequency (Days)</label>
-              <input type="number" id="freq-input-${cat}" value="${item.freqDays}" min="1" class="w-20 p-1 bg-slate-950 border border-slate-700 rounded text-white font-mono text-xs">
-            </div>
-
-            <div>
-              <label class="block text-[10px] text-slate-400 mb-0.5">Upload Custom PNG</label>
-              <input type="file" accept="image/png,image/svg+xml,image/jpeg" onchange="handleIconUpload(event, '${cat}')" class="text-[10px] text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-slate-800 file:text-amber-300">
-            </div>
-
-            ${item.iconUrl ? `<button type="button" onclick="removeIcon('${cat}')" class="text-rose-400 text-[10px] hover:underline pt-3">Remove PNG</button>` : ''}
+          <div class="flex items-center gap-2">
+            <label class="text-[10px] text-slate-400">Frequency (Days):</label>
+            <input type="number" id="freq-input-${cat}" value="${item.freqDays}" min="1" class="w-20 p-1 bg-slate-950 border border-slate-700 rounded text-white font-mono text-xs">
           </div>
         `;
         container.appendChild(card);
       });
 
       openModal('categoryFreqModal');
-    }
-
-    function handleIconUpload(e, cat) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        const img = new Image();
-        img.onload = function() {
-          const canvas = document.createElement('canvas');
-          const size = 64;
-          canvas.width = size;
-          canvas.height = size;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, size, size);
-
-          const compressed = canvas.toDataURL('image/png');
-          categoryConfigs[cat].iconUrl = compressed;
-
-          const preview = document.getElementById(`cfg-prev-${cat}`);
-          if (preview) {
-            preview.outerHTML = `<img id="cfg-prev-${cat}" src="${compressed}" class="w-9 h-9 object-contain rounded-lg border border-slate-700 p-1 bg-slate-950">`;
-          }
-        };
-        img.src = evt.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function removeIcon(cat) {
-      if (categoryConfigs[cat]) {
-        categoryConfigs[cat].iconUrl = '';
-        openCategoryFreqModal();
-      }
     }
 
     function saveCategorySettings() {
@@ -1540,8 +1602,6 @@
         if (inp) {
           const val = parseInt(inp.value, 10) || 90;
           categoryConfigs[cat].freqDays = val;
-
-          // Batch apply to existing assets in this category
           if (applyToAll) {
             assets.forEach(a => {
               if (a.type === cat) a.freqDays = val;
@@ -1550,43 +1610,26 @@
         }
       });
 
-      saveCategoryConfigs();
+      localStorage.setItem('bgl_cat_configs', JSON.stringify(categoryConfigs));
       saveAssets();
       closeModal('categoryFreqModal');
       renderDashboardKPI();
-      applyFiltersAndRender();
-      alert("Category maintenance frequency & PNG icons saved!");
+      renderAssets();
+      showToast("Frequencies updated!");
     }
 
     // --- CSV & KMZ IMPORT ---
     function parseCSVLine(text) {
       const result = [];
-      let cur = '';
-      let inQuotes = false;
+      let cur = '', inQuotes = false;
       for (let i = 0; i < text.length; i++) {
         const c = text[i];
-        if (c === '"') {
-          inQuotes = !inQuotes;
-        } else if (c === ',' && !inQuotes) {
-          result.push(cur.trim());
-          cur = '';
-        } else {
-          cur += c;
-        }
+        if (c === '"') inQuotes = !inQuotes;
+        else if (c === ',' && !inQuotes) { result.push(cur.trim()); cur = ''; }
+        else cur += c;
       }
       result.push(cur.trim());
       return result;
-    }
-
-    function detectAssetType(id, rawType) {
-      if (rawType && ['SR','DRS','MRS','Diaphragm meter','MDPE Valve','SV station'].includes(rawType.trim())) return rawType.trim();
-      const s = (id + ' ' + (rawType || '')).toUpperCase();
-      if (s.includes('MRS')) return 'MRS';
-      if (s.includes('DRS')) return 'DRS';
-      if (s.includes('DIAPHRAGM') || s.includes('METER')) return 'Diaphragm meter';
-      if (s.includes('MDPE') || s.includes('VALVE')) return 'MDPE Valve';
-      if (s.includes('SV')) return 'SV station';
-      return 'SR';
     }
 
     async function handleFileImport(event) {
@@ -1594,7 +1637,7 @@
       if (!file) return;
 
       const statusEl = document.getElementById('importStatus');
-      statusEl.className = "text-center py-2 text-xs font-semibold text-teal-400";
+      statusEl.className = "text-center py-1.5 text-xs font-semibold text-teal-400";
       statusEl.textContent = `Reading ${file.name}...`;
       statusEl.classList.remove('hidden');
 
@@ -1603,59 +1646,48 @@
           const text = await file.text();
           const cleanText = text.charCodeAt(0) === 0xFEFF ? text.slice(1) : text;
           const lines = cleanText.split(/\r?\n/).filter(l => l.trim() !== '');
-          if (lines.length < 2) throw new Error("CSV file has no data rows");
+          if (lines.length < 2) throw new Error("CSV file has no data");
 
-          const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
-          let imported = 0;
-
+          let count = 0;
           for (let i = 1; i < lines.length; i++) {
             const cols = parseCSVLine(lines[i]);
             if (!cols[0]) continue;
 
             const id = cols[0].toUpperCase();
-            const rawType = cols[1] || '';
-            const type = detectAssetType(id, rawType);
+            const rawType = cols[1] || 'SR';
             const team = cols[2] ? cols[2].toUpperCase() : 'HMT';
-            const location = cols[3] || 'Gas Pipeline Network';
+            const location = cols[3] || 'Location';
             const lat = parseFloat(cols[4]);
             const lng = parseFloat(cols[5]);
             const lastDate = safeParseDate(cols[6]);
-            const defFreq = (categoryConfigs[type] && categoryConfigs[type].freqDays) || 90;
+            const defFreq = (categoryConfigs[rawType] && categoryConfigs[rawType].freqDays) || 90;
             const freqDays = parseInt(cols[7], 10) || defFreq;
-            const tech = cols[8] || 'Unassigned';
+            const assignedTech = cols[8] || null;
 
             if (!isNaN(lat) && !isNaN(lng)) {
               const existingIdx = assets.findIndex(a => a.id.toUpperCase() === id);
-              const assetObj = { id, type, team, location, lat, lng, lastDate, freqDays, tech };
-              if (existingIdx >= 0) assets[existingIdx] = assetObj;
-              else assets.push(assetObj);
-              imported++;
+              const obj = { id, type: rawType, team, location, lat, lng, lastDate, freqDays, assignedTech };
+              if (existingIdx >= 0) assets[existingIdx] = obj;
+              else assets.push(obj);
+              count++;
             }
           }
 
           saveAssets();
-          statusEl.textContent = `Successfully imported ${imported} assets!`;
-          statusEl.className = "text-center py-2 text-xs font-semibold text-emerald-400";
-          setTimeout(() => {
-            closeModal('importModal');
-            renderDashboardKPI();
-            applyFiltersAndRender();
-          }, 1200);
+          statusEl.textContent = `Successfully imported ${count} assets!`;
+          statusEl.className = "text-center py-1.5 text-xs font-semibold text-emerald-400";
+          setTimeout(() => { closeModal('importModal'); renderDashboardKPI(); renderAssets(); }, 1200);
 
         } else if (file.name.endsWith('.kmz')) {
           const zip = await JSZip.loadAsync(file);
-          const kmlFile = Object.keys(zip.files).find(name => name.endsWith('.kml'));
-          if (!kmlFile) throw new Error("No KML file found inside KMZ");
-
+          const kmlFile = Object.keys(zip.files).find(n => n.endsWith('.kml'));
+          if (!kmlFile) throw new Error("No KML inside KMZ");
           const kmlText = await zip.files[kmlFile].async('text');
-          parseKMLContent(kmlText, statusEl);
-        } else if (file.name.endsWith('.kml')) {
-          const kmlText = await file.text();
           parseKMLContent(kmlText, statusEl);
         }
       } catch (err) {
         statusEl.textContent = `Error: ${err.message}`;
-        statusEl.className = "text-center py-2 text-xs font-semibold text-rose-400";
+        statusEl.className = "text-center py-1.5 text-xs font-semibold text-rose-400";
       } finally {
         event.target.value = '';
       }
@@ -1683,21 +1715,17 @@
         }
 
         if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
-          const type = detectAssetType(id, '');
-          const team = id.includes('KPHB') ? 'KPHB' : 'HMT';
-          const defFreq = (categoryConfigs[type] && categoryConfigs[type].freqDays) || 90;
-
           const existingIdx = assets.findIndex(a => a.id.toUpperCase() === id);
           const obj = {
             id,
-            type,
-            team,
-            location: 'Imported from KMZ layer',
+            type: id.includes('DRS') ? 'DRS' : (id.includes('MRS') ? 'MRS' : 'SR'),
+            team: id.includes('KPHB') ? 'KPHB' : 'HMT',
+            location: 'Imported KMZ Layer',
             lat,
             lng,
             lastDate: new Date().toISOString().split('T')[0],
-            freqDays: defFreq,
-            tech: 'Unassigned'
+            freqDays: 90,
+            assignedTech: null
           };
           if (existingIdx >= 0) assets[existingIdx] = obj;
           else assets.push(obj);
@@ -1706,117 +1734,14 @@
       }
 
       saveAssets();
-      statusEl.textContent = `Imported ${count} assets from KMZ!`;
-      statusEl.className = "text-center py-2 text-xs font-semibold text-emerald-400";
-      setTimeout(() => {
-        closeModal('importModal');
-        renderDashboardKPI();
-        applyFiltersAndRender();
-      }, 1200);
+      statusEl.textContent = `Imported ${count} placemarks!`;
+      statusEl.className = "text-center py-1.5 text-xs font-semibold text-emerald-400";
+      setTimeout(() => { closeModal('importModal'); renderDashboardKPI(); renderAssets(); }, 1200);
     }
 
-    // --- EXPORTS ---
-    function exportAssetsCSV() {
-      if (!assets.length) {
-        alert("No assets available to export!");
-        return;
-      }
-      let csv = "Asset ID,Type,Team,Location,Latitude,Longitude,Last Maintenance Date,Frequency Days,Assigned Tech\n";
-      assets.forEach(a => {
-        csv += `"${a.id}","${a.type}","${a.team || ''}","${(a.location || '').replace(/"/g, '""')}","${a.lat}","${a.lng}","${safeParseDate(a.lastDate)}","${a.freqDays}","${a.tech || ''}"\n`;
-      });
-      downloadFile(csv, `BGL_Assets_${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
-    }
-
-    function exportFullJSONBackup() {
-      const full = {
-        exportedAt: new Date().toISOString(),
-        assets,
-        maintenanceHistory,
-        categoryConfigs,
-        activeNotice,
-        teamUsers: users
-      };
-      downloadFile(JSON.stringify(full, null, 2), `BGL_Database_Backup_${new Date().toISOString().split('T')[0]}.json`, 'application/json');
-    }
-
-    function downloadFile(content, fileName, mimeType) {
-      const blob = new Blob([content], { type: mimeType });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = fileName;
-      a.click();
-    }
-
-    // --- MAINTENANCE SIGN-OFF ---
-    let activeMaintenanceAssetId = null;
-
-    function openMaintenanceModal(assetId) {
-      activeMaintenanceAssetId = assetId;
-      const a = assets.find(x => x.id === assetId);
-      if (!a) return;
-
-      document.getElementById('maintAssetInfo').textContent = `Asset ID: ${assetId} (${a.type} - ${a.team})`;
-      document.getElementById('maintTechName').value = currentUser.name;
-      document.getElementById('maintDate').value = new Date().toISOString().split('T')[0];
-      document.getElementById('maintObservations').value = '';
-      document.getElementById('maintRemarks').value = '';
-      document.getElementById('beforePreview').innerHTML = '<span>No image</span>';
-      document.getElementById('afterPreview').innerHTML = '<span>No image</span>';
-      document.getElementById('beforePhotoInput').value = '';
-      document.getElementById('afterPhotoInput').value = '';
-
-      openModal('maintenanceModal');
-    }
-
-    function previewImage(input, targetId) {
-      if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          document.getElementById(targetId).innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
-        };
-        reader.readAsDataURL(input.files[0]);
-      }
-    }
-
-    function submitMaintenance(e) {
-      e.preventDefault();
-      const a = assets.find(x => x.id === activeMaintenanceAssetId);
-      if (!a) return;
-
-      const dateConducted = safeParseDate(document.getElementById('maintDate').value);
-      const obs = document.getElementById('maintObservations').value;
-      const rem = document.getElementById('maintRemarks').value;
-      const beforeImg = document.querySelector('#beforePreview img')?.src || '';
-      const afterImg = document.querySelector('#afterPreview img')?.src || '';
-
-      const record = {
-        id: 'LOG-' + Date.now(),
-        assetId: a.id,
-        tech: currentUser.name,
-        date: dateConducted,
-        observations: obs,
-        remarks: rem,
-        beforePhoto: beforeImg,
-        afterPhoto: afterImg,
-        createdAt: new Date().toISOString()
-      };
-
-      maintenanceHistory.unshift(record);
-      a.lastDate = dateConducted;
-      a.tech = currentUser.name; // Automatically assigns tech to asset
-
-      saveAssets();
-      localStorage.setItem('bgl_maint_history_v2', JSON.stringify(maintenanceHistory));
-
-      closeModal('maintenanceModal');
-      renderDashboardKPI();
-      applyFiltersAndRender();
-      alert(`Maintenance logged & signed-off for ${a.id}!`);
-    }
-
-    // --- REPORTS ---
+    // --- AUDIT REPORTS (FROM - TO DATE IN DD-MM-YYYY) ---
     let filteredReportData = [];
+
     function generateReport() {
       const from = document.getElementById('reportFromDate').value;
       const to = document.getElementById('reportToDate').value;
@@ -1835,14 +1760,14 @@
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-800/40';
         tr.innerHTML = `
-          <td class="p-2.5 font-mono">${r.date}</td>
-          <td class="p-2.5 font-semibold text-white">${r.assetId}</td>
-          <td class="p-2.5">${r.tech}</td>
-          <td class="p-2.5 text-slate-400">${r.remarks || '--'}</td>
-          <td class="p-2.5 text-center">
-            ${r.beforePhoto ? `<button onclick="viewPhoto('${r.beforePhoto}', 'Before Photo - ${r.assetId}')" class="text-xs text-teal-400 underline mr-2">Before</button>` : ''}
-            ${r.afterPhoto ? `<button onclick="viewPhoto('${r.afterPhoto}', 'After Photo - ${r.assetId}')" class="text-xs text-teal-400 underline">After</button>` : ''}
-            ${!r.beforePhoto && !r.afterPhoto ? '<span class="text-slate-600">No photos</span>' : ''}
+          <td class="p-2 font-mono">${formatToDDMMYYYY(r.date)}</td>
+          <td class="p-2 font-semibold text-white">${r.assetId}</td>
+          <td class="p-2">${r.tech}</td>
+          <td class="p-2 text-slate-400">${r.remarks || '--'}</td>
+          <td class="p-2 text-center">
+            ${r.beforePhoto ? `<button onclick="viewPhoto('${r.beforePhoto}', 'Before - ${r.assetId}')" class="text-xs text-teal-400 underline mr-2">Before</button>` : ''}
+            ${r.afterPhoto ? `<button onclick="viewPhoto('${r.afterPhoto}', 'After - ${r.assetId}')" class="text-xs text-teal-400 underline">After</button>` : ''}
+            ${!r.beforePhoto && !r.afterPhoto ? '<span class="text-slate-600">None</span>' : ''}
           </td>
         `;
         tbody.appendChild(tr);
@@ -1851,30 +1776,57 @@
 
     function downloadFilteredCSV() {
       if (!filteredReportData.length) {
-        alert("No records to export in the selected range");
+        showToast("No records to export");
         return;
       }
-      let csv = "Date,Asset ID,Technician,Remarks,Observations\n";
+      let csv = "Date (DD-MM-YYYY),Asset ID,Technician,Remarks,Observations\n";
       filteredReportData.forEach(r => {
-        csv += `"${r.date}","${r.assetId}","${r.tech}","${r.remarks || ''}","${r.observations || ''}"\n`;
+        csv += `"${formatToDDMMYYYY(r.date)}","${r.assetId}","${r.tech}","${r.remarks || ''}","${r.observations || ''}"\n`;
       });
-      downloadFile(csv, `BGL_Maintenance_Report_${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
+      downloadFile(csv, `BGL_Maintenance_Report.csv`, 'text/csv');
     }
 
+    function exportAssetsCSV() {
+      if (!assets.length) return showToast("No assets available");
+      let csv = "Asset ID,Type,Team,Location,Latitude,Longitude,Last Maintenance Date (DD-MM-YYYY),Next Due Date (DD-MM-YYYY),Assigned Technician\n";
+      assets.forEach(a => {
+        const s = computeStatus(a.lastDate, a.freqDays);
+        csv += `"${a.id}","${a.type}","${a.team || ''}","${(a.location || '').replace(/"/g, '""')}","${a.lat}","${a.lng}","${formatToDDMMYYYY(a.lastDate)}","${s.dueDateFormatted}","${a.assignedTech || ''}"\n`;
+      });
+      downloadFile(csv, `BGL_Assets_${formatToDDMMYYYY(new Date().toISOString().split('T')[0])}.csv`, 'text/csv');
+    }
+
+    function exportFullJSONBackup() {
+      const fullBackup = {
+        exportedAt: new Date().toISOString(),
+        teams,
+        users,
+        categoryConfigs,
+        assets,
+        maintenanceHistory
+      };
+      downloadFile(JSON.stringify(fullBackup, null, 2), `BGL_Database_Backup_${new Date().toISOString().split('T')[0]}.json`, 'application/json');
+    }
+
+    function downloadFile(content, fileName, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = fileName;
+      a.click();
+    }
+
+    // --- PHOTO VIEWER & PROGRESS ---
     function viewPhoto(src, title) {
       document.getElementById('photoViewerTitle').textContent = title;
       document.getElementById('largePhotoPreview').src = src;
       openModal('photoViewerModal');
     }
 
-    // --- USER PROGRESS ---
     function openProgressModal() {
       const container = document.getElementById('progressItemsContainer');
       container.innerHTML = '';
-
-      const userJobs = maintenanceHistory.filter(h => {
-        return currentUser.role === 'admin' ? true : h.tech === currentUser.name;
-      });
+      const userJobs = maintenanceHistory.filter(h => currentUser.role === 'admin' ? true : h.tech === currentUser.name);
 
       document.getElementById('progressSubTitle').textContent = `Total Inspections Completed: ${userJobs.length}`;
 
@@ -1883,16 +1835,16 @@
       } else {
         userJobs.forEach(job => {
           const card = document.createElement('div');
-          card.className = 'p-3 bg-slate-900/80 rounded-xl border border-slate-800 space-y-2';
+          card.className = 'p-3 bg-slate-900/80 rounded-xl border border-slate-800 space-y-1.5';
           card.innerHTML = `
             <div class="flex justify-between items-center">
               <span class="font-bold text-white">${job.assetId}</span>
-              <span class="text-[11px] text-teal-400 font-mono">${job.date}</span>
+              <span class="text-[11px] text-teal-400 font-mono">${formatToDDMMYYYY(job.date)}</span>
             </div>
             <p class="text-slate-400 text-[11px]"><b>Observations:</b> ${job.observations || 'N/A'}</p>
             <div class="flex items-center gap-3 pt-1">
-              ${job.beforePhoto ? `<button onclick="viewPhoto('${job.beforePhoto}', 'Before - ${job.assetId}')" class="text-xs text-teal-400 underline">View Before Photo</button>` : ''}
-              ${job.afterPhoto ? `<button onclick="viewPhoto('${job.afterPhoto}', 'After - ${job.assetId}')" class="text-xs text-teal-400 underline">View After Photo</button>` : ''}
+              ${job.beforePhoto ? `<button onclick="viewPhoto('${job.beforePhoto}', 'Before - ${job.assetId}')" class="text-xs text-teal-400 underline">Before Photo</button>` : ''}
+              ${job.afterPhoto ? `<button onclick="viewPhoto('${job.afterPhoto}', 'After - ${job.assetId}')" class="text-xs text-teal-400 underline">After Photo</button>` : ''}
             </div>
           `;
           container.appendChild(card);
