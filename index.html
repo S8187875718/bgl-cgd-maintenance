@@ -1921,12 +1921,41 @@
             return currentUser && currentUser.team !== 'ALL' ? currentUser.team : 'HMT';
         }
 
+        // Robust CSV Parser supporting quotes, embedded commas, and whitespace
+        function parseCSVLine(text) {
+            const result = [];
+            let curVal = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const nextChar = text[i + 1];
+
+                if (char === '"') {
+                    if (inQuotes && nextChar === '"') {
+                        curVal += '"';
+                        i++; // Skip escaped double quote
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    result.push(curVal.trim());
+                    curVal = '';
+                } else {
+                    curVal += char;
+                }
+            }
+            result.push(curVal.trim());
+            return result;
+        }
+
         async function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             const status = document.getElementById('import-status');
             status.classList.remove('hidden');
+            status.className = 'p-2.5 bg-blue-950/60 border border-blue-800/80 rounded-lg text-blue-300 text-xs text-center font-medium';
             status.textContent = `Reading ${file.name}...`;
 
             const fileName = file.name.toLowerCase();
@@ -1943,19 +1972,42 @@
                     parseKMLAndImport(kmlText);
                 } else if (fileName.endsWith('.kml')) {
                     const reader = new FileReader();
-                    reader.onload = (e) => parseKMLAndImport(e.target.result);
+                    reader.onload = (e) => {
+                        try {
+                            parseKMLAndImport(e.target.result);
+                        } catch (err) {
+                            showImportError(err.message);
+                        }
+                    };
+                    reader.onerror = () => showImportError("Failed to read KML file.");
                     reader.readAsText(file);
                 } else if (fileName.endsWith('.csv')) {
                     const reader = new FileReader();
-                    reader.onload = (e) => parseCSVAndImport(e.target.result);
+                    reader.onload = (e) => {
+                        try {
+                            parseCSVAndImport(e.target.result);
+                        } catch (err) {
+                            showImportError(err.message);
+                        }
+                    };
+                    reader.onerror = () => showImportError("Failed to read CSV file.");
                     reader.readAsText(file);
                 } else {
-                    throw new Error("Unsupported file format. Please upload .kmz, .kml or .csv");
+                    throw new Error("Unsupported format. Please upload a .kmz, .kml or .csv file.");
                 }
             } catch (err) {
                 console.error(err);
-                status.textContent = "Error: " + err.message;
+                showImportError(err.message);
+            } finally {
+                // Reset file input so re-selecting the same file triggers onchange
+                event.target.value = '';
             }
+        }
+
+        function showImportError(msg) {
+            const status = document.getElementById('import-status');
+            status.className = 'p-2.5 bg-rose-950/70 border border-rose-800/80 rounded-lg text-rose-300 text-xs text-center font-medium';
+            status.textContent = "Error: " + msg;
         }
 
         function parseKMLAndImport(kmlString) {
@@ -1964,7 +2016,7 @@
             const placemarks = xmlDoc.getElementsByTagName("Placemark");
 
             if (placemarks.length === 0) {
-                showToast("No placemarks found in the KML/KMZ file.");
+                showImportError("No placemarks found in the KML/KMZ file.");
                 return;
             }
 
@@ -2005,6 +2057,11 @@
                 }
             }
 
+            if (importedCount === 0) {
+                showImportError("Could not extract valid GPS coordinates from KMZ.");
+                return;
+            }
+
             newAssets.forEach(item => {
                 const existingIndex = assets.findIndex(a => a.id.toLowerCase() === item.id.toLowerCase());
                 if (existingIndex >= 0) {
@@ -2021,13 +2078,18 @@
         }
 
         function parseCSVAndImport(csvText) {
-            const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
-            if (lines.length < 2) {
-                showToast("CSV file is empty or missing headers.");
+            // Strip potential UTF-8 BOM mark at index 0
+            if (csvText.charCodeAt(0) === 0xFEFF) {
+                csvText = csvText.slice(1);
+            }
+
+            const rawLines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
+            if (rawLines.length < 2) {
+                showImportError("CSV file is empty or missing data rows.");
                 return;
             }
 
-            const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]+/g, ''));
+            const headers = parseCSVLine(rawLines[0]).map(h => h.toLowerCase().replace(/['"]+/g, ''));
             let count = 0;
 
             const idxId = headers.findIndex(h => h === 'id' || h === 'asset id' || h === 'asset_id' || h === 'unique id');
@@ -2039,11 +2101,13 @@
             const idxFreq = headers.findIndex(h => h === 'freqdays' || h === 'frequency' || h === 'freq');
             const idxLast = headers.findIndex(h => h === 'lastdate' || h === 'last maintenance' || h === 'last_date');
             const idxTech = headers.findIndex(h => h === 'tech' || h === 'technician');
+            const idxObs = headers.findIndex(h => h === 'observations' || h === 'checklist');
+            const idxRem = headers.findIndex(h => h === 'remarks' || h === 'notes');
 
-            for (let i = 1; i < lines.length; i++) {
-                const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-                if (cols.length >= 3) {
-                    const rawId = cols[idxId >= 0 ? idxId : 0];
+            for (let i = 1; i < rawLines.length; i++) {
+                const cols = parseCSVLine(rawLines[i]);
+                if (cols.length >= 2) {
+                    const rawId = idxId >= 0 ? cols[idxId] : cols[0];
                     const rawType = idxType >= 0 ? cols[idxType] : '';
                     const rawTeam = idxTeam >= 0 ? cols[idxTeam] : '';
                     const rawLoc = idxLoc >= 0 ? cols[idxLoc] : 'Network Location';
@@ -2060,14 +2124,14 @@
                             id: rawId.toUpperCase(),
                             type: type,
                             team: team,
-                            location: rawLoc,
+                            location: rawLoc || 'Gas Pipeline Landmark',
                             lat: lat,
                             lng: lng,
                             freqDays: freqDays,
                             lastDate: (idxLast >= 0 && cols[idxLast]) ? cols[idxLast] : new Date().toISOString().split('T')[0],
                             tech: (idxTech >= 0 && cols[idxTech]) ? cols[idxTech] : 'Unassigned',
-                            observations: '',
-                            remarks: ''
+                            observations: (idxObs >= 0 && cols[idxObs]) ? cols[idxObs] : '',
+                            remarks: (idxRem >= 0 && cols[idxRem]) ? cols[idxRem] : ''
                         };
 
                         const existingIdx = assets.findIndex(a => a.id.toLowerCase() === newAsset.id.toLowerCase());
@@ -2081,10 +2145,15 @@
                 }
             }
 
+            if (count === 0) {
+                showImportError("No valid rows found. Ensure latitude & longitude columns exist.");
+                return;
+            }
+
             saveAssetsToStorage();
             updateDashboard();
             closeModal('import-modal');
-            showToast(`Imported ${count} assets from CSV!`);
+            showToast(`Successfully imported ${count} assets from CSV!`);
         }
 
         // Export Assets to CSV
