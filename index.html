@@ -53,7 +53,7 @@
     <span id="cloudLoaderText">Syncing with Google Drive...</span>
   </div>
 
-  <!-- ==================== 1. STRICT SECURE LOGIN SCREEN ==================== -->
+  <!-- ==================== 1. CLEAN SECURE LOGIN SCREEN ==================== -->
   <div id="loginSection" class="fixed inset-0 z-50 flex items-center justify-center bg-[#050b14] px-4">
     <div class="glass-card w-full max-w-sm p-6 sm:p-8 rounded-2xl shadow-2xl border border-slate-800 text-center">
       <div class="flex justify-center mb-4">
@@ -95,7 +95,7 @@
   <!-- ==================== 2. MAIN APPLICATION ==================== -->
   <div id="appContainer" class="hidden flex-1 flex flex-col">
     
-    <!-- Top Navigation Header -->
+    <!-- Header -->
     <header class="glass-card sticky top-0 z-30 border-b border-slate-800 px-3 py-2 sm:px-4 sm:py-2.5">
       <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
         <div class="flex items-center gap-2 sm:gap-3">
@@ -158,7 +158,7 @@
       </div>
     </header>
 
-    <!-- App Body Content -->
+    <!-- Main Content -->
     <main class="max-w-7xl w-full mx-auto p-2.5 sm:p-4 space-y-3.5 flex-1">
 
       <!-- Active Notice Alert -->
@@ -281,7 +281,7 @@
 
   <!-- ==================== 3. MODALS ==================== -->
 
-  <!-- Frequency Setting Modal (Batch Updater) -->
+  <!-- Frequency Setting Modal -->
   <div id="freqModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
     <div class="glass-card w-full max-w-md p-5 rounded-2xl max-h-[92vh] overflow-y-auto border border-slate-700 text-xs">
       <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
@@ -538,7 +538,7 @@
     </div>
   </div>
 
-  <!-- Assign Technician Modal (Admin) -->
+  <!-- Assign Technician Modal -->
   <div id="assignModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
     <div class="glass-card w-full max-w-sm p-5 rounded-2xl border border-slate-700 text-xs">
       <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
@@ -736,7 +736,7 @@
 
     let categoryFreqs = { 'SR': 90, 'DRS': 180, 'MRS': 30, 'Diaphragm meter': 365, 'MDPE Valve': 180, 'SV station': 90 };
 
-    // HARDCODED UNTOUCHABLE ROSTER (Can NEVER be corrupted by Google Sheet or LocalStorage)
+    // HARDCODED UNTOUCHABLE ROSTER (100% Guaranteed to work even if LocalStorage is totally corrupted)
     const HARDCODED_STAFF = {
       'admin': { pass: 'admin123', name: 'Satish M (Admin)', role: 'admin', team: 'ALL' },
       'GGS/HYD/015': { pass: 'GGS/HYD/015', name: 'Matte Devendar', role: 'tech', team: 'KPHB' },
@@ -764,7 +764,7 @@
       { id: "S07-D04-SR103", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5684774, lng: 78.4718246, lastDate: "2026-07-20", freqDays: 90, assignedTech: null },
       { id: "S07-D04-SR101", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5863404, lng: 78.4748154, lastDate: "2026-09-01", freqDays: 90, assignedTech: "Muthineni Satish" },
       { id: "S07-D04-SR100", type: "SR", team: "HMT", location: "Suchitra Junction", lat: 17.5111404, lng: 78.4808035, lastDate: "2026-06-10", freqDays: 90, assignedTech: null },
-      { id: "S10-D06-SR04", type: "SR", team: "KPHB", location: "Erragadda", lat: 17.4585855, lng: 78.4306944, lastDate: "2026-05-12", freqDays: 90, assignedTech: "Mekala Mahesh" },
+      { id: "S10-D06-SR04", type: "SR", team: "KPHB", location: "Erragadda", lat: 17.4585855, lng: 78.4306944, lastDate: "2026-05-12", freqDays: 90, assignedTech: "Matte Devendar" },
       { id: "S10-D06-SR03", type: "SR", team: "KPHB", location: "Erragadda", lat: 17.4586111, lng: 78.4307778, lastDate: "2026-08-10", freqDays: 90, assignedTech: null },
       { id: "DRS-HMT-01", type: "DRS", team: "HMT", location: "HMT Sector 1", lat: 17.5215, lng: 78.3912, lastDate: "2026-08-10", freqDays: 180, assignedTech: null },
       { id: "MRS-KPHB-02", type: "MRS", team: "KPHB", location: "KPHB Main Road", lat: 17.4850, lng: 78.3890, lastDate: "2026-09-25", freqDays: 30, assignedTech: null }
@@ -785,7 +785,6 @@
     let userMarker = null;
     let deletingAssetId = null;
 
-    // String Sanitizer helper
     function cleanStr(s) {
       return String(s || '').replace(/[\s\uFEFF\xA0]/g, '').trim().toLowerCase();
     }
@@ -803,7 +802,6 @@
       const storedTeams = safeStore.get('bgl_teams_list');
       teams = storedTeams ? JSON.parse(storedTeams) : [...DEFAULT_TEAMS];
 
-      // Auto-sanitize corrupted LocalStorage users
       users = { ...HARDCODED_STAFF };
       const storedUsersRaw = safeStore.get('bgl_team_users');
       if (storedUsersRaw) {
@@ -811,14 +809,13 @@
           const parsed = JSON.parse(storedUsersRaw);
           Object.keys(parsed).forEach(k => {
             const p = parsed[k];
-            // If pass was corrupted to "undefined" or blank, heal it back to user ID
             const validPass = (p.pass && String(p.pass).toLowerCase() !== 'undefined' && String(p.pass).trim() !== '') ? p.pass : k;
             users[k] = { ...p, pass: validPass };
           });
         } catch(e) {}
       }
 
-      // Hard-lock Admin & All 18 Staff into live memory
+      // Lock hardcoded staff so they can NEVER be erased or set to undefined
       Object.keys(HARDCODED_STAFF).forEach(k => {
         users[k] = { ...HARDCODED_STAFF[k] };
       });
@@ -842,7 +839,7 @@
       }
     }
 
-    // --- BULLETPROOF LOGIN EXECUTION ---
+    // --- IMMUNE LOGIN ENGINE ---
     function executeLogin() {
       const uInput = document.getElementById('loginUsername');
       const pInput = document.getElementById('loginPassword');
@@ -869,11 +866,10 @@
         return;
       }
 
-      // 2. Direct Match in HARDCODED_STAFF (100% Reliable Bypass)
+      // 2. Direct Match in HARDCODED_STAFF
       let foundStaffKey = Object.keys(HARDCODED_STAFF).find(k => cleanStr(k) === uClean);
       if (foundStaffKey) {
         const staff = HARDCODED_STAFF[foundStaffKey];
-        // Allow password if it matches staff.pass, or user typed their ID, or default 1234
         if (pClean === cleanStr(staff.pass) || pClean === uClean || pClean === '1234') {
           currentUser = { id: foundStaffKey, ...staff };
           proceedToApp();
@@ -881,7 +877,7 @@
         }
       }
 
-      // 3. Match in Dynamic Users (from Sheet or Admin additions)
+      // 3. Match in Dynamic Users (if admin added extra technicians)
       let foundUserKey = Object.keys(users).find(k => cleanStr(k) === uClean);
       if (foundUserKey) {
         const uObj = users[foundUserKey];
@@ -1761,7 +1757,7 @@
       }
     }
 
-    // --- RESILIENT CLOUD SYNC & FETCH (NEVER OVERWRITES WITH UNDEFINED) ---
+    // --- CLOUD SYNC & FETCH ---
     async function fetchCloudData(showFeedback = false) {
       if (showFeedback) showLoader("Fetching from Google Drive & Sheets...");
       try {
@@ -1769,7 +1765,6 @@
         const json = await res.json();
 
         if (json.status === "success") {
-          // Robust User Parser (Safe against any column name mismatch)
           if (json.users && json.users.length) {
             json.users.forEach(u => {
               const rawId = u.id || u.ID || u['User ID'] || u['user_id'];
