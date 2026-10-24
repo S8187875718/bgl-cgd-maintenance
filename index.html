@@ -53,13 +53,13 @@
     <span id="cloudLoaderText">Syncing Assets with Cloud...</span>
   </div>
 
-  <!-- ==================== 1. ZERO-LAG LOCAL LOGIN SCREEN ==================== -->
+  <!-- ==================== 1. ZERO-LAG LOGIN SCREEN ==================== -->
   <div id="loginSection" class="fixed inset-0 z-50 flex items-center justify-center bg-[#050b14] px-4">
     <div class="glass-card w-full max-w-sm p-6 sm:p-8 rounded-2xl shadow-2xl border border-slate-800 text-center">
       <div class="flex flex-col items-center justify-center mb-3">
         <img src="https://events.eletsonline.com/mobility/assets/partners/BGL.png" alt="BGL Logo" class="h-14 object-contain bg-white/95 px-3 py-1.5 rounded-xl shadow mb-2">
         <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-bold tracking-wider">
-          v5.0 - Master Clean
+          Direct Auth v6.0
         </span>
       </div>
       
@@ -79,7 +79,7 @@
           <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-lock text-xs"></i></span>
-            <input type="password" id="loginPassword" onkeyup="if(event.key==='Enter') executeLogin()" placeholder="Enter Password" class="w-full pl-9 pr-9 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-teal-500">
+            <input type="password" id="loginPassword" onkeyup="if(event.key==='Enter') executeLogin()" placeholder="Enter Password (or PIN 1234)" class="w-full pl-9 pr-9 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-teal-500">
             <button type="button" onclick="togglePassVisibility()" class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 hover:text-slate-300">
               <i id="passEyeIcon" class="fa-solid fa-eye text-xs"></i>
             </button>
@@ -122,7 +122,7 @@
             <i class="fa-solid fa-arrows-rotate"></i>
           </button>
 
-          <!-- Admin Exclusive Toolbar -->
+          <!-- Admin Toolbar -->
           <div id="adminHeaderBtns" class="hidden flex items-center gap-1.5 flex-wrap">
             <button onclick="openModal('addAssetModal')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-teal-600 hover:bg-teal-500 text-white flex items-center gap-1 shadow">
               <i class="fa-solid fa-plus"></i> <span class="hidden md:inline">Asset</span>
@@ -284,7 +284,7 @@
 
   <!-- ==================== 3. MODALS ==================== -->
 
-  <!-- Manage Accounts Modal -->
+  <!-- Staff Logins & Password Modal -->
   <div id="teamManageModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
     <div class="glass-card w-full max-w-2xl p-5 rounded-2xl max-h-[92vh] overflow-y-auto border border-slate-700 text-xs">
       <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3">
@@ -309,7 +309,7 @@
       </form>
 
       <div class="flex items-center justify-between mb-1.5">
-        <h4 class="font-bold text-slate-300">Active Staff Registry (<span id="totalUsersCount">0</span> users)</h4>
+        <h4 class="font-bold text-slate-300">Active Staff Registry</h4>
         <button onclick="resetDefaultStaffRoster()" class="text-[11px] text-rose-400 hover:underline">Reset to Default Roster</button>
       </div>
       <div class="overflow-x-auto border border-slate-800 rounded-lg">
@@ -762,28 +762,28 @@
     const DEFAULT_TEAMS = ['HMT', 'KPHB', 'MEDCHAL', 'SUCHITRA'];
     let categoryFreqs = { 'SR': 90, 'DRS': 180, 'MRS': 30, 'Diaphragm meter': 365, 'MDPE Valve': 180, 'SV station': 90 };
 
-    // --- IMMUNE STANDALONE USERS LIST ---
-    const DEFAULT_STAFF_LIST = [
-      { id: 'admin', pass: 'admin123', name: 'Satish M (Admin)', role: 'admin', team: 'ALL' },
-      { id: 'GGS/HYD/015', pass: 'GGS/HYD/015', name: 'Matte Devendar', role: 'tech', team: 'KPHB' },
-      { id: 'GGS/HYD/022', pass: 'GGS/HYD/022', name: 'Muthineni Satish', role: 'tech', team: 'HMT' },
-      { id: 'GGS/HYD/010', pass: 'GGS/HYD/010', name: 'Mekala Mahesh', role: 'tech', team: 'KPHB' },
-      { id: 'GGS/HYD/017', pass: 'GGS/HYD/017', name: 'Arra Chiranjeevi', role: 'tech', team: 'KPHB' },
-      { id: 'GGS/HYD/024', pass: 'GGS/HYD/024', name: 'Deshamaina Praveen Kumar', role: 'tech', team: 'HMT' },
-      { id: 'GGS/HYD/025', pass: 'GGS/HYD/025', name: 'Dontharaboina Mahesh Kumar', role: 'tech', team: 'HMT' },
-      { id: 'GGS/HYD/019', pass: 'GGS/HYD/019', name: 'Dontharaboina Nagaraju', role: 'tech', team: 'HMT' },
-      { id: 'GGS/HYD/016', pass: 'GGS/HYD/016', name: 'Jupalli Naresh', role: 'tech', team: 'KPHB' },
-      { id: 'GGS/HYD/035', pass: 'GGS/HYD/035', name: 'Md Dilshan Alam', role: 'tech', team: 'HMT' },
-      { id: 'GGS/HYD/003', pass: 'GGS/HYD/003', name: 'Moluguri Dinesh', role: 'tech', team: 'KPHB' },
-      { id: 'GGS/HYD/020', pass: 'GGS/HYD/020', name: 'Nimmala Madhu', role: 'tech', team: 'HMT' },
-      { id: 'GGS/HYD/008', pass: 'GGS/HYD/008', name: 'K.Rajesh', role: 'tech', team: 'KPHB' },
-      { id: 'GGS/HYD/009', pass: 'GGS/HYD/009', name: 'Rathod Ramesh', role: 'tech', team: 'KPHB' },
-      { id: 'GGS/HYD/036', pass: 'GGS/HYD/036', name: 'Salendra yadagiri', role: 'tech', team: 'HMT' },
-      { id: 'GGS/HYD/018', pass: 'GGS/HYD/018', name: 'Vagamari Sai', role: 'tech', team: 'HMT' },
-      { id: 'GGS/HYD/037', pass: 'GGS/HYD/037', name: 'Yavapuram Anilkumar', role: 'tech', team: 'HMT' },
-      { id: 'GGS/HYD/038', pass: 'GGS/HYD/038', name: 'Md Sadab', role: 'tech', team: 'HMT' },
-      { id: 'GGS/HYD/023', pass: 'GGS/HYD/023', name: 'Naralakanti Vijay', role: 'tech', team: 'KPHB' }
-    ];
+    // --- 100% HARDCODED DIRECT ROSTER MAP ---
+    const ROSTER_MAP = {
+      "ADMIN": { id: 'admin', pass: 'admin123', name: 'Satish M (Admin)', role: 'admin', team: 'ALL' },
+      "GGS/HYD/015": { id: 'GGS/HYD/015', pass: 'GGS/HYD/015', name: 'Matte Devendar', role: 'tech', team: 'KPHB' },
+      "GGS/HYD/022": { id: 'GGS/HYD/022', pass: 'GGS/HYD/022', name: 'Muthineni Satish', role: 'tech', team: 'HMT' },
+      "GGS/HYD/010": { id: 'GGS/HYD/010', pass: 'GGS/HYD/010', name: 'Mekala Mahesh', role: 'tech', team: 'KPHB' },
+      "GGS/HYD/017": { id: 'GGS/HYD/017', pass: 'GGS/HYD/017', name: 'Arra Chiranjeevi', role: 'tech', team: 'KPHB' },
+      "GGS/HYD/024": { id: 'GGS/HYD/024', pass: 'GGS/HYD/024', name: 'Deshamaina Praveen Kumar', role: 'tech', team: 'HMT' },
+      "GGS/HYD/025": { id: 'GGS/HYD/025', pass: 'GGS/HYD/025', name: 'Dontharaboina Mahesh Kumar', role: 'tech', team: 'HMT' },
+      "GGS/HYD/019": { id: 'GGS/HYD/019', pass: 'GGS/HYD/019', name: 'Dontharaboina Nagaraju', role: 'tech', team: 'HMT' },
+      "GGS/HYD/016": { id: 'GGS/HYD/016', pass: 'GGS/HYD/016', name: 'Jupalli Naresh', role: 'tech', team: 'KPHB' },
+      "GGS/HYD/035": { id: 'GGS/HYD/035', pass: 'GGS/HYD/035', name: 'Md Dilshan Alam', role: 'tech', team: 'HMT' },
+      "GGS/HYD/003": { id: 'GGS/HYD/003', pass: 'GGS/HYD/003', name: 'Moluguri Dinesh', role: 'tech', team: 'KPHB' },
+      "GGS/HYD/020": { id: 'GGS/HYD/020', pass: 'GGS/HYD/020', name: 'Nimmala Madhu', role: 'tech', team: 'HMT' },
+      "GGS/HYD/008": { id: 'GGS/HYD/008', pass: 'GGS/HYD/008', name: 'K.Rajesh', role: 'tech', team: 'KPHB' },
+      "GGS/HYD/009": { id: 'GGS/HYD/009', pass: 'GGS/HYD/009', name: 'Rathod Ramesh', role: 'tech', team: 'KPHB' },
+      "GGS/HYD/036": { id: 'GGS/HYD/036', pass: 'GGS/HYD/036', name: 'Salendra yadagiri', role: 'tech', team: 'HMT' },
+      "GGS/HYD/018": { id: 'GGS/HYD/018', pass: 'GGS/HYD/018', name: 'Vagamari Sai', role: 'tech', team: 'HMT' },
+      "GGS/HYD/037": { id: 'GGS/HYD/037', pass: 'GGS/HYD/037', name: 'Yavapuram Anilkumar', role: 'tech', team: 'HMT' },
+      "GGS/HYD/038": { id: 'GGS/HYD/038', pass: 'GGS/HYD/038', name: 'Md Sadab', role: 'tech', team: 'HMT' },
+      "GGS/HYD/023": { id: 'GGS/HYD/023', pass: 'GGS/HYD/023', name: 'Naralakanti Vijay', role: 'tech', team: 'KPHB' }
+    };
 
     const INITIAL_ASSETS = [
       { id: "S07-D04-SR102", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5684817, lng: 78.4718986, lastDate: "2026-08-15", freqDays: 90, assignedTech: null },
@@ -797,7 +797,6 @@
     ];
 
     let teams = [];
-    let internalUsers = [];
     let customIcons = {};
     let currentUser = null;
     let assets = [];
@@ -811,7 +810,7 @@
     let userMarker = null;
     let deletingAssetId = null;
 
-    function norm(s) {
+    function sanitizeKey(s) {
       return String(s || '').replace(/[\s\uFEFF\xA0]/g, '').trim().toUpperCase();
     }
 
@@ -827,18 +826,6 @@
     function loadStoredAppData() {
       const storedTeams = safeStore.get('bgl_teams_list');
       teams = storedTeams ? JSON.parse(storedTeams) : [...DEFAULT_TEAMS];
-
-      const storedUsers = safeStore.get('bgl_clean_users_v5');
-      if (storedUsers) {
-        try {
-          internalUsers = JSON.parse(storedUsers);
-        } catch(e) {
-          internalUsers = [...DEFAULT_STAFF_LIST];
-        }
-      } else {
-        internalUsers = [...DEFAULT_STAFF_LIST];
-        safeStore.set('bgl_clean_users_v5', JSON.stringify(internalUsers));
-      }
 
       const storedIcons = safeStore.get('bgl_custom_png_icons');
       customIcons = storedIcons ? JSON.parse(storedIcons) : {};
@@ -859,52 +846,53 @@
       }
     }
 
-    // --- INSTANT INTERNAL LOGIN (Completely Immune to Network / Cache) ---
+    // --- INSTANT BULLETPROOF AUTHENTICATION ---
     function executeLogin() {
-      const uInput = document.getElementById('loginUsername');
-      const pInput = document.getElementById('loginPassword');
+      const uRaw = document.getElementById('loginUsername').value || '';
+      const pRaw = document.getElementById('loginPassword').value || '';
       const err = document.getElementById('loginError');
 
-      const u = norm(uInput ? uInput.value : '');
-      const p = (pInput ? pInput.value : '').trim();
+      const u = sanitizeKey(uRaw);
+      const p = pRaw.trim();
 
       if (!u || !p) {
-        if (err) {
-          err.textContent = "Please enter both User ID and Password";
-          err.classList.remove('hidden');
-        }
+        err.textContent = "Please enter both User ID and Password";
+        err.classList.remove('hidden');
         return;
       }
 
-      // 1. Direct Search in live internal list
-      let user = internalUsers.find(item => norm(item.id) === u);
+      // Check if Admin modified passwords
+      let customPasses = {};
+      try {
+        const storedCP = safeStore.get('bgl_custom_passwords');
+        if (storedCP) customPasses = JSON.parse(storedCP);
+      } catch(e) {}
 
-      // 2. Fallback to default list if local storage was cleared
-      if (!user) {
-        user = DEFAULT_STAFF_LIST.find(item => norm(item.id) === u);
-      }
+      // Direct Roster Lookup (O(1) Exact Match)
+      const user = ROSTER_MAP[u];
 
-      if (user && (user.pass === p || norm(user.pass) === norm(p) || p === '1234')) {
-        currentUser = user;
-        try { sessionStorage.setItem('bgl_clean_session_v5', JSON.stringify(currentUser)); } catch(e) {}
-        if (err) err.classList.add('hidden');
+      if (user) {
+        const expectedPass = customPasses[user.id] || user.pass;
+        // Allows: Exact password OR Emergency Master PIN '1234' OR ID as Password
+        if (p === expectedPass || p.toUpperCase() === expectedPass.toUpperCase() || p === '1234' || p.toUpperCase() === u) {
+          currentUser = { ...user, pass: expectedPass };
+          try { sessionStorage.setItem('bgl_auth_user', JSON.stringify(currentUser)); } catch(e) {}
+          err.classList.add('hidden');
 
-        const loginSec = document.getElementById('loginSection');
-        const appCon = document.getElementById('appContainer');
-        if (loginSec) loginSec.style.setProperty('display', 'none', 'important');
-        if (appCon) {
+          // Switch screen
+          document.getElementById('loginSection').style.setProperty('display', 'none', 'important');
+          const appCon = document.getElementById('appContainer');
           appCon.style.setProperty('display', 'flex', 'important');
           appCon.classList.remove('hidden');
-        }
 
-        initAppView();
-        showToast(`Welcome, ${currentUser.name}!`);
-      } else {
-        if (err) {
-          err.textContent = "Invalid User ID or Password. (Check Accounts in Admin if changed).";
-          err.classList.remove('hidden');
+          initAppView();
+          showToast(`Welcome, ${currentUser.name}!`);
+          return;
         }
       }
+
+      err.textContent = "Invalid User ID or Password. (Emergency PIN: 1234)";
+      err.classList.remove('hidden');
     }
 
     function togglePassVisibility() {
@@ -921,23 +909,20 @@
 
     function checkSession() {
       try {
-        const sess = sessionStorage.getItem('bgl_clean_session_v5');
+        const sess = sessionStorage.getItem('bgl_auth_user');
         if (sess) {
           currentUser = JSON.parse(sess);
-          const loginSec = document.getElementById('loginSection');
+          document.getElementById('loginSection').style.setProperty('display', 'none', 'important');
           const appCon = document.getElementById('appContainer');
-          if (loginSec) loginSec.style.setProperty('display', 'none', 'important');
-          if (appCon) {
-            appCon.style.setProperty('display', 'flex', 'important');
-            appCon.classList.remove('hidden');
-          }
+          appCon.style.setProperty('display', 'flex', 'important');
+          appCon.classList.remove('hidden');
           initAppView();
         }
       } catch(e) {}
     }
 
     function handleLogout() {
-      try { sessionStorage.removeItem('bgl_clean_session_v5'); } catch(e) {}
+      try { sessionStorage.removeItem('bgl_auth_user'); } catch(e) {}
       location.reload();
     }
 
@@ -974,28 +959,28 @@
     // --- ADMIN USER & PASSWORD MANAGER ---
     function renderTeamMembers() {
       const tbody = document.getElementById('teamMembersTableBody');
-      const countEl = document.getElementById('totalUsersCount');
       if (!tbody) return;
       tbody.innerHTML = '';
-      if (countEl) countEl.textContent = internalUsers.length;
 
-      internalUsers.forEach(u => {
+      let customPasses = {};
+      try {
+        const storedCP = safeStore.get('bgl_custom_passwords');
+        if (storedCP) customPasses = JSON.parse(storedCP);
+      } catch(e) {}
+
+      Object.values(ROSTER_MAP).forEach(u => {
+        const currentPass = customPasses[u.id] || u.pass;
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-800/40 transition';
         tr.innerHTML = `
           <td class="p-2.5 font-mono text-white font-bold">${u.id}</td>
           <td class="p-2.5 text-slate-300">${u.name}</td>
-          <td class="p-2.5 font-mono text-teal-300 font-bold tracking-wider">${u.pass}</td>
+          <td class="p-2.5 font-mono text-teal-300 font-bold tracking-wider">${currentPass}</td>
           <td class="p-2.5"><span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] text-amber-300">${u.team}</span></td>
           <td class="p-2.5 text-right whitespace-nowrap">
-            <button onclick="openEditUserModal('${u.id}')" title="Edit Password" class="p-1 px-2 rounded bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 mr-1.5">
-              <i class="fa-solid fa-pen-to-square mr-1"></i> Edit
+            <button onclick="openEditUserModal('${u.id}')" title="Edit Password" class="p-1 px-2 rounded bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700">
+              <i class="fa-solid fa-pen-to-square mr-1"></i> Edit Password
             </button>
-            ${u.id !== 'admin' ? `
-              <button onclick="deleteTeamMember('${u.id}')" title="Delete User" class="p-1 px-2 rounded bg-slate-800 hover:bg-rose-900/50 text-rose-400 border border-slate-700">
-                <i class="fa-solid fa-trash"></i>
-              </button>
-            ` : '<span class="text-slate-600 text-[10px]">Admin</span>'}
           </td>
         `;
         tbody.appendChild(tr);
@@ -1003,13 +988,19 @@
     }
 
     function openEditUserModal(userId) {
-      const user = internalUsers.find(item => item.id === userId);
+      const user = Object.values(ROSTER_MAP).find(u => u.id === userId);
       if (!user) return;
+
+      let customPasses = {};
+      try {
+        const storedCP = safeStore.get('bgl_custom_passwords');
+        if (storedCP) customPasses = JSON.parse(storedCP);
+      } catch(e) {}
 
       document.getElementById('editUserOldId').value = user.id;
       document.getElementById('editUserId').value = user.id;
       document.getElementById('editUserName').value = user.name;
-      document.getElementById('editUserPass').value = user.pass;
+      document.getElementById('editUserPass').value = customPasses[user.id] || user.pass;
 
       const teamSelect = document.getElementById('editUserTeamSelect');
       teamSelect.innerHTML = teams.map(t => `<option value="${t}" ${t === user.team ? 'selected' : ''}>${t}</option>`).join('');
@@ -1019,23 +1010,21 @@
 
     function saveUserChanges(e) {
       e.preventDefault();
-      const oldId = document.getElementById('editUserOldId').value;
-      const newId = document.getElementById('editUserId').value.trim().toUpperCase();
-      const newName = document.getElementById('editUserName').value.trim();
+      const targetId = document.getElementById('editUserOldId').value;
       const newPass = document.getElementById('editUserPass').value.trim();
-      const newTeam = document.getElementById('editUserTeamSelect').value;
 
-      const user = internalUsers.find(item => item.id === oldId);
-      if (user) {
-        user.id = newId;
-        user.name = newName;
-        user.pass = newPass;
-        user.team = newTeam;
-        safeStore.set('bgl_clean_users_v5', JSON.stringify(internalUsers));
-        renderTeamMembers();
-        closeModal('editUserModal');
-        showToast(`Credentials updated for ${newName}!`);
-      }
+      let customPasses = {};
+      try {
+        const storedCP = safeStore.get('bgl_custom_passwords');
+        if (storedCP) customPasses = JSON.parse(storedCP);
+      } catch(e) {}
+
+      customPasses[targetId] = newPass;
+      safeStore.set('bgl_custom_passwords', JSON.stringify(customPasses));
+
+      renderTeamMembers();
+      closeModal('editUserModal');
+      showToast(`Password updated for ${targetId}!`);
     }
 
     function saveNewTeamMember(e) {
@@ -1045,32 +1034,17 @@
       const pass = document.getElementById('newUserPass').value.trim();
       const team = document.getElementById('newUserTeamSelect').value;
 
-      if (internalUsers.some(u => norm(u.id) === norm(id))) {
-        return alert("User ID already exists! Please choose another.");
-      }
-
-      internalUsers.push({ id, name, pass, team, role: 'tech' });
-      safeStore.set('bgl_clean_users_v5', JSON.stringify(internalUsers));
+      ROSTER_MAP[id] = { id, name, pass, team, role: 'tech' };
       renderTeamMembers();
       document.getElementById('addMemberForm').reset();
-      showToast(`Staff account ${name} created!`);
-    }
-
-    function deleteTeamMember(userId) {
-      if (confirm(`Delete user ${userId}?`)) {
-        internalUsers = internalUsers.filter(u => u.id !== userId);
-        safeStore.set('bgl_clean_users_v5', JSON.stringify(internalUsers));
-        renderTeamMembers();
-        showToast("User deleted");
-      }
+      showToast(`Account ${id} added to live session!`);
     }
 
     function resetDefaultStaffRoster() {
-      if (confirm("Reset staff logins back to the default 18 accounts?")) {
-        internalUsers = [...DEFAULT_STAFF_LIST];
-        safeStore.set('bgl_clean_users_v5', JSON.stringify(internalUsers));
+      if (confirm("Reset modified passwords back to default?")) {
+        safeStore.remove('bgl_custom_passwords');
         renderTeamMembers();
-        showToast("Roster reset to default!");
+        showToast("Passwords reset to default!");
       }
     }
 
@@ -1239,7 +1213,7 @@
       markersLayer = L.layerGroup().addTo(map);
     }
 
-    // --- STRICT DATE PARSING (DD-MM-YYYY) & EPOCH FIX ---
+    // --- STRICT DATE PARSING & DUE CALCULATION ---
     function safeParseDate(val) {
       if (!val) return new Date().toISOString().split('T')[0];
       val = String(val).trim();
@@ -1677,7 +1651,7 @@
       const select = document.getElementById('assignTechSelect');
       select.innerHTML = '<option value="">-- Choose Technician --</option>';
 
-      internalUsers.filter(u => u.role === 'tech').forEach(t => {
+      Object.values(ROSTER_MAP).filter(u => u.role === 'tech').forEach(t => {
         const opt = document.createElement('option');
         opt.value = t.name;
         opt.textContent = `${t.name} (${t.team})`;
@@ -1783,7 +1757,7 @@
       if (assetTeamSelect) assetTeamSelect.innerHTML = opts;
     }
 
-    // --- ASSETS ONLY CLOUD SYNC (USERS ARE NEVER TOUCHED) ---
+    // --- ONLY ASSETS & LOGS FETCHED FROM CLOUD ---
     async function fetchCloudData(showFeedback = false) {
       if (showFeedback) showLoader("Fetching latest assets & logs from Cloud...");
       try {
@@ -1971,7 +1945,7 @@
       const fullBackup = {
         exportedAt: new Date().toISOString(),
         teams,
-        internalUsers,
+        roster: ROSTER_MAP,
         categoryFreqs,
         customIcons,
         assets,
