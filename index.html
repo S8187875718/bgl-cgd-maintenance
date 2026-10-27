@@ -121,6 +121,9 @@
           <button onclick="fetchCloudData(true)" title="Sync Cloud Assets" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-teal-400 border border-slate-700">
             <i class="fa-solid fa-arrows-rotate"></i>
           </button>
+          <button id="enableHeaderNotifications" onclick="enableTechNotifications()" title="Enable phone notifications" class="hidden px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-yellow-300 border border-slate-700">
+            <i class="fa-solid fa-bell"></i><span class="hidden sm:inline ml-1">Alerts</span>
+          </button>
 
           <!-- Admin Toolbar -->
           <div id="adminHeaderBtns" class="hidden flex items-center gap-1.5 flex-wrap">
@@ -133,7 +136,7 @@
             <button onclick="openModal('customIconsModal')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 flex items-center gap-1">
               <i class="fa-solid fa-map-pin"></i> <span class="hidden md:inline">Icons</span>
             </button>
-            <button onclick="openModal('noticeModal')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-yellow-300 border border-slate-700 flex items-center gap-1">
+            <button onclick="openNoticeModal()" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-yellow-300 border border-slate-700 flex items-center gap-1">
               <i class="fa-solid fa-bullhorn"></i> <span class="hidden md:inline">Notice</span>
             </button>
             <button onclick="openModal('teamManageModal')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 flex items-center gap-1">
@@ -170,7 +173,10 @@
           <i class="fa-solid fa-bullhorn text-sm animate-bounce"></i>
           <span id="noticeBannerText" class="font-medium"></span>
         </div>
-        <button onclick="dismissNotice()" class="text-slate-400 hover:text-white ml-2"><i class="fa-solid fa-xmark"></i></button>
+        <div class="flex items-center gap-2 ml-2 shrink-0">
+          <button type="button" onclick="enableTechNotifications()" class="text-[10px] px-2 py-1 rounded bg-slate-800 text-yellow-200 border border-yellow-500/30">Enable phone alerts</button>
+          <button onclick="dismissNotice()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        </div>
       </div>
 
       <!-- Technician Pending Tasks Banner -->
@@ -423,11 +429,14 @@
   <div id="noticeModal" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3">
     <div class="glass-card w-full max-w-md p-5 rounded-2xl border border-slate-700 text-xs">
       <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
-        <h3 class="text-sm font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-bullhorn text-yellow-400"></i> Broadcast Team Notice</h3>
+        <h3 class="text-sm font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-bullhorn text-yellow-400"></i> Technician Reminder</h3>
         <button onclick="closeModal('noticeModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="space-y-3">
-        <textarea id="noticeInput" rows="3" placeholder="Enter urgent operational instructions or announcements..." class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-yellow-500"></textarea>
+        <label class="block text-slate-300">Send reminder to
+          <select id="noticeAudienceSelect" class="mt-1 w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-yellow-500"></select>
+        </label>
+        <textarea id="noticeInput" rows="3" placeholder="Enter a reminder or operational announcement..." class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-yellow-500"></textarea>
         <div class="flex justify-end gap-2">
           <button onclick="clearNotice()" class="px-3 py-1.5 bg-slate-800 text-rose-300 rounded">Clear Notice</button>
           <button onclick="publishNotice()" class="px-4 py-1.5 bg-yellow-600 hover:bg-yellow-500 text-black font-bold rounded">Publish Notice</button>
@@ -480,15 +489,9 @@
             <input type="number" step="any" id="editAssetLng" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block text-slate-400 mb-1">Last Maintenance Date</label>
-            <input type="date" id="editAssetLastDate" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
-          </div>
-          <div>
-            <label class="block text-slate-400 mb-1">Frequency (Days)</label>
-            <input type="number" id="editAssetFreq" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
-          </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Frequency (Days)</label>
+          <input type="number" id="editAssetFreq" min="1" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
         </div>
         <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
           <button type="button" onclick="closeModal('editAssetModal')" class="px-3.5 py-1.5 bg-slate-800 text-slate-300 rounded">Cancel</button>
@@ -527,7 +530,8 @@
       <form id="maintenanceForm" onsubmit="submitMaintenance(event)" class="space-y-3 text-xs">
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block text-slate-400 mb-1">Technician (Locked)</label>
+            <label id="maintTechLabel" class="block text-slate-400 mb-1">Technician</label>
+            <select id="maintTechSelect" class="hidden w-full p-2 bg-slate-900 border border-slate-700 rounded text-white focus:outline-none focus:border-teal-500"></select>
             <input type="text" id="maintTechName" readonly class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-teal-300 font-semibold cursor-not-allowed">
           </div>
           <div>
@@ -539,14 +543,14 @@
         <div class="grid grid-cols-2 gap-2 p-2.5 bg-slate-900/60 rounded-xl border border-slate-800">
           <div>
             <label class="block text-slate-300 font-medium mb-1"><i class="fa-solid fa-camera mr-1 text-teal-400"></i> Before Photo</label>
-            <input type="file" id="beforePhotoInput" accept="image/*" capture="environment" onchange="previewImage(this, 'beforePreview')" class="text-[10px] text-slate-400 w-full">
+            <input type="file" id="beforePhotoInput" accept="image/*" onchange="previewImage(this, 'beforePreview')" class="text-[10px] text-slate-400 w-full">
             <div id="beforePreview" class="mt-1.5 h-20 rounded border border-slate-800 bg-black/40 flex items-center justify-center text-slate-600 overflow-hidden text-[11px]">
               <span>No image</span>
             </div>
           </div>
           <div>
             <label class="block text-slate-300 font-medium mb-1"><i class="fa-solid fa-camera mr-1 text-teal-400"></i> After Photo</label>
-            <input type="file" id="afterPhotoInput" accept="image/*" capture="environment" onchange="previewImage(this, 'afterPreview')" class="text-[10px] text-slate-400 w-full">
+            <input type="file" id="afterPhotoInput" accept="image/*" onchange="previewImage(this, 'afterPreview')" class="text-[10px] text-slate-400 w-full">
             <div id="afterPreview" class="mt-1.5 h-20 rounded border border-slate-800 bg-black/40 flex items-center justify-center text-slate-600 overflow-hidden text-[11px]">
               <span>No image</span>
             </div>
@@ -777,15 +781,9 @@
             <input type="number" step="any" id="newAssetLng" required placeholder="78.3845" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block text-slate-400 mb-1">Last Maintenance Date</label>
-            <input type="date" id="newAssetLastDate" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
-          </div>
-          <div>
-            <label class="block text-slate-400 mb-1">Frequency (Days)</label>
-            <input type="number" id="newAssetFreq" value="90" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
-          </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Maintenance Frequency (Days) *</label>
+          <input type="number" id="newAssetFreq" min="1" value="90" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" onclick="closeModal('addAssetModal')" class="px-3.5 py-1.5 bg-slate-800 text-slate-300 rounded">Cancel</button>
@@ -834,14 +832,14 @@
     };
 
     const INITIAL_ASSETS = [
-      { id: "S07-D04-SR102", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5684817, lng: 78.4718986, lastDate: "2026-08-15", freqDays: 90, assignedTech: null },
-      { id: "S07-D04-SR103", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5684774, lng: 78.4718246, lastDate: "2026-07-20", freqDays: 90, assignedTech: null },
-      { id: "S07-D04-SR101", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5863404, lng: 78.4748154, lastDate: "2026-09-01", freqDays: 90, assignedTech: null },
-      { id: "S07-D04-SR100", type: "SR", team: "HMT", location: "Suchitra Junction", lat: 17.5111404, lng: 78.4808035, lastDate: "2026-06-10", freqDays: 90, assignedTech: null },
-      { id: "S10-D06-SR04", type: "SR", team: "KPHB", location: "Erragadda", lat: 17.4585855, lng: 78.4306944, lastDate: "2026-05-12", freqDays: 90, assignedTech: null },
-      { id: "S10-D06-SR03", type: "SR", team: "KPHB", location: "Erragadda", lat: 17.4586111, lng: 78.4307778, lastDate: "2026-08-10", freqDays: 90, assignedTech: null },
-      { id: "DRS-HMT-01", type: "DRS", team: "HMT", location: "HMT Sector 1", lat: 17.5215, lng: 78.3912, lastDate: "2026-08-10", freqDays: 180, assignedTech: null },
-      { id: "MRS-KPHB-02", type: "MRS", team: "KPHB", location: "KPHB Main Road", lat: 17.4850, lng: 78.3890, lastDate: "2026-09-25", freqDays: 30, assignedTech: null }
+      { id: "S07-D04-SR102", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5684817, lng: 78.4718986, freqDays: 90, assignedTech: null },
+      { id: "S07-D04-SR103", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5684774, lng: 78.4718246, freqDays: 90, assignedTech: null },
+      { id: "S07-D04-SR101", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5863404, lng: 78.4748154, freqDays: 90, assignedTech: null },
+      { id: "S07-D04-SR100", type: "SR", team: "HMT", location: "Suchitra Junction", lat: 17.5111404, lng: 78.4808035, freqDays: 90, assignedTech: null },
+      { id: "S10-D06-SR04", type: "SR", team: "KPHB", location: "Erragadda", lat: 17.4585855, lng: 78.4306944, freqDays: 90, assignedTech: null },
+      { id: "S10-D06-SR03", type: "SR", team: "KPHB", location: "Erragadda", lat: 17.4586111, lng: 78.4307778, freqDays: 90, assignedTech: null },
+      { id: "DRS-HMT-01", type: "DRS", team: "HMT", location: "HMT Sector 1", lat: 17.5215, lng: 78.3912, freqDays: 180, assignedTech: null },
+      { id: "MRS-KPHB-02", type: "MRS", team: "KPHB", location: "KPHB Main Road", lat: 17.4850, lng: 78.3890, freqDays: 30, assignedTech: null }
     ];
 
     let teams = [];
@@ -850,6 +848,7 @@
     let currentUser = null;
     let assets = [];
     let maintenanceHistory = [];
+    let cloudNotices = [];
     let activeCategory = 'All';
     let searchQuery = '';
     let showAllTeams = false;
@@ -875,12 +874,7 @@
           const cleanId = String(item.id).trim().toUpperCase();
           if (uniqueMap.has(cleanId)) {
             const existing = uniqueMap.get(cleanId);
-            const d1 = new Date(safeParseDate(existing.lastDate) || '1970-01-01');
-            const d2 = new Date(safeParseDate(item.lastDate) || '1970-01-01');
-            // Keep record with latest maintenance date
-            if (d2 >= d1) {
-              uniqueMap.set(cleanId, { ...existing, ...item, id: cleanId });
-            }
+            uniqueMap.set(cleanId, { ...existing, ...item, id: cleanId });
           } else {
             uniqueMap.set(cleanId, { ...item, id: cleanId });
           }
@@ -896,6 +890,7 @@
       renderFrequencyModal();
       checkActiveNotice();
       fetchCloudData(false);
+      setInterval(() => { if (currentUser && currentUser.role !== 'admin') fetchTechnicianNotices(); }, 60000);
     });
 
     function loadStoredAppData() {
@@ -920,10 +915,27 @@
       }
       safeStore.set('bgl_assets_v2', JSON.stringify(assets));
 
+      try { cloudNotices = JSON.parse(safeStore.get('bgl_cloud_notices') || '[]'); } catch(e) { cloudNotices = []; }
       const historyStored = safeStore.get('bgl_maint_history_v2');
       if (historyStored) {
         try { maintenanceHistory = JSON.parse(historyStored); } catch(e) { maintenanceHistory = []; }
       }
+      applyMaintenanceDatesFromLogs();
+    }
+
+    function applyMaintenanceDatesFromLogs() {
+      const latestLogDateByAsset = new Map();
+      maintenanceHistory.forEach(log => {
+        const id = sanitizeKey(log.assetId);
+        if (!id || !log.date) return;
+        const date = safeParseDate(log.date);
+        if (!date) return;
+        const previous = latestLogDateByAsset.get(id);
+        if (!previous || date > previous) latestLogDateByAsset.set(id, date);
+      });
+      assets.forEach(asset => {
+        asset.lastDate = latestLogDateByAsset.get(sanitizeKey(asset.id)) || null;
+      });
     }
 
     // --- INSTANT BULLETPROOF AUTHENTICATION ---
@@ -1012,6 +1024,11 @@
         document.getElementById('userZoneLabel').textContent = `${currentUser.name} (${currentUser.team})`;
         const selectionHeader = document.getElementById('assetSelectionHeader');
         if (selectionHeader) selectionHeader.classList.toggle('hidden', currentUser.role !== 'admin');
+        const headerNotifications = document.getElementById('enableHeaderNotifications');
+        if (headerNotifications) {
+          headerNotifications.classList.toggle('hidden', currentUser.role === 'admin');
+          if ('Notification' in window && Notification.permission === 'granted') headerNotifications.innerHTML = '<i class="fa-solid fa-bell"></i><span class="hidden sm:inline ml-1">Alerts on</span>';
+        }
         if (currentUser.role === 'admin') {
           const ab = document.getElementById('adminHeaderBtns');
           if (ab) { ab.classList.remove('hidden'); ab.style.display = 'flex'; }
@@ -1032,6 +1049,7 @@
         console.error("UI Header error:", err);
       }
 
+      checkActiveNotice();
       try { initMap(); } catch(err) { console.error("Map init error:", err); }
       try { renderAssets(); } catch(err) { console.error("Assets render error:", err); }
       try { updateKPIDashboard(); } catch(err) { console.error("KPI error:", err); }
@@ -1131,37 +1149,131 @@
       }
     }
 
-    // --- NOTICE BOARD ---
-    function checkActiveNotice() {
-      const n = safeStore.get('bgl_active_notice');
+    // --- CLOUD TECHNICIAN REMINDERS ---
+    function openNoticeModal() {
+      const select = document.getElementById('noticeAudienceSelect');
+      select.innerHTML = '<option value="*">All technicians</option>';
+      getTechniciansForAssignment().forEach(tech => {
+        const option = document.createElement('option');
+        option.value = tech.id;
+        option.textContent = `${tech.name} (${tech.team || 'No team'})`;
+        select.appendChild(option);
+      });
+      openModal('noticeModal');
+    }
+
+    function getDismissedNoticeIds() {
+      if (!currentUser) return [];
+      try { return JSON.parse(safeStore.get(`bgl_dismissed_notices_${sanitizeKey(currentUser.id)}`) || '[]'); }
+      catch (err) { return []; }
+    }
+
+    function checkActiveNotice(notify = false) {
       const banner = document.getElementById('noticeBanner');
-      if (n && n.trim() !== '') {
-        document.getElementById('noticeBannerText').textContent = n;
-        banner.classList.remove('hidden');
-      } else {
+      if (!banner || !currentUser || currentUser.role === 'admin') {
+        if (banner) banner.classList.add('hidden');
+        return;
+      }
+      const dismissed = new Set(getDismissedNoticeIds());
+      const matching = cloudNotices.filter(notice => {
+        const active = notice.active !== false && String(notice.active).toUpperCase() !== 'FALSE';
+        const audience = String(notice.targetTechId || '*');
+        const addressedToMe = audience === '*' || sanitizeKey(audience) === sanitizeKey(currentUser.id) ||
+          sanitizeKey(notice.targetTechName) === sanitizeKey(currentUser.name);
+        return active && addressedToMe && !dismissed.has(String(notice.id));
+      });
+      const legacy = !cloudNotices.length ? (safeStore.get('bgl_active_notice') || '') : '';
+      if (!matching.length && !legacy.trim()) {
         banner.classList.add('hidden');
+        return;
+      }
+      const text = matching.slice(0, 3).map(notice => notice.message).join(' • ') || legacy;
+      document.getElementById('noticeBannerText').textContent = text;
+      banner.classList.remove('hidden');
+
+      if (notify && matching.length && 'Notification' in window && Notification.permission === 'granted') {
+        const key = `bgl_seen_notices_${sanitizeKey(currentUser.id)}`;
+        let seen = [];
+        try { seen = JSON.parse(safeStore.get(key) || '[]'); } catch (err) { seen = []; }
+        const fresh = matching.filter(notice => !seen.includes(String(notice.id)));
+        safeStore.set(key, JSON.stringify([...new Set([...seen, ...matching.map(notice => String(notice.id))])]));
+        if (fresh.length) {
+          const latest = fresh[0];
+          const notification = new Notification('BGL maintenance reminder', {
+            body: fresh.length === 1 ? latest.message : `${fresh.length} new reminders. Open BGL O&M to read them.`,
+            tag: `bgl-notice-${latest.id}`
+          });
+          notification.onclick = () => window.focus();
+        }
       }
     }
 
-    function publishNotice() {
-      const val = document.getElementById('noticeInput').value.trim();
-      if (!val) return;
-      safeStore.set('bgl_active_notice', val);
-      checkActiveNotice();
-      closeModal('noticeModal');
-      showToast("Notice broadcasted to all technicians!");
+    async function publishNotice() {
+      const message = document.getElementById('noticeInput').value.trim();
+      const targetTechId = document.getElementById('noticeAudienceSelect').value || '*';
+      if (!message) return showToast('Enter a reminder message first.');
+      const target = getTechniciansForAssignment().find(tech => String(tech.id) === targetTechId);
+      showLoader('Sending technician reminder...');
+      try {
+        const response = await fetch(CLOUD_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'sendNotice',
+            targetTechId,
+            targetTechName: target ? target.name : 'All technicians',
+            message,
+            sender: currentUser ? currentUser.name : 'Admin'
+          })
+        });
+        const result = await response.json();
+        if (!response.ok || result.status !== 'success') throw new Error(result.message || 'Reminder was not saved');
+        document.getElementById('noticeInput').value = '';
+        closeModal('noticeModal');
+        await fetchCloudData(false);
+        showToast(targetTechId === '*' ? 'Reminder sent to all technicians.' : `Reminder sent to ${target.name}.`);
+      } catch (err) {
+        console.error('Notice send failed:', err);
+        showToast('Could not send reminder. Deploy the updated Apps Script and try again.');
+      } finally {
+        hideLoader();
+      }
     }
 
-    function clearNotice() {
-      safeStore.remove('bgl_active_notice');
-      document.getElementById('noticeInput').value = '';
-      checkActiveNotice();
-      closeModal('noticeModal');
-      showToast("Notice cleared");
+    async function clearNotice() {
+      showLoader('Clearing active reminders...');
+      try {
+        const response = await fetch(CLOUD_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'clearNotices' })
+        });
+        const result = await response.json();
+        if (!response.ok || result.status !== 'success') throw new Error(result.message || 'Could not clear reminders');
+        cloudNotices = [];
+        safeStore.set('bgl_cloud_notices', '[]');
+        document.getElementById('noticeInput').value = '';
+        checkActiveNotice();
+        closeModal('noticeModal');
+        showToast('Active reminders cleared.');
+      } catch (err) {
+        console.error('Notice clear failed:', err);
+        showToast('Could not clear reminders. Deploy the updated Apps Script and try again.');
+      } finally {
+        hideLoader();
+      }
     }
 
     function dismissNotice() {
-      document.getElementById('noticeBanner').classList.add('hidden');
+      if (currentUser) {
+        const key = `bgl_dismissed_notices_${sanitizeKey(currentUser.id)}`;
+        const ids = cloudNotices.filter(notice => {
+          const audience = String(notice.targetTechId || '*');
+          return audience === '*' || sanitizeKey(audience) === sanitizeKey(currentUser.id);
+        }).map(notice => String(notice.id));
+        safeStore.set(key, JSON.stringify([...new Set([...getDismissedNoticeIds(), ...ids])]));
+      }
+      checkActiveNotice();
     }
 
     // --- BATCH FREQUENCY UPDATER (ADMIN) ---
@@ -1220,7 +1332,7 @@
         const s = computeStatus(a.lastDate, a.freqDays);
         if (s.status === 'Healthy') healthy++;
         else if (s.status === 'Due Soon') dueSoon++;
-        else overdue++;
+        else if (s.status === 'Overdue') overdue++;
       });
 
       document.getElementById('kpiTotal').textContent = filtered.length;
@@ -1301,7 +1413,7 @@
 
     // --- STRICT DATE PARSING & DUE CALCULATION ---
     function safeParseDate(val) {
-      if (!val) return new Date().toISOString().split('T')[0];
+      if (!val) return '';
       val = String(val).trim();
       if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
         const yr = parseInt(val.split('-')[0]);
@@ -1329,14 +1441,22 @@
     }
 
     function computeStatus(lastDateStr, freqDays = 90) {
+      if (!lastDateStr) {
+        return { status: 'No Log', color: '#64748b', badge: 'bg-slate-700/40 text-slate-300 border border-slate-600/50', dueDateFormatted: '--' };
+      }
       const parsed = safeParseDate(lastDateStr);
-      const last = new Date(parsed);
+      const [year, month, day] = parsed.split('-').map(Number);
+      const last = new Date(Date.UTC(year, month - 1, day));
       const due = new Date(last);
-      due.setDate(due.getDate() + parseInt(freqDays));
-      
-      const today = new Date();
-      const diffDays = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
-      const formattedDue = formatToDDMMYYYY(due.toISOString().split('T')[0]);
+      const interval = Number.parseInt(freqDays, 10);
+      due.setUTCDate(due.getUTCDate() + (Number.isFinite(interval) && interval > 0 ? interval : 90));
+
+      // Compare date-only values in UTC so timezone offsets cannot shift the due date.
+      const now = new Date();
+      const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+      const diffDays = Math.floor((due.getTime() - today) / 86400000);
+      const dueIso = `${due.getUTCFullYear()}-${String(due.getUTCMonth() + 1).padStart(2, '0')}-${String(due.getUTCDate()).padStart(2, '0')}`;
+      const formattedDue = formatToDDMMYYYY(dueIso);
 
       if (diffDays < 0) {
         return { status: 'Overdue', color: '#f43f5e', badge: 'bg-rose-500/20 text-rose-300 border border-rose-500/40', dueDateFormatted: formattedDue };
@@ -1527,7 +1647,6 @@
       document.getElementById('editAssetLoc').value = asset.location;
       document.getElementById('editAssetLat').value = asset.lat;
       document.getElementById('editAssetLng').value = asset.lng;
-      document.getElementById('editAssetLastDate').value = safeParseDate(asset.lastDate);
       document.getElementById('editAssetFreq').value = asset.freqDays || 90;
 
       const teamSelect = document.getElementById('editAssetTeamSelect');
@@ -1547,7 +1666,6 @@
       asset.location = document.getElementById('editAssetLoc').value.trim();
       asset.lat = parseFloat(document.getElementById('editAssetLat').value);
       asset.lng = parseFloat(document.getElementById('editAssetLng').value);
-      asset.lastDate = document.getElementById('editAssetLastDate').value;
       asset.freqDays = parseInt(document.getElementById('editAssetFreq').value) || 90;
 
       assets = deduplicateAssets(assets);
@@ -1617,12 +1735,36 @@
 
     // --- TECHNICIAN MAINTENANCE RECORDING & DRIVE SYNC ---
     let activeMaintenanceAssetId = null;
+    let activeMaintenanceClientLogId = null;
 
     function openMaintenanceModal(assetId) {
       activeMaintenanceAssetId = assetId;
+      activeMaintenanceClientLogId = `LOG-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
       document.getElementById('maintAssetInfo').textContent = `Asset: ${assetId}`;
-      document.getElementById('maintTechName').value = currentUser ? currentUser.name : 'Unknown';
-      document.getElementById('maintDate').value = new Date().toISOString().split('T')[0];
+      const techSelect = document.getElementById('maintTechSelect');
+      const techNameInput = document.getElementById('maintTechName');
+      const techLabel = document.getElementById('maintTechLabel');
+      if (currentUser && currentUser.role === 'admin') {
+        techLabel.textContent = 'Technician who performed maintenance *';
+        techSelect.innerHTML = '<option value="">-- Select Technician --</option>';
+        getTechniciansForAssignment().forEach(tech => {
+          const option = document.createElement('option');
+          option.value = tech.name;
+          option.textContent = `${tech.name} (${tech.team || 'No team'})`;
+          techSelect.appendChild(option);
+        });
+        techSelect.classList.remove('hidden');
+        techSelect.required = true;
+        techNameInput.classList.add('hidden');
+      } else {
+        techLabel.textContent = 'Technician (Locked)';
+        techSelect.classList.add('hidden');
+        techSelect.required = false;
+        techNameInput.value = currentUser ? currentUser.name : 'Unknown';
+        techNameInput.classList.remove('hidden');
+      }
+      const now = new Date();
+      document.getElementById('maintDate').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       document.getElementById('beforePreview').innerHTML = '<span>No image</span>';
       document.getElementById('afterPreview').innerHTML = '<span>No image</span>';
       openModal('maintenanceModal');
@@ -1644,6 +1786,10 @@
       if (!asset) return;
 
       const dateConducted = document.getElementById('maintDate').value;
+      const technicianName = currentUser && currentUser.role === 'admin'
+        ? document.getElementById('maintTechSelect').value
+        : (currentUser ? currentUser.name : 'Unknown');
+      if (!technicianName) return showToast('Select the technician who performed this maintenance.');
       const obs = document.getElementById('maintObservations').value;
       const rem = document.getElementById('maintRemarks').value;
       const beforeImg = document.querySelector('#beforePreview img')?.src || '';
@@ -1657,8 +1803,9 @@
       try {
         const payload = {
           action: "logMaintenance",
+          clientLogId: activeMaintenanceClientLogId,
           assetId: asset.id,
-          tech: currentUser.name,
+          tech: technicianName,
           date: dateConducted,
           observations: obs,
           remarks: rem,
@@ -1673,11 +1820,14 @@
         });
 
         const json = await res.json();
+        if (!res.ok || json.status !== "success") {
+          throw new Error(json.message || `Cloud request failed (${res.status})`);
+        }
 
         const logRecord = {
-          id: 'LOG-' + Date.now(),
+          id: json.id || activeMaintenanceClientLogId,
           assetId: asset.id,
-          tech: currentUser.name,
+          tech: technicianName,
           date: dateConducted,
           observations: obs,
           remarks: rem,
@@ -1699,13 +1849,9 @@
         showToast("Maintenance signed off & synced to Drive!");
       } catch (err) {
         console.error("Cloud Upload Error:", err);
-        asset.lastDate = dateConducted;
-        asset.assignedTech = null;
-        
-        safeStore.set('bgl_assets_v2', JSON.stringify(assets));
-        closeModal('maintenanceModal');
-        renderAssets();
-        showToast("Saved locally (will sync once online)");
+        // Do not update the asset locally when the server did not confirm the save.
+        // Keep the form and its clientLogId so the user can retry without duplicate logs.
+        showToast("Cloud save failed; date unchanged. Please retry.");
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<i class="fa-solid fa-check"></i> Close & Sync to Drive`;
@@ -1736,19 +1882,23 @@
     }
 
     async function enableTechNotifications() {
-      if (!('Notification' in window)) return showToast('This browser does not support notifications.');
+      if (!('Notification' in window)) return showToast('This browser does not support notifications. Open the HTTPS site on your phone.');
+      if (location.protocol !== 'https:' && location.hostname !== 'localhost') return showToast('Open the HTTPS hosted site to enable phone notifications.');
       try {
         const permission = await Notification.requestPermission();
         const button = document.getElementById('enableTechNotifications');
+        const headerButton = document.getElementById('enableHeaderNotifications');
         if (permission === 'granted') {
           if (button) button.textContent = 'Notifications on';
-          showToast('Task notifications enabled');
+          if (headerButton) headerButton.innerHTML = '<i class="fa-solid fa-bell"></i><span class="hidden sm:inline ml-1">Alerts on</span>';
+          showToast('Notifications enabled');
+          checkActiveNotice(true);
           const tasks = getPendingTasksForCurrentUser();
           const taskKey = `bgl_notified_tasks_${sanitizeKey(currentUser.id || currentUser.name)}`;
           safeStore.set(taskKey, JSON.stringify(tasks.map(task => String(task.id))));
           if (tasks.length) new Notification('Pending BGL maintenance tasks', { body: `${tasks.length} task${tasks.length === 1 ? '' : 's'} assigned to you.` });
         } else {
-          showToast('Allow notifications in your browser settings to receive task alerts.');
+          showToast('Allow notifications for this site in browser settings, then try again.');
         }
       } catch (err) {
         showToast('Could not enable browser notifications.');
@@ -2030,6 +2180,21 @@
       if (singleTeamSelect) singleTeamSelect.innerHTML = teamOptions;
       populateBatchTechnicianSelect();
     }
+    async function fetchTechnicianNotices() {
+      if (!currentUser || currentUser.role === 'admin') return;
+      try {
+        const response = await fetch(`${CLOUD_API_URL}?action=getNotices`);
+        const result = await response.json();
+        if (result.status === 'success' && Array.isArray(result.notices)) {
+          cloudNotices = result.notices;
+          safeStore.set('bgl_cloud_notices', JSON.stringify(cloudNotices));
+          checkActiveNotice(true);
+        }
+      } catch (err) {
+        console.warn('Could not refresh technician reminders', err);
+      }
+    }
+
     // --- ONLY ASSETS & LOGS FETCHED FROM CLOUD ---
     async function fetchCloudData(showFeedback = false) {
       if (showFeedback) showLoader("Fetching latest assets & logs from Cloud...");
@@ -2053,7 +2218,6 @@
               location: a.location || 'Location',
               lat: parseFloat(a.lat) || 17.5132,
               lng: parseFloat(a.lng) || 78.3845,
-              lastDate: safeParseDate(a.lastDate),
               freqDays: parseInt(a.freqDays) || (categoryFreqs[a.type] || 90),
               assignedTech: a.assignedTech || null,
 
@@ -2064,7 +2228,12 @@
             safeStore.set('bgl_assets_v2', JSON.stringify(assets));
           }
 
-          if (json.logs && json.logs.length) {
+          if (Array.isArray(json.notices)) {
+            cloudNotices = json.notices;
+            safeStore.set('bgl_cloud_notices', JSON.stringify(cloudNotices));
+          }
+
+          if (Array.isArray(json.logs)) {
             maintenanceHistory = json.logs.map(l => ({
               id: l.id,
               assetId: l.assetId,
@@ -2078,7 +2247,12 @@
             safeStore.set('bgl_maint_history_v2', JSON.stringify(maintenanceHistory));
           }
 
+          // MaintenanceLogs is the only source of last-maintenance dates.
+          applyMaintenanceDatesFromLogs();
+          safeStore.set('bgl_assets_v2', JSON.stringify(assets));
+
           if (showFeedback) showToast("Cloud Assets Synced Successfully!");
+          checkActiveNotice(true);
           if (currentUser) { renderTechPendingTasks(); renderAssets(); }
         }
       } catch (err) {
@@ -2140,21 +2314,34 @@
           const text = await file.text();
           const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
           let count = 0;
+          const csvHeaders = parseCSVLine(lines[0]).map(value => value.trim().toLowerCase());
+          const headerIndex = (terms, fallback) => {
+            const found = csvHeaders.findIndex(value => terms.some(term => value.includes(term)));
+            return found >= 0 ? found : fallback;
+          };
+          const idIndex = headerIndex(['asset id', 'id'], 0);
+          const typeIndex = headerIndex(['type'], 1);
+          const teamIndex = headerIndex(['team'], 2);
+          const locationIndex = headerIndex(['location'], 3);
+          const latIndex = headerIndex(['latitude', 'lat'], 4);
+          const lngIndex = headerIndex(['longitude', 'lng', 'lon'], 5);
+          const freqIndex = headerIndex(['frequency days', 'freqdays', 'frequency'], -1);
+          const assignedIndex = headerIndex(['assigned technician', 'assignedtech'], -1);
 
           for (let i = 1; i < lines.length; i++) {
             const cols = parseCSVLine(lines[i]);
-            if (!cols[0]) continue;
+            if (!cols[idIndex]) continue;
 
-            const id = cols[0];
-            const rawType = cols[1] || 'SR';
-            const team = cols[2] || 'HMT';
-            const location = cols[3] || 'Location';
-            const lat = parseFloat(cols[4]) || 17.5132;
-            const lng = parseFloat(cols[5]) || 78.3845;
-            const lastDate = safeParseDate(cols[6]);
-            const freqDays = parseInt(cols[7]) || (categoryFreqs[rawType] || 90);
+            const id = cols[idIndex];
+            const rawType = cols[typeIndex] || 'SR';
+            const team = cols[teamIndex] || 'HMT';
+            const location = cols[locationIndex] || 'Location';
+            const lat = parseFloat(cols[latIndex]) || 17.5132;
+            const lng = parseFloat(cols[lngIndex]) || 78.3845;
+            const freqDays = parseInt(cols[freqIndex]) || (categoryFreqs[rawType] || 90);
+            const assignedTech = assignedIndex >= 0 ? (cols[assignedIndex] || null) : null;
 
-            assets.push({ id, type: rawType, team, location, lat, lng, lastDate, freqDays, assignedTech: null });
+            assets.push({ id, type: rawType, team, location, lat, lng, freqDays, assignedTech });
             count++;
           }
 
@@ -2208,7 +2395,6 @@
             location: 'Imported from KMZ',
             lat,
             lng,
-            lastDate: new Date().toISOString().split('T')[0],
             freqDays: categoryFreqs[t] || 90,
             assignedTech: null
           });
@@ -2224,10 +2410,9 @@
 
     function exportAssetsCSV() {
       if (!assets.length) return alert("No assets available");
-      let csv = "Asset ID,Type,Team,Location,Latitude,Longitude,Last Maintenance Date (DD-MM-YYYY),Next Due Date (DD-MM-YYYY),Assigned Technician\n";
+      let csv = "Asset ID,Type,Team,Location,Latitude,Longitude,Frequency Days,Assigned Technician\n";
       assets.forEach(a => {
-        const s = computeStatus(a.lastDate, a.freqDays);
-        csv += `"${a.id}","${a.type}","${a.team || ''}","${a.location || ''}","${a.lat}","${a.lng}","${formatToDDMMYYYY(a.lastDate)}","${s.dueDateFormatted}","${a.assignedTech || ''}"\n`;
+        csv += `"${a.id}","${a.type}","${a.team || ''}","${a.location || ''}","${a.lat}","${a.lng}","${a.freqDays}","${a.assignedTech || ''}"\n`;
       });
       downloadFile(csv, `BGL_Assets_${formatToDDMMYYYY(new Date().toISOString().split('T')[0])}.csv`, 'text/csv');
     }
@@ -2293,10 +2478,9 @@
       const location = document.getElementById('newAssetLoc').value.trim();
       const lat = parseFloat(document.getElementById('newAssetLat').value);
       const lng = parseFloat(document.getElementById('newAssetLng').value);
-      const lastDate = document.getElementById('newAssetLastDate').value;
       const freqDays = parseInt(document.getElementById('newAssetFreq').value) || (categoryFreqs[type] || 90);
 
-      assets.push({ id, type, team, location, lat, lng, lastDate, freqDays, assignedTech: null });
+      assets.push({ id, type, team, location, lat, lng, freqDays, assignedTech: null });
       assets = deduplicateAssets(assets);
       safeStore.set('bgl_assets_v2', JSON.stringify(assets));
       closeModal('addAssetModal');
