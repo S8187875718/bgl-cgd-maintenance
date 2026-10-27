@@ -1770,6 +1770,11 @@
       openModal('maintenanceModal');
     }
 
+    function getPhotoLink(value) {
+      const link = String(value || '').trim();
+      return /^https?:\/\//i.test(link) ? link : '';
+    }
+
     function previewImage(input, targetId) {
       if (input.files && input.files[0]) {
         const reader = new FileReader();
@@ -2002,8 +2007,8 @@
             <p class="text-slate-300 text-[11px]"><b>Observations:</b> ${rec.observations || '--'}</p>
             <p class="text-slate-400 text-[11px]"><b>Remarks:</b> ${rec.remarks || '--'}</p>
             <div class="flex items-center gap-3 pt-1">
-              ${rec.beforePhoto ? `<a href="${rec.beforePhoto}" target="_blank" class="text-xs text-teal-400 underline mr-2">View Before (Drive)</a>` : ''}
-              ${rec.afterPhoto ? `<a href="${rec.afterPhoto}" target="_blank" class="text-xs text-teal-400 underline">View After (Drive)</a>` : ''}
+              ${getPhotoLink(rec.beforePhoto) ? `<a href="${getPhotoLink(rec.beforePhoto)}" target="_blank" rel="noopener" class="text-xs text-teal-400 underline mr-2">View Before (Drive)</a>` : (rec.beforePhoto ? '<span class="text-xs text-slate-500 mr-2">Before photo link unavailable</span>' : '')}
+              ${getPhotoLink(rec.afterPhoto) ? `<a href="${getPhotoLink(rec.afterPhoto)}" target="_blank" rel="noopener" class="text-xs text-teal-400 underline">View After (Drive)</a>` : (rec.afterPhoto ? '<span class="text-xs text-slate-500">After photo link unavailable</span>' : '')}
             </div>
           `;
           container.appendChild(card);
@@ -2032,8 +2037,8 @@
             </div>
             <p class="text-slate-400 text-[11px]"><b>Observations:</b> ${job.observations || 'N/A'}</p>
             <div class="flex items-center gap-3 pt-1">
-              ${job.beforePhoto ? `<a href="${job.beforePhoto}" target="_blank" class="text-xs text-teal-400 underline">View Before Photo</a>` : ''}
-              ${job.afterPhoto ? `<a href="${job.afterPhoto}" target="_blank" class="text-xs text-teal-400 underline">View After Photo</a>` : ''}
+              ${getPhotoLink(job.beforePhoto) ? `<a href="${getPhotoLink(job.beforePhoto)}" target="_blank" rel="noopener" class="text-xs text-teal-400 underline">View Before Photo</a>` : (job.beforePhoto ? '<span class="text-xs text-slate-500">Before photo link unavailable</span>' : '')}
+              ${getPhotoLink(job.afterPhoto) ? `<a href="${getPhotoLink(job.afterPhoto)}" target="_blank" rel="noopener" class="text-xs text-teal-400 underline">View After Photo</a>` : (job.afterPhoto ? '<span class="text-xs text-slate-500">After photo link unavailable</span>' : '')}
             </div>
           `;
           container.appendChild(card);
@@ -2453,8 +2458,8 @@
           <td class="p-2">${r.tech}</td>
           <td class="p-2 text-slate-400">${r.remarks || '--'}</td>
           <td class="p-2 text-center">
-            ${r.beforePhoto ? `<a href="${r.beforePhoto}" target="_blank" class="text-xs text-teal-400 underline mr-2">Before</a>` : ''}
-            ${r.afterPhoto ? `<a href="${r.afterPhoto}" target="_blank" class="text-xs text-teal-400 underline">After</a>` : ''}
+            ${getPhotoLink(r.beforePhoto) ? `<a href="${getPhotoLink(r.beforePhoto)}" target="_blank" rel="noopener" class="text-xs text-teal-400 underline mr-2">Before</a>` : (r.beforePhoto ? '<span class="text-slate-500 mr-2">Before unavailable</span>' : '')}
+            ${getPhotoLink(r.afterPhoto) ? `<a href="${getPhotoLink(r.afterPhoto)}" target="_blank" rel="noopener" class="text-xs text-teal-400 underline">After</a>` : (r.afterPhoto ? '<span class="text-slate-500">After unavailable</span>' : '')}
             ${!r.beforePhoto && !r.afterPhoto ? '<span class="text-slate-600">None</span>' : ''}
           </td>
         `;
