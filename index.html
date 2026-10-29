@@ -192,28 +192,28 @@
 
       <!-- Dashboard KPI Summary Cards -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-        <div class="glass-card p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+        <div id="kpiCardTotal" role="button" tabindex="0" aria-label="Show all assets" onclick="setStatusFilter(null)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setStatusFilter(null)}" class="glass-card p-3 rounded-xl border border-slate-800 flex items-center justify-between cursor-pointer hover:border-slate-600 transition">
           <div>
             <p class="text-slate-400 text-[11px]">Total Unique Assets</p>
             <h3 id="kpiTotal" class="text-lg font-bold text-white mt-0.5">0</h3>
           </div>
           <div class="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center text-sm"><i class="fa-solid fa-cubes"></i></div>
         </div>
-        <div class="glass-card p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+        <div id="kpiCardHealthy" role="button" tabindex="0" aria-label="Filter healthy assets" aria-pressed="false" onclick="setStatusFilter('Healthy')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setStatusFilter('Healthy')}" class="glass-card p-3 rounded-xl border border-slate-800 flex items-center justify-between cursor-pointer hover:border-emerald-400/70 transition">
           <div>
             <p class="text-slate-400 text-[11px]">Healthy</p>
             <h3 id="kpiHealthy" class="text-lg font-bold text-emerald-400 mt-0.5">0</h3>
           </div>
           <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm"><i class="fa-solid fa-circle-check"></i></div>
         </div>
-        <div class="glass-card p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+        <div id="kpiCardDueSoon" role="button" tabindex="0" aria-label="Filter assets due soon" aria-pressed="false" onclick="setStatusFilter('Due Soon')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setStatusFilter('Due Soon')}" class="glass-card p-3 rounded-xl border border-slate-800 flex items-center justify-between cursor-pointer hover:border-amber-400/70 transition">
           <div>
             <p class="text-slate-400 text-[11px]">Due Soon (&le;15d)</p>
             <h3 id="kpiDueSoon" class="text-lg font-bold text-amber-400 mt-0.5">0</h3>
           </div>
           <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm"><i class="fa-solid fa-clock"></i></div>
         </div>
-        <div class="glass-card p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+        <div id="kpiCardOverdue" role="button" tabindex="0" aria-label="Filter overdue assets" aria-pressed="false" onclick="setStatusFilter('Overdue')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setStatusFilter('Overdue')}" class="glass-card p-3 rounded-xl border border-slate-800 flex items-center justify-between cursor-pointer hover:border-rose-400/70 transition">
           <div>
             <p class="text-slate-400 text-[11px]">High Alert (Overdue)</p>
             <h3 id="kpiOverdue" class="text-lg font-bold text-rose-400 mt-0.5">0</h3>
@@ -806,11 +806,11 @@
 
     const CATEGORIES = ['SR', 'DRS', 'MRS', 'Diaphragm meter', 'MDPE Valve', 'SV station'];
     const DEFAULT_TEAMS = ['HMT', 'KPHB', 'MEDCHAL', 'SUCHITRA'];
-    let categoryFreqs = { 'SR': 90, 'DRS': 180, 'MRS': 30, 'Diaphragm meter': 365, 'MDPE Valve': 180, 'SV station': 90 };
+    let categoryFreqs = { 'SR': 180, 'DRS': 180, 'MRS': 90, 'Diaphragm meter': 90, 'MDPE Valve': 180, 'SV station': 180 };
 
     // --- 100% HARDCODED DIRECT ROSTER MAP ---
     const ROSTER_MAP = {
-      "ADMIN": { id: 'admin', pass: 'admin123', name: 'Satish M (Admin)', role: 'admin', team: 'ALL' },
+      "ADMIN": { id: 'admin', pass: 'Sathishccp', name: 'Satish M (Admin)', role: 'admin', team: 'ALL' },
       "GGS/HYD/015": { id: 'GGS/HYD/015', pass: 'GGS/HYD/015', name: 'Matte Devendar', role: 'tech', team: 'KPHB' },
       "GGS/HYD/022": { id: 'GGS/HYD/022', pass: 'GGS/HYD/022', name: 'Muthineni Satish', role: 'tech', team: 'HMT' },
       "GGS/HYD/010": { id: 'GGS/HYD/010', pass: 'GGS/HYD/010', name: 'Mekala Mahesh', role: 'tech', team: 'KPHB' },
@@ -832,14 +832,14 @@
     };
 
     const INITIAL_ASSETS = [
-      { id: "S07-D04-SR102", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5684817, lng: 78.4718986, freqDays: 90, assignedTech: null },
-      { id: "S07-D04-SR103", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5684774, lng: 78.4718246, freqDays: 90, assignedTech: null },
-      { id: "S07-D04-SR101", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5863404, lng: 78.4748154, freqDays: 90, assignedTech: null },
-      { id: "S07-D04-SR100", type: "SR", team: "HMT", location: "Suchitra Junction", lat: 17.5111404, lng: 78.4808035, freqDays: 90, assignedTech: null },
-      { id: "S10-D06-SR04", type: "SR", team: "KPHB", location: "Erragadda", lat: 17.4585855, lng: 78.4306944, freqDays: 90, assignedTech: null },
-      { id: "S10-D06-SR03", type: "SR", team: "KPHB", location: "Erragadda", lat: 17.4586111, lng: 78.4307778, freqDays: 90, assignedTech: null },
+      { id: "S07-D04-SR102", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5684817, lng: 78.4718986, freqDays: 180, assignedTech: null },
+      { id: "S07-D04-SR103", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5684774, lng: 78.4718246, freqDays: 180, assignedTech: null },
+      { id: "S07-D04-SR101", type: "SR", team: "HMT", location: "Gundlapochampalli", lat: 17.5863404, lng: 78.4748154, freqDays: 180, assignedTech: null },
+      { id: "S07-D04-SR100", type: "SR", team: "HMT", location: "Suchitra Junction", lat: 17.5111404, lng: 78.4808035, freqDays: 180, assignedTech: null },
+      { id: "S10-D06-SR04", type: "SR", team: "KPHB", location: "Erragadda", lat: 17.4585855, lng: 78.4306944, freqDays: 180, assignedTech: null },
+      { id: "S10-D06-SR03", type: "SR", team: "KPHB", location: "Erragadda", lat: 17.4586111, lng: 78.4307778, freqDays: 180, assignedTech: null },
       { id: "DRS-HMT-01", type: "DRS", team: "HMT", location: "HMT Sector 1", lat: 17.5215, lng: 78.3912, freqDays: 180, assignedTech: null },
-      { id: "MRS-KPHB-02", type: "MRS", team: "KPHB", location: "KPHB Main Road", lat: 17.4850, lng: 78.3890, freqDays: 30, assignedTech: null }
+      { id: "MRS-KPHB-02", type: "MRS", team: "KPHB", location: "KPHB Main Road", lat: 17.4850, lng: 78.3890, freqDays: 90, assignedTech: null }
     ];
 
     let teams = [];
@@ -850,6 +850,7 @@
     let maintenanceHistory = [];
     let cloudNotices = [];
     let activeCategory = 'All';
+    let activeStatusFilter = null;
     let searchQuery = '';
     let showAllTeams = false;
     let userLocation = null;
@@ -1506,6 +1507,7 @@
 
       let filtered = assets.filter(a => {
         if (activeCategory !== 'All' && a.type !== activeCategory) return false;
+        if (activeStatusFilter && computeStatus(a.lastDate, a.freqDays).status !== activeStatusFilter) return false;
         if (!showAllTeams && currentUser && currentUser.role !== 'admin') {
           if (a.team && a.team.toUpperCase() !== currentUser.team.toUpperCase()) return false;
         }
@@ -1689,6 +1691,27 @@
       renderAssets();
       showToast(`Asset ${deletingAssetId} deleted!`);
       deletingAssetId = null;
+    }
+
+    function setStatusFilter(status) {
+      // Clicking the active KPI again clears that status filter.
+      activeStatusFilter = activeStatusFilter === status ? null : status;
+      const cardIds = ['kpiCardTotal', 'kpiCardHealthy', 'kpiCardDueSoon', 'kpiCardOverdue'];
+      cardIds.forEach(id => {
+        const card = document.getElementById(id);
+        if (!card) return;
+        card.classList.remove('ring-2', 'ring-teal-400', 'ring-emerald-400', 'ring-amber-400', 'ring-rose-400');
+        card.setAttribute('aria-pressed', 'false');
+      });
+      const selectedId = activeStatusFilter === 'Healthy' ? 'kpiCardHealthy' : activeStatusFilter === 'Due Soon' ? 'kpiCardDueSoon' : activeStatusFilter === 'Overdue' ? 'kpiCardOverdue' : 'kpiCardTotal';
+      const selectedCard = document.getElementById(selectedId);
+      if (selectedCard) {
+        const ring = activeStatusFilter === 'Healthy' ? 'ring-emerald-400' : activeStatusFilter === 'Due Soon' ? 'ring-amber-400' : activeStatusFilter === 'Overdue' ? 'ring-rose-400' : 'ring-teal-400';
+        selectedCard.classList.add('ring-2', ring);
+        selectedCard.setAttribute('aria-pressed', 'true');
+      }
+      renderAssets();
+      document.getElementById('assetsTableBody')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function handleSearch(val) {
