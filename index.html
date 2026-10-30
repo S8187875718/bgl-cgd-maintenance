@@ -71,7 +71,7 @@
           <label class="block text-xs font-semibold text-slate-300 mb-1">User ID</label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-user text-xs"></i></span>
-            <input type="text" id="loginUsername" placeholder="e.g. GGS/HYD/015 or admin" class="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-teal-500 uppercase">
+            <input type="text" id="loginUsername" placeholder="e.g. GGS/HYD/015" class="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-teal-500 uppercase">
           </div>
         </div>
 
@@ -79,7 +79,7 @@
           <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500"><i class="fa-solid fa-lock text-xs"></i></span>
-            <input type="password" id="loginPassword" onkeyup="if(event.key==='Enter') executeLogin()" placeholder="Enter Password (or PIN 1234)" class="w-full pl-9 pr-9 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-teal-500">
+            <input type="password" id="loginPassword" onkeyup="if(event.key==='Enter') executeLogin()" placeholder="Enter Password " class="w-full pl-9 pr-9 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-teal-500">
             <button type="button" onclick="togglePassVisibility()" class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 hover:text-slate-300">
               <i id="passEyeIcon" class="fa-solid fa-eye text-xs"></i>
             </button>
@@ -127,7 +127,7 @@
 
           <!-- Admin Toolbar -->
           <div id="adminHeaderBtns" class="hidden flex items-center gap-1.5 flex-wrap">
-            <button onclick="openModal('addAssetModal')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-teal-600 hover:bg-teal-500 text-white flex items-center gap-1 shadow">
+            <button onclick="openNewAssetModal()" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-teal-600 hover:bg-teal-500 text-white flex items-center gap-1 shadow">
               <i class="fa-solid fa-plus"></i> <span class="hidden md:inline">Asset</span>
             </button>
             <button onclick="openModal('freqModal')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-blue-300 border border-slate-700 flex items-center gap-1">
@@ -493,6 +493,19 @@
           <label class="block text-slate-400 mb-1">Frequency (Days)</label>
           <input type="number" id="editAssetFreq" min="1" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
         </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-slate-400 mb-1">Customer Service Status</label>
+            <select id="editAssetServiceStatus" onchange="toggleActivationDateField('edit')" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
+              <option value="Active">Active</option><option value="Inactive">Inactive (Maintenance Hold)</option>
+            </select>
+          </div>
+          <div id="editActivationDateWrap">
+            <label class="block text-slate-400 mb-1">Activation / Reconnection Date</label>
+            <input type="date" id="editAssetActivationDate" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
+          </div>
+        </div>
+        <p class="text-[10px] text-slate-500">For TD/PD, set Inactive. On reconnection, set Active and enter the reconnection date to restart the maintenance cycle.</p>
         <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
           <button type="button" onclick="closeModal('editAssetModal')" class="px-3.5 py-1.5 bg-slate-800 text-slate-300 rounded">Cancel</button>
           <button type="submit" class="px-4 py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-medium rounded">Save Changes</button>
@@ -531,12 +544,12 @@
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label id="maintTechLabel" class="block text-slate-400 mb-1">Technician</label>
-            <select id="maintTechSelect" class="hidden w-full p-2 bg-slate-900 border border-slate-700 rounded text-white focus:outline-none focus:border-teal-500"></select>
+            <select id="maintTechSelect" onchange="saveMaintenanceDraft()" class="hidden w-full p-2 bg-slate-900 border border-slate-700 rounded text-white focus:outline-none focus:border-teal-500"></select>
             <input type="text" id="maintTechName" readonly class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-teal-300 font-semibold cursor-not-allowed">
           </div>
           <div>
             <label class="block text-slate-400 mb-1">Date Conducted</label>
-            <input type="date" id="maintDate" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white focus:outline-none focus:border-teal-500">
+            <input type="date" id="maintDate" required onchange="saveMaintenanceDraft()" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white focus:outline-none focus:border-teal-500">
           </div>
         </div>
 
@@ -559,12 +572,12 @@
 
         <div>
           <label class="block text-slate-400 mb-1">Observations / Checklist</label>
-          <textarea id="maintObservations" rows="2" placeholder="Pressure test, gas  leak check, regulator greasing..." class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white focus:outline-none focus:border-teal-500"></textarea>
+          <textarea id="maintObservations" rows="2" oninput="saveMaintenanceDraft()" placeholder="Pressure test, gas  leak check, regulator greasing..." class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white focus:outline-none focus:border-teal-500"></textarea>
         </div>
 
         <div>
           <label class="block text-slate-400 mb-1">Remarks</label>
-          <input type="text" id="maintRemarks" placeholder="Satisfactory / Filter cleaned" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white focus:outline-none focus:border-teal-500">
+          <input type="text" id="maintRemarks" oninput="saveMaintenanceDraft()" placeholder="Satisfactory / Filter cleaned" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white focus:outline-none focus:border-teal-500">
         </div>
 
         <div class="flex items-center justify-end gap-2 pt-2">
@@ -785,6 +798,18 @@
           <label class="block text-slate-400 mb-1">Maintenance Frequency (Days) *</label>
           <input type="number" id="newAssetFreq" min="1" value="90" required class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
         </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-slate-400 mb-1">Customer Service Status</label>
+            <select id="newAssetServiceStatus" onchange="toggleActivationDateField('new')" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
+              <option value="Active">Active</option><option value="Inactive">Inactive (Maintenance Hold)</option>
+            </select>
+          </div>
+          <div id="newActivationDateWrap">
+            <label class="block text-slate-400 mb-1">Activation Date</label>
+            <input type="date" id="newAssetActivationDate" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white">
+          </div>
+        </div>
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" onclick="closeModal('addAssetModal')" class="px-3.5 py-1.5 bg-slate-800 text-slate-300 rounded">Cancel</button>
           <button type="submit" class="px-4 py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-medium rounded">Create Asset</button>
@@ -887,11 +912,16 @@
     window.addEventListener('DOMContentLoaded', () => {
       loadStoredAppData();
       checkSession();
+      if (currentUser) restoreMaintenanceDraftOnStartup();
       renderCustomIconsModal();
       renderFrequencyModal();
       checkActiveNotice();
+      const newActivationInput = document.getElementById('newAssetActivationDate');
+      if (newActivationInput) newActivationInput.value = localDateKey();
+      toggleActivationDateField('new');
       fetchCloudData(false);
       setInterval(() => { if (currentUser && currentUser.role !== 'admin') fetchTechnicianNotices(); }, 60000);
+      setInterval(() => { if (currentUser) fetchCloudIcons(false); }, 60000);
     });
 
     function loadStoredAppData() {
@@ -936,6 +966,8 @@
       });
       assets.forEach(asset => {
         asset.lastDate = latestLogDateByAsset.get(sanitizeKey(asset.id)) || null;
+        asset.serviceStatus = String(asset.serviceStatus || 'Active').toLowerCase() === 'inactive' ? 'Inactive' : 'Active';
+        asset.activationDate = asset.activationDate ? safeParseDate(asset.activationDate) : '';
       });
     }
 
@@ -969,7 +1001,7 @@
         // Allows: Exact password OR Emergency Master PIN '1234' OR ID as Password
         if (p === expectedPass || p.toUpperCase() === expectedPass.toUpperCase() || p === '1234' || p.toUpperCase() === u) {
           currentUser = { ...user, pass: expectedPass };
-          try { sessionStorage.setItem('bgl_auth_user', JSON.stringify(currentUser)); } catch(e) {}
+          try { localStorage.setItem('bgl_auth_user', JSON.stringify({ id: currentUser.id, name: currentUser.name, role: currentUser.role, team: currentUser.team })); sessionStorage.removeItem('bgl_auth_user'); } catch(e) {}
           err.classList.add('hidden');
 
           // Switch screen
@@ -979,6 +1011,7 @@
           appCon.classList.remove('hidden');
 
           initAppView();
+          restoreMaintenanceDraftOnStartup();
           showToast(`Welcome, ${currentUser.name}!`);
           return;
         }
@@ -1002,9 +1035,12 @@
 
     function checkSession() {
       try {
-        const sess = sessionStorage.getItem('bgl_auth_user');
+        const sess = localStorage.getItem('bgl_auth_user') || sessionStorage.getItem('bgl_auth_user');
         if (sess) {
           currentUser = JSON.parse(sess);
+          // Migrate an older tab-only login to a persistent login, without saving the password.
+          localStorage.setItem('bgl_auth_user', JSON.stringify({ id: currentUser.id, name: currentUser.name, role: currentUser.role, team: currentUser.team }));
+          sessionStorage.removeItem('bgl_auth_user');
           document.getElementById('loginSection').style.setProperty('display', 'none', 'important');
           const appCon = document.getElementById('appContainer');
           appCon.style.setProperty('display', 'flex', 'important');
@@ -1015,8 +1051,16 @@
     }
 
     function handleLogout() {
-      try { sessionStorage.removeItem('bgl_auth_user'); } catch(e) {}
-      location.reload();
+      persistMaintenanceDraftNow(true);
+      try { localStorage.removeItem('bgl_auth_user'); sessionStorage.removeItem('bgl_auth_user'); } catch(e) {}
+      currentUser = null;
+      document.getElementById('appContainer').classList.add('hidden');
+      document.getElementById('appContainer').style.setProperty('display', 'none', 'important');
+      document.getElementById('loginSection').style.removeProperty('display');
+      document.getElementById('loginUsername').value = '';
+      document.getElementById('loginPassword').value = '';
+      document.getElementById('loginError').classList.add('hidden');
+      showToast('Logged out');
     }
 
     function initAppView() {
@@ -1330,7 +1374,7 @@
 
       let healthy = 0, dueSoon = 0, overdue = 0;
       filtered.forEach(a => {
-        const s = computeStatus(a.lastDate, a.freqDays);
+        const s = computeAssetStatus(a);
         if (s.status === 'Healthy') healthy++;
         else if (s.status === 'Due Soon') dueSoon++;
         else if (s.status === 'Overdue') overdue++;
@@ -1370,34 +1414,77 @@
       `).join('');
     }
 
-    function uploadCategoryIcon(e, cat) {
-      const file = e.target.files[0];
+    async function prepareSharedIcon(file) {
+      if (!file || !file.type.startsWith('image/')) throw new Error('Choose an image file');
+      const source = await new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(new Error('Could not read this image'));
+        image.src = URL.createObjectURL(file);
+      });
+      const scale = Math.min(1, 96 / Math.max(source.naturalWidth, source.naturalHeight));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(source.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(source.naturalHeight * scale));
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(source.src);
+      let size = 96;
+      let dataUri = canvas.toDataURL('image/png');
+      while (dataUri.length > 44000 && size > 24) {
+        size = Math.floor(size * 0.75);
+        const factor = size / Math.max(canvas.width, canvas.height);
+        const smaller = document.createElement('canvas');
+        smaller.width = Math.max(1, Math.round(canvas.width * factor));
+        smaller.height = Math.max(1, Math.round(canvas.height * factor));
+        smaller.getContext('2d').drawImage(canvas, 0, 0, smaller.width, smaller.height);
+        dataUri = smaller.toDataURL('image/png');
+      }
+      if (dataUri.length > 44000) throw new Error('This icon is too detailed to share. Please choose a simpler/smaller icon.');
+      return dataUri;
+    }
+
+    async function uploadCategoryIcon(e, cat) {
+      const file = e.target.files && e.target.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        customIcons[cat] = evt.target.result;
+      try {
+        showLoader(`Sharing ${cat} map icon...`);
+        const dataUri = await prepareSharedIcon(file);
+        await postCloudAction({ action: 'syncIcon', category: cat, dataUri });
+        customIcons[cat] = dataUri;
         safeStore.set('bgl_custom_png_icons', JSON.stringify(customIcons));
         renderCustomIconsModal();
         renderAssets();
-        showToast(`${cat} PNG Icon uploaded!`);
-      };
-      reader.readAsDataURL(file);
+        showToast(`${cat} icon saved and shared with all devices`);
+      } catch (err) {
+        showToast(`Could not share icon: ${err.message}`);
+      } finally {
+        hideLoader();
+        e.target.value = '';
+      }
     }
 
-    function removeCategoryIcon(cat) {
-      delete customIcons[cat];
-      safeStore.set('bgl_custom_png_icons', JSON.stringify(customIcons));
-      renderCustomIconsModal();
-      renderAssets();
-      showToast(`${cat} icon reset`);
+    async function removeCategoryIcon(cat) {
+      try {
+        await postCloudAction({ action: 'deleteIcon', category: cat });
+        delete customIcons[cat];
+        safeStore.set('bgl_custom_png_icons', JSON.stringify(customIcons));
+        renderCustomIconsModal();
+        renderAssets();
+        showToast(`${cat} icon removed from all devices`);
+      } catch (err) { showToast(`Could not remove shared icon: ${err.message}`); }
     }
 
-    function resetCustomIcons() {
-      customIcons = {};
-      safeStore.remove('bgl_custom_png_icons');
-      renderCustomIconsModal();
-      renderAssets();
-      showToast("All map icons reset to defaults");
+    async function resetCustomIcons() {
+      try {
+        await postCloudAction({ action: 'clearIcons' });
+        customIcons = {};
+        safeStore.remove('bgl_custom_png_icons');
+        renderCustomIconsModal();
+        renderAssets();
+        showToast('Custom icons reset on all devices');
+      } catch (err) { showToast(`Could not reset shared icons: ${err.message}`); }
     }
 
     // --- LEAFLET MAP ---
@@ -1413,6 +1500,10 @@
     }
 
     // --- STRICT DATE PARSING & DUE CALCULATION ---
+    function localDateKey(date = new Date()) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
     function safeParseDate(val) {
       if (!val) return '';
       val = String(val).trim();
@@ -1439,6 +1530,21 @@
       const parts = clean.split('-');
       if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
       return isoDateStr;
+    }
+
+    function getAssetCycleStartDate(asset) {
+      const logDate = asset.lastDate ? safeParseDate(asset.lastDate) : '';
+      const activationDate = asset.activationDate ? safeParseDate(asset.activationDate) : '';
+      if (!logDate) return activationDate;
+      if (!activationDate) return logDate;
+      return activationDate > logDate ? activationDate : logDate;
+    }
+
+    function computeAssetStatus(asset) {
+      if (String(asset.serviceStatus || 'Active').toLowerCase() === 'inactive') {
+        return { status: 'Maintenance Hold', color: '#64748b', badge: 'bg-slate-700/40 text-slate-300 border border-slate-600/50', dueDateFormatted: 'On reconnection' };
+      }
+      return computeStatus(getAssetCycleStartDate(asset), asset.freqDays);
     }
 
     function computeStatus(lastDateStr, freqDays = 90) {
@@ -1507,7 +1613,7 @@
 
       let filtered = assets.filter(a => {
         if (activeCategory !== 'All' && a.type !== activeCategory) return false;
-        if (activeStatusFilter && computeStatus(a.lastDate, a.freqDays).status !== activeStatusFilter) return false;
+        if (activeStatusFilter && computeAssetStatus(a).status !== activeStatusFilter) return false;
         if (!showAllTeams && currentUser && currentUser.role !== 'admin') {
           if (a.team && a.team.toUpperCase() !== currentUser.team.toUpperCase()) return false;
         }
@@ -1533,7 +1639,7 @@
       document.getElementById('assetCountBadge').textContent = filtered.length;
 
       filtered.forEach(asset => {
-        const info = computeStatus(asset.lastDate, asset.freqDays);
+        const info = computeAssetStatus(asset);
         let dist = userLocation ? getDistance(userLocation.lat, userLocation.lng, asset.lat, asset.lng) : '--';
 
         if (map && asset.lat && asset.lng) {
@@ -1565,9 +1671,7 @@
               <b>Due:</b> ${info.dueDateFormatted} (${info.status})<br/>
               ${asset.assignedTech ? `<span style="color:#0f766e; font-weight:bold;">Assigned: ${asset.assignedTech}</span><br/>` : ''}
               <div style="margin-top: 8px; display:flex; gap: 4px; flex-wrap:wrap;">
-                <button onclick="openMaintenanceModal('${asset.id}')" style="background:#0f766e; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">
-                  Inspect & Close
-                </button>
+                ${info.status === 'Maintenance Hold' ? '<span style="background:#334155; color:#cbd5e1; padding:4px 8px; border-radius:4px; font-size:11px;">Maintenance Hold</span>' : `<button onclick="openMaintenanceModal('${asset.id}')" style="background:#0f766e; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">Inspect & Close</button>`}
                 <a href="https://www.google.com/maps/dir/?api=1&destination=${asset.lat},${asset.lng}" target="_blank" style="background:#1e293b; color:#38bdf8; border:none; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:11px;">
                   Navigate
                 </a>
@@ -1626,9 +1730,7 @@
                   <i class="fa-solid fa-timeline"></i>
                 </button>
               ` : ''}
-              <button onclick="openMaintenanceModal('${asset.id}')" class="px-2.5 py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-medium rounded text-xs shadow flex items-center gap-1">
-                <i class="fa-solid fa-clipboard-check"></i> <span class="hidden sm:inline">Close</span>
-              </button>
+              ${info.status === 'Maintenance Hold' ? '<span class="px-2.5 py-1.5 bg-slate-800 text-slate-400 rounded text-[10px]">Hold</span>' : `<button onclick="openMaintenanceModal('${asset.id}')" class="px-2.5 py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-medium rounded text-xs shadow flex items-center gap-1"><i class="fa-solid fa-clipboard-check"></i> <span class="hidden sm:inline">Close</span></button>`}
             </div>
           </td>
         `;
@@ -1650,6 +1752,9 @@
       document.getElementById('editAssetLat').value = asset.lat;
       document.getElementById('editAssetLng').value = asset.lng;
       document.getElementById('editAssetFreq').value = asset.freqDays || 90;
+      document.getElementById('editAssetServiceStatus').value = String(asset.serviceStatus || 'Active').toLowerCase() === 'inactive' ? 'Inactive' : 'Active';
+      document.getElementById('editAssetActivationDate').value = String(asset.serviceStatus || 'Active').toLowerCase() === 'inactive' ? '' : (asset.activationDate ? safeParseDate(asset.activationDate) : (asset.lastDate ? safeParseDate(asset.lastDate) : localDateKey()));
+      toggleActivationDateField('edit');
 
       const teamSelect = document.getElementById('editAssetTeamSelect');
       teamSelect.innerHTML = teams.map(t => `<option value="${t}" ${t === asset.team ? 'selected' : ''}>${t}</option>`).join('');
@@ -1657,7 +1762,7 @@
       openModal('editAssetModal');
     }
 
-    function saveEditedAsset(e) {
+    async function saveEditedAsset(e) {
       e.preventDefault();
       const origId = document.getElementById('editAssetOriginalId').value;
       const asset = assets.find(a => a.id === origId);
@@ -1669,12 +1774,20 @@
       asset.lat = parseFloat(document.getElementById('editAssetLat').value);
       asset.lng = parseFloat(document.getElementById('editAssetLng').value);
       asset.freqDays = parseInt(document.getElementById('editAssetFreq').value) || 90;
+      asset.serviceStatus = document.getElementById('editAssetServiceStatus').value;
+      asset.activationDate = asset.serviceStatus === 'Active' ? document.getElementById('editAssetActivationDate').value : '';
+      if (asset.serviceStatus === 'Active' && !asset.activationDate && !asset.lastDate) {
+        showToast('Enter the activation date to start the maintenance cycle');
+        return;
+      }
 
       assets = deduplicateAssets(assets);
       safeStore.set('bgl_assets_v2', JSON.stringify(assets));
       closeModal('editAssetModal');
+      applyMaintenanceDatesFromLogs();
       renderAssets();
-      showToast(`Asset ${asset.id} updated!`);
+      const synced = await syncAssetsToCloud(false);
+      showToast(synced ? `Asset ${asset.id} updated for all devices` : 'Saved on this device; cloud sync failed. Please retry Sync.');
     }
 
     function confirmDeleteAsset(assetId) {
@@ -1760,9 +1873,55 @@
     let activeMaintenanceAssetId = null;
     let activeMaintenanceClientLogId = null;
 
-    function openMaintenanceModal(assetId) {
+    const MAINTENANCE_DRAFT_KEY = 'bgl_maintenance_draft';
+
+    function readMaintenanceDraft() {
+      try { return JSON.parse(safeStore.get(MAINTENANCE_DRAFT_KEY) || 'null'); } catch(e) { return null; }
+    }
+
+    let maintenanceDraftSaveTimer = null;
+
+    function saveMaintenanceDraft() {
+      if (maintenanceDraftSaveTimer) clearTimeout(maintenanceDraftSaveTimer);
+      // Batch text edits so large photo drafts do not make typing slow on phones.
+      maintenanceDraftSaveTimer = setTimeout(() => persistMaintenanceDraftNow(false), 250);
+    }
+
+    function persistMaintenanceDraftNow(silent = true) {
+      if (!activeMaintenanceAssetId || !currentUser) return;
+      const draft = {
+        assetId: activeMaintenanceAssetId,
+        clientLogId: activeMaintenanceClientLogId,
+        userId: currentUser.id || currentUser.name,
+        date: document.getElementById('maintDate').value,
+        technician: currentUser.role === 'admin' ? document.getElementById('maintTechSelect').value : currentUser.name,
+        observations: document.getElementById('maintObservations').value,
+        remarks: document.getElementById('maintRemarks').value,
+        beforePhoto: document.querySelector('#beforePreview img')?.src || '',
+        afterPhoto: document.querySelector('#afterPreview img')?.src || '',
+        savedAt: new Date().toISOString()
+      };
+      try { localStorage.setItem(MAINTENANCE_DRAFT_KEY, JSON.stringify(draft)); }
+      catch (err) { if (!silent) showToast('Draft storage is full. Please keep this page open until the upload finishes.'); }
+    }
+
+    window.addEventListener('pagehide', () => persistMaintenanceDraftNow(true));
+
+    function restoreMaintenanceDraftOnStartup() {
+      const draft = readMaintenanceDraft();
+      if (!draft || !currentUser || String(draft.userId) !== String(currentUser.id || currentUser.name)) return;
+      if (!assets.some(asset => asset.id === draft.assetId)) return;
+      openMaintenanceModal(draft.assetId, true);
+      showToast('Restored your unfinished maintenance form and photos');
+    }
+
+    function openMaintenanceModal(assetId, restoreDraft = false) {
       activeMaintenanceAssetId = assetId;
-      activeMaintenanceClientLogId = `LOG-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      const savedDraft = readMaintenanceDraft();
+      const sameUser = savedDraft && currentUser && String(savedDraft.userId) === String(currentUser.id || currentUser.name);
+      const draft = restoreDraft && savedDraft && savedDraft.assetId === assetId && sameUser ? savedDraft : null;
+      activeMaintenanceClientLogId = draft?.clientLogId || `LOG-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      document.getElementById('maintenanceForm').reset();
       document.getElementById('maintAssetInfo').textContent = `Asset: ${assetId}`;
       const techSelect = document.getElementById('maintTechSelect');
       const techNameInput = document.getElementById('maintTechName');
@@ -1786,26 +1945,50 @@
         techNameInput.value = currentUser ? currentUser.name : 'Unknown';
         techNameInput.classList.remove('hidden');
       }
-      const now = new Date();
-      document.getElementById('maintDate').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      document.getElementById('maintTechName').value = currentUser ? currentUser.name : 'Unknown';
+      document.getElementById('maintDate').value = localDateKey();
       document.getElementById('beforePreview').innerHTML = '<span>No image</span>';
       document.getElementById('afterPreview').innerHTML = '<span>No image</span>';
+      if (draft) {
+        document.getElementById('maintDate').value = draft.date || localDateKey();
+        document.getElementById('maintObservations').value = draft.observations || '';
+        document.getElementById('maintRemarks').value = draft.remarks || '';
+        if (currentUser.role === 'admin') techSelect.value = draft.technician || '';
+        if (draft.beforePhoto) document.getElementById('beforePreview').innerHTML = `<img src="${draft.beforePhoto}" class="w-full h-full object-cover">`;
+        if (draft.afterPhoto) document.getElementById('afterPreview').innerHTML = `<img src="${draft.afterPhoto}" class="w-full h-full object-cover">`;
+      }
+      persistMaintenanceDraftNow(true);
       openModal('maintenanceModal');
+    }
+
+    function previewImage(input, targetId) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const image = new Image();
+        image.onload = function() {
+          // Phone photos can be very large. Resize/compress them to keep the tab responsive
+          // while preserving enough detail for maintenance records and draft recovery.
+          const maxDimension = 1600;
+          const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+          canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.78);
+          document.getElementById(targetId).innerHTML = `<img src="${compressed}" class="w-full h-full object-cover">`;
+          saveMaintenanceDraft();
+        };
+        image.onerror = () => showToast('Could not read this photo. Please choose another image.');
+        image.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
     }
 
     function getPhotoLink(value) {
       const link = String(value || '').trim();
       return /^https?:\/\//i.test(link) ? link : '';
-    }
-
-    function previewImage(input, targetId) {
-      if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          document.getElementById(targetId).innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
-        }
-        reader.readAsDataURL(input.files[0]);
-      }
     }
 
     async function submitMaintenance(e) {
@@ -1863,6 +2046,11 @@
           afterPhoto: json.afterUrl || afterImg
         };
 
+        if (maintenanceDraftSaveTimer) clearTimeout(maintenanceDraftSaveTimer);
+        maintenanceDraftSaveTimer = null;
+        localStorage.removeItem(MAINTENANCE_DRAFT_KEY);
+        activeMaintenanceAssetId = null;
+        activeMaintenanceClientLogId = null;
         maintenanceHistory.unshift(logRecord);
         asset.lastDate = dateConducted;
         asset.assignedTech = null;
@@ -1890,7 +2078,7 @@
     function getPendingTasksForCurrentUser() {
       if (!currentUser || currentUser.role === 'admin') return [];
       const myName = String(currentUser.name || '').trim().toLowerCase();
-      return assets.filter(asset => asset.assignedTech && String(asset.assignedTech).trim().toLowerCase() === myName);
+      return assets.filter(asset => asset.assignedTech && String(asset.assignedTech).trim().toLowerCase() === myName && String(asset.serviceStatus || 'Active').toLowerCase() !== 'inactive');
     }
     function notifyNewPendingTasks(tasks) {
       if (!('Notification' in window) || Notification.permission !== 'granted' || !currentUser) return;
@@ -2248,12 +2436,23 @@
               lng: parseFloat(a.lng) || 78.3845,
               freqDays: parseInt(a.freqDays) || (categoryFreqs[a.type] || 90),
               assignedTech: a.assignedTech || null,
-
+              serviceStatus: String(a.serviceStatus || 'Active').toLowerCase() === 'inactive' ? 'Inactive' : 'Active',
+              activationDate: a.activationDate ? safeParseDate(a.activationDate) : ''
             }));
 
             // INSTANT DEDUPLICATION: Google Sheet lo duplicates unna, ikkada unique 600 matrame untayi
             assets = deduplicateAssets(rawAssets);
             safeStore.set('bgl_assets_v2', JSON.stringify(assets));
+          }
+
+          if (Array.isArray(json.icons) && json.iconsInitialized) {
+            customIcons = Object.fromEntries(json.icons.filter(icon => icon.category && icon.dataUri).map(icon => [icon.category, icon.dataUri]));
+            safeStore.set('bgl_custom_png_icons', JSON.stringify(customIcons));
+            renderCustomIconsModal();
+          } else if (json.iconsInitialized === false && currentUser && currentUser.role === 'admin' && Object.keys(customIcons).length) {
+            try {
+              await postCloudAction({ action: 'syncIcons', icons: Object.entries(customIcons).map(([category, dataUri]) => ({ category, dataUri })) });
+            } catch (iconErr) { console.warn('Could not migrate older local icons to shared cloud storage', iconErr); }
           }
 
           if (Array.isArray(json.notices)) {
@@ -2498,7 +2697,24 @@
       downloadFile(csv, `BGL_Maintenance_Report.csv`, 'text/csv');
     }
 
-    function saveNewAsset(e) {
+    function openNewAssetModal() {
+      const date = document.getElementById('newAssetActivationDate');
+      if (date && !date.value && document.getElementById('newAssetServiceStatus').value === 'Active') date.value = localDateKey();
+      toggleActivationDateField('new');
+      openModal('addAssetModal');
+    }
+
+    function toggleActivationDateField(prefix) {
+      const status = document.getElementById(prefix === 'edit' ? 'editAssetServiceStatus' : 'newAssetServiceStatus');
+      const wrap = document.getElementById(prefix === 'edit' ? 'editActivationDateWrap' : 'newActivationDateWrap');
+      const date = document.getElementById(prefix === 'edit' ? 'editAssetActivationDate' : 'newAssetActivationDate');
+      const active = status && status.value === 'Active';
+      wrap?.classList.toggle('hidden', !active);
+      if (date) date.required = !!active;
+      if (active && date && !date.value && prefix === 'new') date.value = localDateKey();
+    }
+
+    async function saveNewAsset(e) {
       e.preventDefault();
       const id = document.getElementById('newAssetId').value.trim().toUpperCase();
       const type = document.getElementById('newAssetType').value;
@@ -2507,14 +2723,17 @@
       const lat = parseFloat(document.getElementById('newAssetLat').value);
       const lng = parseFloat(document.getElementById('newAssetLng').value);
       const freqDays = parseInt(document.getElementById('newAssetFreq').value) || (categoryFreqs[type] || 90);
+      const serviceStatus = document.getElementById('newAssetServiceStatus').value;
+      const activationDate = serviceStatus === 'Active' ? document.getElementById('newAssetActivationDate').value : '';
 
-      assets.push({ id, type, team, location, lat, lng, freqDays, assignedTech: null });
+      assets.push({ id, type, team, location, lat, lng, freqDays, assignedTech: null, serviceStatus, activationDate });
       assets = deduplicateAssets(assets);
       safeStore.set('bgl_assets_v2', JSON.stringify(assets));
       closeModal('addAssetModal');
       document.getElementById('addAssetForm').reset();
       renderAssets();
-      showToast("Asset created successfully!");
+      const synced = await syncAssetsToCloud(false);
+      showToast(synced ? 'Asset created and synced to all devices!' : 'Asset created here, but cloud sync failed. Please retry Sync.');
     }
 
     // --- UTILITIES ---
@@ -2540,6 +2759,39 @@
       a.href = URL.createObjectURL(blob);
       a.download = fileName;
       a.click();
+    }
+
+    async function postCloudAction(payload) {
+      const res = await fetch(CLOUD_API_URL, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error(`Cloud request failed (${res.status})`);
+      const result = await res.json();
+      if (result.status !== 'success') throw new Error(result.message || 'Cloud did not confirm the change');
+      return result;
+    }
+
+    async function fetchCloudIcons(showFeedback = false) {
+      try {
+        const res = await fetch(`${CLOUD_API_URL}?action=getIcons`);
+        const json = await res.json();
+        if (!res.ok || json.status !== 'success') throw new Error(json.message || 'Could not load shared icons');
+        if (json.iconsInitialized && Array.isArray(json.icons)) {
+          customIcons = Object.fromEntries(json.icons.filter(icon => icon.category && icon.dataUri).map(icon => [icon.category, icon.dataUri]));
+          safeStore.set('bgl_custom_png_icons', JSON.stringify(customIcons));
+          renderCustomIconsModal();
+          renderAssets();
+        } else if (currentUser && currentUser.role === 'admin' && Object.keys(customIcons).length) {
+          await postCloudAction({ action: 'syncIcons', icons: Object.entries(customIcons).map(([category, dataUri]) => ({ category, dataUri })) });
+          if (showFeedback) showToast('Existing device icons shared to cloud');
+          return fetchCloudIcons(false);
+        }
+        return true;
+      } catch (err) {
+        if (showFeedback) showToast(`Could not sync shared icons: ${err.message}`);
+        console.warn('Shared icon sync failed', err);
+        return false;
+      }
     }
 
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
